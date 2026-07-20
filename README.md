@@ -1,19 +1,8 @@
 # Scientific Autoresearch
 
-```mermaid
-flowchart TD
-    Q["Scientific question + authorized data scope"] --> G{"Governance and resource gate"}
-    G -- "restricted" --> B["Design-only report or approval request"]
-    G -- "cleared" --> D["Freeze Decision Contract and Prior-exposure Audit"]
-    D --> I["Build versioned mechanism inventory and finite coverage cells"]
-    I --> X["Schedule uniform screening and candidate-specific deep tests"]
-    X --> E["Record every selection-influencing result in the ledger"]
-    E --> C{"Coverage complete and inventory saturated?"}
-    C -- "no: supported cell remains" --> X
-    C -- "no: new mechanism or formulation" --> I
-    C -- "resources exhausted" --> P["Pause with an immutable open queue"]
-    C -- "yes" --> F["Audit selection path and issue final report"]
-```
+![Coverage-guided scientific autoresearch workflow](figures/scientific-autoresearch-workflow-v0.2.1.png)
+
+[Vector PDF](figures/scientific-autoresearch-workflow-v0.2.1.pdf) · [Vector SVG](figures/scientific-autoresearch-workflow-v0.2.1.svg)
 
 `scientific-autoresearch` is an agent-independent [Agent Skill](https://agentskills.io) for mechanism-first scientific investigation over a finite, data-supported search space. It helps an agent define the decision before seeing outcomes, search systematically without arbitrary mechanism or round caps, learn from weak and null results, and preserve an auditable path from candidate generation to final inference.
 
@@ -72,6 +61,10 @@ Inventory saturation requires both a mechanism-forward audit and a data-product-
 ├── CITATION.cff
 ├── CITATION.bib
 ├── LICENSE
+├── figures/
+│   ├── scientific-autoresearch-workflow-v0.2.1.pdf
+│   ├── scientific-autoresearch-workflow-v0.2.1.png
+│   └── scientific-autoresearch-workflow-v0.2.1.svg
 ├── scripts/
 │   └── validate_skill.py
 └── scientific-autoresearch/

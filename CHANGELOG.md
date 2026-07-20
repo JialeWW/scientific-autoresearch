@@ -13,6 +13,7 @@ All notable changes to this project are documented here.
 - Separated scientific coverage from compute scheduling, added low-cost screening followed by deeper testing, and preserved unrun cells in a resource-limited open queue.
 - Added machine consistency checks across inventories, coverage matrices, ledgers, selection families, candidate decisions, data versions, decision artifacts, and status transitions.
 - Preserved conservative evidence labels, complete search ledgers, stochastic-seed discipline, and weak or failed results.
+- Added a publication-ready workflow figure in embedded-font PDF, vector SVG, and high-resolution PNG formats.
 
 ## 0.2.0 - 2026-07-20
 

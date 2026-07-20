@@ -14,9 +14,15 @@ If mechanism M contributes to outcome Y, then observable X should change in dire
 
 A result is a number, fit, feature, detection, or comparison. A claim states what that result changes. Verify that the computed estimand matches the sentence used to describe it.
 
+## Decision Before Ranking
+
+Define the intended decision, comparable candidates, evidence rule, meaningful difference, tie rule, and inconclusive rule before inspecting candidate-specific outcomes. The smallest p-value is not automatically the best scientific explanation.
+
 ## Exploration Is Not Confirmation
 
 Exploration is valuable when its search scope and failures remain visible. A data-dependent result becomes a frozen candidate for future verification, not a retrospective confirmatory result.
+
+Exposure follows the underlying information. Changing a sample, codebase, model, repository, workflow, or skill version does not make overlapping evidence untouched again.
 
 ## Formulation Is Not Mechanism
 
@@ -25,6 +31,8 @@ A formulation combines a mechanism, observable, support definition, statistic, a
 ## Support Is Part of the Science
 
 Rows in a table are not automatically a testable sample. Separate cases that were not observed, observed but nondetected, observed and zero, censored, low quality, ineligible, or excluded by a frozen rule.
+
+Candidates with different target populations, supported samples, estimands, evidence stages, or material data quality are not automatically comparable. Keep them as parallel conclusions or support-limited candidates unless a validated common-scale mapping exists.
 
 ## Sensitivity Precedes Null Interpretation
 
@@ -42,9 +50,17 @@ Same-data consistency, alternate proxies, cross-validation, simulations, sealed 
 
 Preserve null, inconclusive, invalid, and failed branches. They constrain future search and prevent rediscovery of the same mistake.
 
-## Autonomy Must Be Bounded
+## Autonomy Must Be Auditable
 
-Freeze finite rounds, candidates, mutations, data looks, compute, and cost. Stop when progress needs new data, assumptions, authorization, or human judgment. Do not optimize until a favorable result appears.
+Do not cap scientific possibilities with an arbitrary mechanism or round count. Instead, version a finite data-supported inventory, make every executable formulation set finite, preserve the full ledger, and stop scientifically only after audited inventory saturation and coverage completion.
+
+The ledger must cover the complete selection path from candidate generation and modification through screening, ranking, verification targeting, and promotion. Use an inferential strategy suited to that path; no single global-null method fits every domain.
+
+Data looks, governance, compute, cost, time, storage, and external actions still require frozen boundaries. If an execution boundary arrives first, pause with open cells rather than declaring the scientific space complete. Do not optimize until a favorable result appears.
+
+## Coverage Is Not Universal Exhaustiveness
+
+Coverage describes a versioned search space constructed from the current question and data products. It does not prove that no other physical, causal, computational, measurement, or selection mechanism exists.
 
 ## Governance Is Not an Afterthought
 

@@ -1,22 +1,30 @@
 [
   {
-    "query": "Run a bounded autonomous investigation of why the expanded sample erased our original signal, including new mechanism-matched observables and falsification checks.",
+    "query": "Build a versioned inventory of every physical mechanism and observable supported by these data products, search the finite coverage cells, and stop only after coverage and saturation audits pass.",
     "should_trigger": true
   },
   {
-    "query": "We have several physical explanations for this anomaly. Build a candidate portfolio, test them over three rounds, and keep a reproducible search ledger.",
+    "query": "Before comparing these candidate explanations, define a Decision Contract with comparable selection families, ranking evidence, and explicit tie and inconclusive rules.",
     "should_trigger": true
   },
   {
-    "query": "Figure out whether the fragmentation in these simulations is physical or a numerical artifact, and decide the next convergence experiment.",
+    "query": "Audit all prior looks at overlapping data and determine whether changing the sample, analysis code, and skill version can make the new test confirmatory.",
     "should_trigger": true
   },
   {
-    "query": "Our primary result is null. Diagnose whether the proxy, support definition, scale, or background formulation failed before we reject the mechanism.",
+    "query": "Figure out whether fragmentation in these simulations is physical or a numerical artifact, and decide the next convergence experiment.",
     "should_trigger": true
   },
   {
-    "query": "Autonomously improve this scientific prediction model while protecting the held-out benchmark and reporting all failed model families.",
+    "query": "Autonomously improve this scientific prediction model while protecting the held-out benchmark, logging all selection-influencing tests, and reporting all failed model families.",
+    "should_trigger": true
+  },
+  {
+    "query": "Our primary result is null. Diagnose whether the proxy, support definition, scale, background formulation, or an omitted mechanism failed before rejecting the theory.",
+    "should_trigger": true
+  },
+  {
+    "query": "Use the approved seven-day cluster-compute envelope to screen the registered candidates cheaply, deepen promising tests, and save the open queue if resources run out.",
     "should_trigger": true
   },
   {
@@ -24,19 +32,11 @@
     "should_trigger": true
   },
   {
-    "query": "Investigate which of these proposed mechanisms explains the sensor anomaly and stop after a finite evidence budget.",
+    "query": "Compare candidates from different target populations and estimands only when scientifically commensurable, retaining the others as parallel or support-limited conclusions.",
     "should_trigger": true
   },
   {
-    "query": "Use injection and recovery to validate whether our detection pipeline can recover effects of a scientifically meaningful scale.",
-    "should_trigger": true
-  },
-  {
-    "query": "Analyze this survey catalog for a background-relative excess, carefully separating footprint, nondetection, and true zero.",
-    "should_trigger": true
-  },
-  {
-    "query": "Design and execute a reproducible two-round test of whether this treatment effect depends on baseline severity, while preserving the prespecified primary result.",
+    "query": "Resume this autoresearch run only after machine-checking the inventory, coverage matrix, ledger, selection families, data versions, and status transitions for consistency.",
     "should_trigger": true
   },
   {

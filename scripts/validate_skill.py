@@ -17,7 +17,7 @@ def unquote(value: str) -> str:
 
 
 def frontmatter_value(frontmatter: str, key: str) -> str | None:
-    match = re.search(rf"(?m)^{re.escape(key)}:\s*(.+?)\s*$", frontmatter)
+    match = re.search(rf"(?m)^[ \t]*{re.escape(key)}:\s*(.+?)\s*$", frontmatter)
     return unquote(match.group(1)) if match else None
 
 
@@ -77,6 +77,9 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
             errors.append("evals/evals.json skill_name does not match frontmatter name")
         if len(evals.get("evals", [])) < 3:
             errors.append("evals/evals.json must contain at least 3 cases")
+        ids = [case.get("id") for case in evals.get("evals", [])]
+        if len(ids) != len(set(ids)):
+            errors.append("evals/evals.json case IDs must be unique")
         for case in evals.get("evals", []):
             if not case.get("prompt") or not case.get("expected_output") or not case.get("assertions"):
                 errors.append(f"Incomplete output eval case: {case.get('id')}")

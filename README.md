@@ -2,57 +2,66 @@
 
 ```mermaid
 flowchart TD
-    Q["Scientific question + authorized scope"] --> G{"Governance and resource gate"}
-    G -- "blocked or restricted" --> B["Design-only report or approval request"]
-    G -- "cleared" --> R0["Freeze Round 0: claims, budgets, search ledger, verification policy"]
-    R0 --> R["Execute one bounded round: test, uncertainty, falsification"]
-    R --> S{"Canonical evidence status"}
-    S -- "supported candidate" --> V["Freeze once, then verify on sealed or independent evidence"]
-    S -- "null, inconclusive, invalid, or artifact" --> T["Preserve result and triage the failure mode"]
-    T -- "one registered mutation remains" --> R
-    T -- "budget or authority exhausted" --> F["Stop with immutable final report"]
-    V --> F
+    Q["Scientific question + authorized data scope"] --> G{"Governance and resource gate"}
+    G -- "restricted" --> B["Design-only report or approval request"]
+    G -- "cleared" --> D["Freeze Decision Contract and Prior-exposure Audit"]
+    D --> I["Build versioned mechanism inventory and finite coverage cells"]
+    I --> X["Schedule uniform screening and candidate-specific deep tests"]
+    X --> E["Record every selection-influencing result in the ledger"]
+    E --> C{"Coverage complete and inventory saturated?"}
+    C -- "no: supported cell remains" --> X
+    C -- "no: new mechanism or formulation" --> I
+    C -- "resources exhausted" --> P["Pause with an immutable open queue"]
+    C -- "yes" --> F["Audit selection path and issue final report"]
 ```
 
-`scientific-autoresearch` is a vendor-neutral [Agent Skill](https://agentskills.io) for bounded, mechanism-first scientific investigation. It helps an agent turn an open-ended question into testable claims, execute finite evidence rounds, learn from null results without result shopping, and preserve reproducible decisions.
+`scientific-autoresearch` is an agent-independent [Agent Skill](https://agentskills.io) for mechanism-first scientific investigation over a finite, data-supported search space. It helps an agent define the decision before seeing outcomes, search systematically without arbitrary mechanism or round caps, learn from weak and null results, and preserve an auditable path from candidate generation to final inference.
 
-Current version: **0.2.0**.
+Current version: **0.2.1**.
 
 ## Scope
 
 Use the skill for research that requires several of these capabilities:
 
-- generate and maintain a finite portfolio of candidate mechanisms;
-- translate mechanisms into claim cards, observables, estimands, and falsifiers;
-- audit whether available data can support a claim;
-- separate exploration, confirmation, internal validation, sealed-holdout verification, and replication;
-- control adaptive search, multiplicity, stochastic variation, compute, and stopping;
-- distinguish a failed formulation from a failed mechanism;
-- produce immutable round-by-round evidence and decisions.
+- build and version a mechanism inventory from what the available data can test;
+- translate each mechanism into finite observables, formulations, parameters, supported samples, estimands, and falsifiers;
+- define comparable selection families and retain incomparable or support-limited candidates as parallel conclusions;
+- freeze a Decision Contract covering the final decision, admissible evidence, ranking rule, tie rule, and inconclusive rule;
+- audit prior exposure to the same or overlapping data, including earlier analyses, parameter trials, and result views;
+- separate exploratory analysis, internal validation, independent verification, and replication;
+- cover the complete candidate-generation, modification, filtering, and promotion path with an appropriate inferential design;
+- stop on coverage completion and inventory saturation, or pause with an open queue when execution resources end;
+- produce immutable evidence, state transitions, and reproducible decisions.
 
 Do not use it for literature-only review, manuscript editing, routine execution of a fixed pipeline, or unauthorized live human, animal, clinical, field, wet-lab, hazardous, or external-system actions.
 
-## Version 0.2.0 Highlights
+## Version 0.2.1 Highlights
 
-- Three execution modes: `design_only`, `single_round`, and finite `multi_round`.
-- A mandatory scope, authorization, privacy, safety, and resource gate.
-- Conservative default budgets when autonomous work is requested without limits.
-- A search and inference ledger for adaptive testing and multiplicity.
-- Sealed verification evidence and explicit compromised-holdout handling.
-- Multi-seed and numerical-variation rules for machine learning and simulation.
-- Separate canonical fields for governance, mechanism, formulation, evidence role, verification, and next action.
-- `null` versus `inconclusive` based on support and sensitivity, not only a threshold test.
-- Immutable `runs/<run_id>/rounds/round_NNN/` outputs with privacy and secret-redaction rules.
-- Conditional adapters for observational data, machine learning and simulation, and causal or experimental work.
-- Output-quality evals and trigger eval queries following the Agent Skills evaluation pattern.
+- Replaced fixed mechanism and round caps with a versioned `mechanism_inventory` and finite coverage cells.
+- Added coverage completion plus inventory saturation as the scientific stopping rule.
+- Added a pre-search Decision Contract; the smallest `p` value is never a default winner.
+- Added a Prior-exposure Audit. Changing a sample, codebase, or skill version does not restore confirmatory status after overlapping data have been examined.
+- Added explicit selection families and comparability gates for target population, supported sample, estimand, evidence stage, and data quality.
+- Expanded inference to cover the complete selection path. Valid strategies include sealed holdouts, end-to-end null procedures, selective or sequential inference, hierarchical multiplicity control, and Bayesian model comparison or averaging.
+- Kept method choice domain-sensitive rather than imposing one universal global-null procedure.
+- Strengthened saturation auditing with mechanism-forward and data-product-reverse reviews, plus a question-dependent third independent source when useful.
+- Separated scientific coverage from compute scheduling: priority controls execution order only, and unrun cells remain open.
+- Added reusable compute authorization envelopes, resource-limited pause reports, and persistent open queues.
+- Added a machine consistency validator for inventories, coverage matrices, ledgers, selection families, candidate decisions, data versions, and status transitions.
+- Preserved weak, null, inconclusive, invalid, and failed results alongside supported findings.
 
 ## Core Loop
 
 ```text
-question -> mechanism -> claim -> test -> falsification -> interpretation -> decision
+decision -> prior exposure -> inventory -> coverage cells -> tests -> ledger
+         -> selection-path inference -> saturation audit -> decision or open queue
 ```
 
-Every autonomous run begins by freezing a finite charter: allowed inputs and actions, governance status, claim cards, candidate and round budgets, data-look and mutation budgets, resource limits, verification policy, and stopping boundaries.
+The search space is bounded by the available data products and explicit formulations, not by a universal number of mechanisms or rounds. Rounds are immutable execution checkpoints. A run may use inexpensive uniform screening before deeper tests, but scheduling priority never counts as scientific coverage.
+
+Scientific completion requires inventory saturation, closure of every eligible coverage cell, an audited complete selection ledger, and application of the frozen Decision Contract. The machine consistency check must also pass before `complete_within_scope` is reported.
+
+Inventory saturation requires both a mechanism-forward audit and a data-product-reverse audit to produce no unresolved additions. A third independent audit source—such as literature, theory, expert knowledge, or known failure modes—is added when the scientific question makes it informative. Literature review is therefore conditional, not mandatory for every run.
 
 ## Repository Layout
 
@@ -67,24 +76,19 @@ Every autonomous run begins by freezing a finite charter: allowed inputs and act
 │   └── validate_skill.py
 └── scientific-autoresearch/
     ├── SKILL.md
+    ├── scripts/
+    │   └── validate_run.py
     ├── evals/
     │   ├── evals.json
     │   └── eval_queries.json
     └── references/
-        ├── causal-experimental.md
-        ├── claim-types.md
-        ├── falsification-toolkit.md
+        ├── coverage-search.md
+        ├── decision-selection.md
         ├── governance-safety.md
-        ├── literature-evidence.md
-        ├── ml-simulation.md
-        ├── null-triage.md
-        ├── observational-data.md
         ├── report-contract.md
-        ├── round-gate-checklist.md
-        ├── scientific-review-lens.md
         ├── statistical-discipline.md
         ├── status-schema.md
-        └── thinking-principles.md
+        └── ...
 ```
 
 Only the `scientific-autoresearch/` directory is the installable skill. Repository-level scripts, citation files, and documentation support distribution and maintenance.
@@ -104,49 +108,60 @@ The installed path must end with:
 scientific-autoresearch/SKILL.md
 ```
 
-Discovery and configuration vary by client. The skill itself contains no client-specific metadata or tool dependency.
+Discovery and configuration vary by client. The skill contains no client-specific metadata. Its run validator uses Python 3.10 or later and only the standard library.
 
 ## Basic Usage
 
 ### Design only
 
 ```text
-Use the scientific-autoresearch skill to turn this mechanism into a claim card,
-minimal test, uncertainty plan, and falsifier. Do not execute an analysis.
+Use the scientific-autoresearch skill to define the Decision Contract,
+Prior-exposure Audit, mechanism inventory, coverage matrix, and falsifiers.
+Do not execute an analysis.
 ```
 
-### One executed round
+### One execution checkpoint
 
 ```text
-Use the scientific-autoresearch skill to run one bounded analysis round over
-the approved local data. Preserve immutable outputs and stop after reporting.
+Use the scientific-autoresearch skill to execute the next eligible coverage cells
+over the approved local data. Preserve immutable outputs and the open queue.
 ```
 
-### Bounded autonomous run
+### Coverage-based autonomous run
 
 ```text
-Use the scientific-autoresearch skill to investigate this question for at most
-three rounds and four active candidates. Do not acquire new data or submit
-external compute. Freeze the verification policy before looking at outcomes.
+Use the scientific-autoresearch skill to search the mechanisms and observables
+supported by the approved data products. Stop scientifically only when coverage
+is complete and the inventory is saturated. If the authorized compute envelope
+ends first, pause and save every unrun coverage cell in the open queue.
 ```
 
 ## Executed-Run Outputs
 
-The default immutable layout is:
+A run records the decision and the complete selection history, for example:
 
 ```text
 runs/<run_id>/
   run_manifest.json
+  decision_contract.json
+  prior_exposure_audit.json
+  data_versions.json
+  inventories/mechanism_inventory_vNNN.csv
+  inventories/coverage_matrix_vNNN.csv
+  inventories/saturation_audit_vNNN.json
+  execution_queue.csv
+  search_ledger.jsonl
+  selection_families.json
+  status_transitions.jsonl
   candidate_registry.csv
-  rounds/round_000/
+  rounds/round_NNN/
     report.md
-    inventory.json
     summary.csv
-    diagnostics.<csv|parquet|jsonl>   # conditional
-    figures/                          # conditional
     reproduce_commands.txt
     round_gate.md
-  final_report.md
+  consistency_report.json
+  pause_report.md                 # when work remains open
+  final_report.md                 # only after completion checks pass
 ```
 
 Sensitive diagnostics must be minimized or de-identified. Reproduction records must redact credentials, tokens, signed links, private identifiers, and restricted paths.
@@ -159,35 +174,38 @@ Run the repository validator:
 python scripts/validate_skill.py scientific-autoresearch
 ```
 
-The validator checks required frontmatter, naming, description length, reference routing, JSON eval files, line limits, and release-version consistency. A compatible implementation of the Agent Skills reference validator can provide an additional specification check:
+Validate a run before resuming it and before issuing a pause or final report:
 
 ```bash
-skills-ref validate scientific-autoresearch
+python scientific-autoresearch/scripts/validate_run.py runs/<run_id> \
+  --output runs/<run_id>/consistency_report.json
 ```
+
+The run validator checks referential integrity and state consistency across the inventory, coverage matrix, search ledger, selection families, candidate registry, data versions, decision artifacts, and status transitions. A failed consistency audit blocks a scientific-completion claim.
 
 ## Evaluation
 
-`scientific-autoresearch/evals/evals.json` contains behavioral cases for:
+The behavioral evals cover design-only work, observational support, coverage-based machine learning and simulation, compute authorization and resource pauses, sensitive data, null triage, causal identification, Decision Contracts, prior exposure, candidate comparability, full selection-path inference, saturation audits, and consistency checks.
 
-- design-only mode;
-- observational support and geometry;
-- sealed-test machine-learning work;
-- costly simulation and approval boundaries;
-- sensitive human data and result-shopping pressure;
-- null triage and bounded mutations;
-- causal identification limits.
-
-`scientific-autoresearch/evals/eval_queries.json` contains balanced should-trigger and should-not-trigger prompts for testing the frontmatter description. Run evals in isolated contexts and compare v0.2.0 with the previous version or a no-skill baseline.
+Trigger evals contain balanced should-trigger and should-not-trigger prompts. Run evals in isolated contexts and compare v0.2.1 with the previous version or a no-skill baseline.
 
 ## Scientific Interpretation Standard
 
-Promote a result only when it has a clear claim and estimand, mechanism-matched evidence, adequate support and sensitivity, meaningful effect scale, decomposed uncertainty, transparent search history, a falsifier that could have hurt it, and correctly labeled verification evidence.
+A final ranking or selection must follow the frozen Decision Contract and apply only within a valid selection family. Candidates with different target populations, support samples, estimands, evidence stages, or materially different data quality are not directly ranked unless a defensible comparison was declared in advance.
 
-Exploratory results remain valuable, but they remain exploratory until prospectively verified.
+Inference must account for every step that influenced candidate generation, modification, filtering, and promotion. The skill selects an appropriate method for the scientific design; it does not force all fields into one global-null technique. Weak and failed results remain in the ledger, and random seeds may not be chosen by outcome.
+
+Recommended manuscript language is:
+
+> We systematically searched a versioned inventory of mechanisms and observables testable with the available data products.
+
+Add the boundary statement:
+
+> This search does not establish exhaustiveness beyond the data-supported search space.
 
 ## Inspiration
 
-This project was inspired by Andrej Karpathy's [`autoresearch`](https://github.com/karpathy/autoresearch) project and adapts iterative agent-run experimentation to general scientific inference, with additional emphasis on governance, bounded autonomy, support audits, falsification, adaptive-search control, and reproducibility.
+This project was inspired by Andrej Karpathy's [`autoresearch`](https://github.com/karpathy/autoresearch) project and adapts iterative agent-run experimentation to general scientific inference, with additional emphasis on governance, coverage, falsification, adaptive-search control, and reproducibility.
 
 ## Citation
 

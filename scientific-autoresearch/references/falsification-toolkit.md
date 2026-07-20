@@ -64,9 +64,9 @@ Test invariances, symmetries, units, conservation laws, monotonicity, or limitin
 
 ## Multiple Testing and Adaptive Search
 
-- Record the full search space and all data looks.
+- Record the complete selection path and all data looks, including generation, modification, screening, ranking, verification targeting, and promotion.
 - Save complete grids, not only the winner.
-- Use a justified multiplicity or selective-inference method, or reserve sealed verification evidence.
+- Use a justified end-to-end null, multiplicity, selective, sequential, hierarchical, Bayesian, or other path-covering method, or reserve sealed verification evidence.
 - Keep a scan winner exploratory until verified.
 - Do not use favorable physical storytelling as a substitute for selection control.
 

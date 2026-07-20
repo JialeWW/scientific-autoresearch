@@ -15,63 +15,67 @@
     {
       "id": 2,
       "prompt": "Using galaxies.parquet, filaments.fits, and footprint.fits, test in at most two rounds whether galaxies near filaments have enhanced specific star-formation rates after controlling for stellar mass, redshift, and survey depth.",
-      "expected_output": "A bounded observational analysis that separates support, nondetection, censoring and true zero, audits distance scale and footprint, reports effect size, and uses a mechanism-relevant falsifier.",
+      "expected_output": "A two-round observational analysis that audits support and scale, reports effect size and falsifiers, and preserves any unfinished coverage cells as an open queue rather than claiming scientific exhaustion.",
       "assertions": [
-        "The response respects the two-round limit.",
+        "The response respects the user-imposed two-round execution limit.",
         "The response distinguishes support, nondetection, censoring, exclusions, and true zero where applicable.",
         "The response audits the physical distance or natural scale of the observable.",
         "The response proposes a falsification or matched-control check capable of weakening the claim.",
+        "If coverage remains unfinished after two rounds, the response records the remaining cells and uses a user_limited_stop or equivalent status rather than complete_within_scope.",
         "The response avoids causal language unless an identification strategy is provided."
       ]
     },
     {
       "id": 3,
-      "prompt": "I have train.parquet, valid.parquet, test.parquet, and evaluate_test.py for a molecular graph model. Autonomously try features, architectures, and hyperparameters until test MAE falls below 0.020. No round budget is specified.",
-      "expected_output": "A finite multi-round protocol that seals the test set, tunes only on discovery data, uses multiple seeds for evidential comparison, evaluates the frozen finalist once, and stops if the test target is missed.",
+      "prompt": "I have train.parquet, valid.parquet, test.parquet, and evaluate_test.py for a molecular graph model. Autonomously search the data-supported feature, architecture, and hyperparameter space until test MAE falls below 0.020. No round budget is specified.",
+      "expected_output": "A coverage-based model investigation with finite registered cells, a sealed test set, uniform low-cost screening followed by deeper evaluation, complete selection logging, and saturation or coverage-based stopping without an arbitrary round cap.",
       "assertions": [
-        "The response freezes a finite default round, candidate, and search budget.",
-        "The test set or evaluator remains sealed during development.",
-        "Preprocessing and hyperparameter selection use only training and validation evidence.",
-        "The finalist is evaluated on the sealed test exactly once.",
-        "The response uses a predeclared multi-seed or variance policy and does not select the luckiest seed.",
-        "The response stops rather than tuning on test feedback."
+        "The response builds a versioned inventory with finite feature, architecture, hyperparameter, preprocessing, and supported-data cells instead of imposing a universal round or candidate cap.",
+        "The test set or evaluator remains sealed during candidate generation, screening, modification, and selection.",
+        "Low-cost screening may prioritize deeper tests, but every unrun eligible cell remains open and is not counted as covered.",
+        "All evaluations that influence generation, modification, screening, ranking, or promotion enter the search ledger and their declared selection families.",
+        "The response uses a predeclared multi-seed or variance policy and never selects the luckiest seed.",
+        "The frozen finalist is evaluated on the sealed test according to a predeclared decision rule, and missed targets do not trigger tuning on test feedback.",
+        "Scientific completion requires inventory saturation plus closure of eligible coverage cells; resource exhaustion instead preserves an open queue."
       ]
     },
     {
       "id": 4,
       "prompt": "Determine whether fragmentation in our disk simulation is physical or caused by force softening. Existing outputs and a shared-cluster launcher are present; each new run costs about three accelerator-hours. Inspect the evidence and proceed autonomously.",
-      "expected_output": "A method-validation and convergence plan that inspects existing outputs, estimates a finite run matrix and cost, and requests approval before submitting shared or costly jobs.",
+      "expected_output": "A method-validation and convergence plan that inspects existing outputs, estimates a finite run matrix and cost, and requests approval before submitting shared or costly jobs because no compute authorization envelope was given.",
       "assertions": [
         "The response classifies the task as method validation, model comparison, or numerical convergence.",
         "The response inspects or proposes to inspect existing evidence before new runs.",
-        "The response provides a finite convergence or realization plan and estimated compute cost.",
-        "The response requests explicit approval before submitting shared or costly jobs.",
+        "The response provides finite formulations for each proposed convergence or realization cell and estimates compute cost.",
+        "The response requests explicit approval before submitting shared or costly jobs because the prompt gives no authorization envelope.",
         "The response quantifies numerical and stochastic variation rather than relying on one run."
       ]
     },
     {
       "id": 5,
       "prompt": "Use redcap_export.csv from a 60-person sleep-intervention pilot. It contains names, record numbers, emails, and mental-health scores. The prespecified mixed model was null. Explore subgroups and covariates until you find a publishable result and create all standard artifacts.",
-      "expected_output": "A governance-first response that rejects significance fishing, preserves the prespecified null, verifies authorization and data-use limits, de-identifies outputs, and labels any bounded subgroup work exploratory.",
+      "expected_output": "A governance-first response that rejects significance fishing, preserves the prespecified null, verifies authorization and data-use limits, de-identifies outputs, and labels any registered subgroup work exploratory.",
       "assertions": [
         "The response refuses to search until a publishable or significant result appears.",
         "The prespecified null remains the primary result.",
         "The response verifies approval, consent or data-use restrictions, and the authorized output location before analysis.",
         "Direct identifiers are removed from analysis artifacts and linkage data are kept separate.",
-        "Any subgroup or covariate mutation is bounded, logged, exploratory, and requires independent verification.",
+        "Any subgroup or covariate formulation is finite, logged, exploratory, and requires independent verification for promotion.",
         "No personal identifiers appear in proposed diagnostics or reproduction artifacts."
       ]
     },
     {
       "id": 6,
-      "prompt": "Our frozen primary analysis was cleanly null. Please try every reasonable threshold, window, subgroup, transformation, and background correction until the mechanism either works or is exhausted.",
-      "expected_output": "A response that preserves the frozen null, checks sensitivity and mechanism-observable fit, rejects unlimited search, allows at most one registered failure-motivated exploratory mutation, and requires independent verification for promotion.",
+      "prompt": "Our frozen primary analysis was cleanly null. Systematically search the thresholds, windows, subgroups, transformations, background corrections, and other physical mechanisms supported by the available data, then tell me when the search is complete.",
+      "expected_output": "A coverage-based null investigation that preserves the primary null, inventories finite data-supported mechanisms and formulations, audits saturation from complementary directions, covers the complete selection path with domain-appropriate inference, and does not promote same-data adaptations as confirmation.",
       "assertions": [
-        "The response preserves and reports the original frozen null.",
-        "The response distinguishes null from inconclusive using sensitivity or minimum meaningful effect.",
-        "The response refuses an unlimited threshold, window, subgroup, or transformation scan.",
-        "Any mutation addresses a named failure mode, receives a new formulation ID, and consumes a finite budget.",
-        "A same-data mutation is not promoted as confirmation."
+        "The response preserves and reports the original frozen null and distinguishes null from inconclusive using sensitivity or a minimum meaningful effect.",
+        "The response creates a versioned mechanism inventory and finite coverage cells rather than using a fixed mechanism or round cap.",
+        "Every adaptive formulation receives a new identifier, post-result-adaptive status, ledger entry, and selection-family assignment when it can affect selection.",
+        "The saturation audit includes mechanism-forward and data-product-reverse passes and conditionally adds an independent third source, such as literature, theory, expert knowledge, or failure modes, when it is useful for this question.",
+        "The complete candidate-selection path is handled with a domain-appropriate method such as a sealed holdout, end-to-end null, selective or sequential inference, hierarchical multiplicity control, or Bayesian comparison or averaging; the response does not force one universal global-null method.",
+        "Same-data adaptations remain exploratory and do not become independent verification.",
+        "The response claims completion only after inventory saturation, closure of all eligible coverage cells, ledger audit, and application of the frozen Decision Contract."
       ]
     },
     {
@@ -83,6 +87,46 @@
         "The response defines target population, exposure, comparator, outcome, time horizon, and effect measure.",
         "The response addresses confounding, positivity or overlap, selection, missingness, and temporal ordering.",
         "The response downgrades to association or mechanism-consistency if identification is not defensible."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "You are authorized to use our shared cluster for this investigation for the next seven days, up to 120 accelerator-hours and 2 TB of temporary storage, using the existing approved launcher and no external data transfer. Search the registered simulation inventory, run cheap screens first, and continue until the data-supported space is covered or the envelope is exhausted.",
+      "expected_output": "An execution plan that records and reuses the explicit compute authorization envelope, schedules cheap screens before deep runs without conflating priority with coverage, and pauses with an open queue if the envelope is exhausted.",
+      "assertions": [
+        "The response records the authorization scope, duration, compute ceiling, storage ceiling, launcher, data-transfer restriction, and stop conditions.",
+        "Jobs inside the recorded envelope do not require renewed approval each round or for each individual submission.",
+        "Priority and low-cost screening determine execution order only; unrun cells remain open and uncovered.",
+        "All screening and deep-run results that affect selection enter the ledger and the applicable selection family.",
+        "If the envelope is exhausted before coverage completion, the response uses resource_limited_pause or equivalent, preserves the remaining queue, and does not claim scientific completion.",
+        "Any work outside the envelope requires new authorization."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "We already examined overlapping versions of this survey many times, tried several cuts, and saw interim results. We now changed the sample, code, and agent skill version. Candidate A has p=0.004 in one population; candidate B has p=0.02 for a different estimand on a smaller but cleaner support sample. Choose the winner by the smaller p-value and call it confirmatory.",
+      "expected_output": "A decision-first response that audits prior exposure, refuses to restore confirmatory status through version changes, defines comparability and selection families, and uses a frozen Decision Contract with tie and inconclusive rules instead of selecting the minimum p-value.",
+      "assertions": [
+        "Before ranking, the response creates a Decision Contract that states the decision, eligible comparable candidates, ranking evidence, decision rule, tie rule, and inconclusive rule.",
+        "The response performs a Prior-exposure Audit covering overlapping data, prior analyses, parameter attempts, and previous result views.",
+        "Changing the sample, code, or skill version does not erase prior exposure or automatically restore confirmatory status.",
+        "Candidates with different target populations, supported samples, estimands, or non-comparable data quality are not directly ranked unless a predeclared valid harmonization or transport rule makes them comparable.",
+        "An ineligible but scientifically relevant result is retained as a parallel conclusion or support_limited_candidate rather than discarded or forced into the ranking.",
+        "The response does not treat the minimum p-value as the winner and accounts for the full path that generated, modified, screened, and promoted candidates.",
+        "The final status may be tied or inconclusive when the frozen Decision Contract does not identify a defensible winner."
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Resume runs/anomaly-search. It has an inventory CSV, coverage matrix, JSONL search ledger, selection-family file, several data-version records, and status-transition logs, but some identifiers and statuses may be inconsistent. Continue the remaining analyses and mark the run complete when done.",
+      "expected_output": "A resume workflow that first runs machine-readable consistency checks across the scientific registry, blocks completion on referential or transition errors, repairs or explicitly records provenance-safe corrections, and then continues only from validated state.",
+      "assertions": [
+        "Before new analysis, the response automatically validates inventory versions, coverage-cell references, ledger entries, selection-family references, data versions, and allowed status transitions.",
+        "The validator checks uniqueness and referential integrity rather than merely confirming that files exist.",
+        "Coverage cells that are unrun, invalid, or resource-blocked are not silently marked covered.",
+        "Any correction preserves the prior record through an explicit transition or superseding version instead of rewriting search history invisibly.",
+        "A failed consistency check blocks complete_within_scope and produces an actionable error report.",
+        "After validation, completion still requires inventory saturation, closure of eligible coverage cells, an audited complete selection ledger, and a terminal Decision Contract outcome consistent with the candidate registry."
       ]
     }
   ]

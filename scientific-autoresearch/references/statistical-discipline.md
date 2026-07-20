@@ -1,92 +1,155 @@
 # Statistical and Adaptive-Search Discipline
 
-Use this file before confirmatory inference, repeated testing, adaptive scans, stochastic comparisons, or any result that may be promoted.
+Use this file before repeated testing, adaptive scans, stochastic comparisons, candidate ranking, or promotion. Also read `decision-selection.md`.
 
-## 1. Freeze a Claim Card
+## 1. Freeze the Decision and Audit Exposure
 
-For each claim, record:
+Before candidate-specific outcomes, freeze a Decision Contract that states:
+
+- the decision and eligible candidate classes;
+- which candidates share a justified selection family and comparison key;
+- the estimand, ranking evidence, decision rule, minimum meaningful difference, and treatment of robustness, complexity, and data quality;
+- tie, practical-equivalence, and inconclusive rules;
+- the inference strategy that will cover the complete selection path.
+
+Nominal p-values may contribute to an evidence rule, but the smallest p-value is not a default winner. When the rule does not separate candidates, report `tie` or `inconclusive`.
+
+A Decision Contract first written or revised after relevant outcomes were inspected is `post_result_adaptive`. It may govern future untouched evidence, but it does not retrospectively make the exposed comparison confirmatory.
+
+Complete a Prior-exposure Audit covering same or overlapping data, earlier analyses, parameter attempts, data looks, holdouts, and candidate decisions. Evidence exposure follows the underlying information. A changed sample, codebase, model, repository, workflow, or skill version does not restore confirmatory status. If exposure is uncertain, record `prior_exposure_status=unknown` and do not claim pristine confirmation.
+
+## 2. Freeze Each Coverage Cell
+
+Record:
 
 ```text
+inventory_version
+coverage_cell_id
 claim_id
 claim_type
+mechanism_id
+observable_id
+formulation_id
 target_population_or_system
 unit_of_inference
-mechanism
+supported_sample
 exposure_or_model
 comparator
-outcome_or_observable
+outcome
 time_horizon_or_scale
 summary_measure
 expected_direction
 minimum_meaningful_effect
-supported_sample
 assumptions
-primary_or_exploratory
+specification_timing
+evidence_stage
+selection_family_id
+comparison_key
 freeze_time
 ```
 
-A substantive change to the sample, outcome, formula, threshold, model, or estimand creates a new formulation ID. A post-result formulation is exploratory.
+A substantive change to sample, outcome, formula, scale, threshold, model, or estimand creates a new formulation ID. A change motivated by related outcomes is `post_result_adaptive` and exploratory.
 
-## 2. Establish Sensitivity Before Interpreting a Null
+## 3. Establish Sensitivity Before Null Interpretation
 
-Before testing, state the smallest effect that would matter scientifically and estimate the attainable precision, power, detectable-effect curve, upper-limit sensitivity, or simulation recovery rate.
+Before testing, state the smallest scientifically meaningful effect and estimate attainable precision, power, detectable-effect limits, upper-limit sensitivity, or recovery performance.
 
 After testing:
 
 - use intervals, upper limits, equivalence bounds, posterior mass, or another claim-appropriate measure;
-- call a result `null` only when the data were capable of detecting or excluding a meaningful effect;
+- use `null` only when valid, supported, sensitive data can exclude or constrain meaningful effects;
 - use `inconclusive` when uncertainty remains too wide;
-- keep statistical significance separate from practical or physical importance.
+- separate statistical thresholds from practical or physical importance.
 
-## 3. Maintain a Search and Inference Ledger
+## 4. Cover the Complete Selection Path
 
-Before looking at outcomes, register:
+Every test or choice capable of influencing the same candidate generation, modification, screening, retention, ranking, verification targeting, promotion, or headline decision belongs to that decision's complete selection path.
 
-- claim families and primary, secondary, or exploratory status;
-- planned outcomes, transformations, models, thresholds, subgroups, windows, and robustness checks;
-- the number and timing of data looks;
-- the error criterion and multiplicity, selective-inference, or sequential method;
-- the discovery, validation, and sealed verification evidence;
-- finite success, futility, safety, inconclusive, and resource boundaries.
+Before outcomes, register:
 
-Append every attempted branch, including failures and abandoned variants. Do not reset the ledger when a new formulation looks promising.
+- family scope, version, decision, comparison key, and inferential target;
+- all included mechanisms, observables, formulations, thresholds, subgroups, transformations, models, parameter regions, and data looks;
+- the dependence structure and error criterion;
+- how the candidate-generation and selection algorithm is reproduced or conditioned upon;
+- the end-to-end null, sealed holdout, multiplicity, max-statistic, hierarchical, selective, sequential, online, false-discovery, Bayesian comparison or averaging, shrinkage, or other justified method;
+- discovery, internal-validation, and independent-verification evidence.
 
-When many choices are scanned, use a method appropriate to the claim and dependence structure, such as family-wise control, false-discovery control, max-stat randomization, hierarchical testing, multilevel shrinkage, or a sealed verification sample. Conservative wording alone does not turn a scan winner into confirmation.
+Append every attempted branch, including weak, null, invalid, failed, and abandoned work. Never reset or shrink a family when a winner appears.
 
-## 4. Protect Verification Evidence
+No single global-null method is mandatory. Choose the method whose assumptions and target match the actual selection path:
 
-- Keep verification data, labels, benchmark servers, or experimental outcomes sealed until preprocessing, feature selection, model, hyperparameters, sample, seed policy, and decision rule are frozen.
-- Fit imputation, scaling, feature selection, and tuning only inside training folds or discovery data.
-- Split by the independent unit: participant, site, batch, field, time block, spatial block, family, object, or another scientifically justified unit.
-- Use nested validation when model selection and performance estimation would otherwise reuse the same folds.
-- Evaluate a sealed holdout once. If its feedback changes development, mark it `compromised` and obtain new verification evidence.
-- Treat bootstrap, alternate proxy, alternate model, resampling, and same-data cross-validation as internal evidence, not replication.
+- sealed holdout when all development choices can be frozen before one untouched evaluation;
+- end-to-end null or randomization when the complete generation, screening, and selection pipeline can be replayed under an appropriate null;
+- selective inference when the selection event is characterized;
+- sequential or always-valid inference for prospectively governed repeated looks;
+- hierarchical multiplicity when the scientific family structure is prespecified;
+- Bayesian model comparison or averaging when the candidate set, priors, likelihood, decision rule, and sensitivity analyses are declared.
 
-When data are too small for a useful holdout, state `verification_status=internal_only`, quantify instability, and require future independent verification for promotion.
+Document what the chosen method covers and omits. Bayesian analysis does not erase prior exposure or outcome-driven expansion of the model set.
 
-## 5. Handle Stochasticity Honestly
+Direct ranking requires a common scientific decision, target population, supported sample, estimand, evidence stage, and materially comparable data-quality regime, or a prespecified validated mapping to a common scale. Otherwise retain results as `parallel_conclusion` or `support_limited_candidate`. Do not mechanically combine scientifically unrelated estimands, samples, quality regimes, or null distributions. When mechanisms legitimately compete for one headline conclusion, use a justified cross-mechanism gate or omnibus family, followed by prespecified within-mechanism localization. An omnibus rejection says only that some signal exists; it does not identify a mechanism.
+
+When an adaptive mechanism or formulation is added:
+
+1. record it before execution;
+2. version the inventory and affected family;
+3. update inference using a valid adaptive method, or keep the result exploratory;
+4. preserve the original family and every prior branch.
+
+Technical failures without a statistic remain in the ledger but receive no fabricated inferential value. Predeclare replacement and retry rules when failures could affect selection.
+
+## 5. Separate Evidence Stages
+
+- `exploratory`: candidate generation, adaptive formulations, model search, screening, and ranking.
+- `internal_validation`: same-source resampling, cross-validation, alternate models, proxy changes, or robustness checks.
+- `independent_verification`: a sealed holdout or independent dataset or experiment tests a fully frozen candidate.
+
+Keep verification data, labels, benchmark evaluators, or experimental outcomes sealed until sample, preprocessing, features, formula, model, hyperparameters, seed policy, statistic, and decision rule are frozen.
+
+Fit imputation, scaling, feature selection, and tuning only inside discovery folds or discovery data. Split by the independent scientific unit. Use nested validation when selection and performance estimation would otherwise reuse folds.
+
+Evaluate a sealed holdout once. If its feedback changes development, mark it `compromised`. When data are too small for a useful holdout, use `internal_only`, quantify instability, and require future untouched evidence for promotion.
+
+Earlier inspection of the same or overlapping verification units compromises independence even if the split, code, or skill version later changes. Link evidence-stage assignments to the Prior-exposure Audit.
+
+## 6. Handle Stochasticity Honestly
 
 - Use one fixed seed only for debugging or exact reproduction.
-- Predeclare multiple seeds or independent realizations when stochastic variation could change ranking, sign, uncertainty, or scientific interpretation.
-- Report the seed set, aggregation rule, between-seed variation, failed runs, and convergence failures.
-- Select models by a frozen aggregate criterion, never by the luckiest seed.
-- Distinguish Monte Carlo error from data uncertainty, model uncertainty, and sample variance.
+- Predeclare a common seed or realization set when randomness could change ranking, sign, uncertainty, or interpretation.
+- Freeze the aggregation, pairing, retry, failure, and precision-based seed-expansion rules.
+- Report actual seeds, failed or nonconverged runs, between-seed variation, and aggregation.
+- Never add, remove, select, or report seeds because they improve effect direction, significance, or rank.
+- Do not treat seeds as independent scientific sample units.
+- Separate optimization noise and Monte Carlo error from data, model, and sample uncertainty.
 
-## 6. Stop Without Outcome Shopping
+## 7. Stop by Saturation and Coverage
 
-Freeze the maximum rounds, candidate count, looks, compute, cost, and mutation count before outcomes. Stop at a predeclared success, futility, safety, inconclusive, or resource boundary.
+Do not use a universal round, mechanism, or candidate count as the scientific stopping rule.
 
-Do not stop only because a favorable threshold was reached unless a valid sequential rule allows it. Do not continue only because results are null. Any unplanned continuation creates exploratory evidence and consumes the registered budget.
+Freeze:
 
-## 7. Promotion Checklist
+- the inventory-audit protocol and saturation sequence;
+- the eligibility and coverage-cell closure rules;
+- selection-family and evidence-separation rules;
+- safety, governance, user-specified, data-look, and execution-resource limits.
+
+Scientific completion requires `inventory_saturated`, `coverage_complete`, `search_ledger_audited`, and `decision_contract_applied` for the same inventory version.
+
+If user limits, compute, cost, storage, time, or authorization end first, pause or stop execution with every open cell listed. Do not call the search saturated or complete. Do not stop merely because a favorable threshold was crossed or continue merely because results are null.
+
+## 8. Promotion Checklist
 
 Before promotion, verify:
 
-- the estimand computed matches the claim stated;
-- sensitivity was sufficient for the interpretation;
-- all searches and data looks are recorded;
-- multiplicity or adaptive selection is handled;
-- verification evidence remained sealed;
-- stochastic variation is quantified when relevant;
+- the computed estimand matches the stated claim;
+- support and sensitivity justify the interpretation;
+- every selection-influencing branch and data look is recorded;
+- inference covers the complete generation-to-promotion selection path and its adaptive versions;
+- the Decision Contract, comparison key, tie rule, and inconclusive rule were applied;
+- prior exposure is audited and evidence-stage claims respect it;
+- the formulation's timing and evidence stage are labeled correctly;
+- verification evidence remained untouched;
+- stochastic variation is quantified without favorable-seed selection;
 - the effect exceeds a meaningful scale and dominant systematic floor;
-- the result is labeled frozen, exploratory, internally validated, holdout-verified, or externally replicated correctly.
+- weak, failed, null, inconclusive, artifact, and invalid branches remain visible;
+- any completeness statement is restricted to the current data-supported inventory version.

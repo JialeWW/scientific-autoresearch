@@ -7,6 +7,7 @@ Use this lens before promoting a candidate, claiming verification, or writing a 
 - State the question and claim type in one sentence.
 - State the gap, decision, uncertainty, anomaly, calibration, or mechanism the result addresses.
 - Explain why the minimum meaningful effect matters.
+- State the frozen Decision Contract, including eligible comparisons, ranking evidence, and tie or inconclusive rule.
 
 ## Method Fit
 
@@ -19,8 +20,25 @@ Use this lens before promoting a candidate, claiming verification, or writing a 
 
 - Report direction, magnitude, interval or uncertainty, sensitivity, sample support, and failure cases.
 - Compare the effect with measurement precision, intrinsic variation, calibration limits, and the dominant systematic floor.
-- Record the complete search space, data looks, multiplicity handling, and stochastic variation.
+- Record the complete versioned search space, prior exposure, data looks, generation-to-promotion selection path, adaptive additions, and stochastic variation.
 - State which observation would reduce belief.
+
+## Search-Scope Audit
+
+- Which inventory version and data-product scope were searched?
+- Which complementary generation lenses were completed?
+- Were mechanism-forward and data-product-reverse audits independent, and was every conditionally required third source completed?
+- Which mechanisms and coverage cells were eligible, unsupported, duplicate, invalid, blocked, or resource-deferred?
+- What are the coverage numerator, denominator, and closure rules?
+- What evidence supports inventory saturation?
+- Did any result add a post-result mechanism or formulation and reset the relevant audit?
+- Did every generation, modification, screening, ranking, verification-targeting, and promotion step enter the correct complete path?
+- Does the selected end-to-end null, holdout, selective, sequential, hierarchical, Bayesian, or other method match the path, dependence structure, and decision?
+- Are directly ranked candidates genuinely comparable in target population, supported sample, estimand, evidence stage, and material data quality?
+- Did the machine consistency check pass across contracts, versions, ledger, families, queue, and statuses?
+- Were actual seeds and failed realizations handled under the frozen policy?
+
+Resource-deferred or governance-blocked cells prevent coverage completion. Inventory saturation and coverage completion are separate claims.
 
 ## Evidence Independence
 
@@ -38,6 +56,10 @@ independent sample or experiment
 
 Do not present internal checks as replication. If verification evidence influenced development, mark it compromised.
 
+Call outcome-influenced choices exploratory. Call same-source resampling, cross-validation, alternate models, and robustness checks internal validation. Reserve independent verification for untouched evidence testing a fully frozen candidate.
+
+Audit earlier use of the same or overlapping evidence. Changing samples, code, models, repositories, workflows, or skill versions does not reseal exposed data or restore confirmatory status.
+
 ## Interpretation Boundary
 
 Use language that matches the design:
@@ -51,9 +73,21 @@ Use language that matches the design:
 
 ## Literature and Novelty
 
-- Verify the literature premise and include conflicting or null evidence.
+- When a premise, novelty claim, or inventory source depends on literature, verify the search scope and include conflicting or null evidence.
 - State whether novelty lies in data, measurement, method, population, scale, mechanism test, or replication.
 - Do not claim novelty from an incomplete search.
+
+## Coverage Wording
+
+When supported, use:
+
+> We systematically searched a versioned inventory of mechanisms and observables testable with the available data products.
+
+Always retain:
+
+> This search does not establish exhaustiveness beyond the data-supported search space.
+
+Do not claim all possible mechanisms, universal exhaustiveness, or mechanism proof from coverage completion.
 
 ## Promotion Audit
 
@@ -61,9 +95,14 @@ Before promotion, answer:
 
 1. What exact claim or estimand is promoted?
 2. Which sample and support conditions does it cover?
-3. Was the formulation frozen or discovered through search?
-4. Was sensitivity adequate and multiplicity handled?
-5. What falsifier could have hurt it?
-6. What is the verification status?
-7. What dominant limitation must remain in the headline sentence?
-8. What evidence would change the decision?
+3. What does the Prior-exposure Audit permit this evidence to be called?
+4. Was the formulation frozen or discovered through search?
+5. Was sensitivity adequate, and did inference cover the complete selection path rather than only winners?
+6. Is comparison restricted to a justified family, with noncomparable results parallel or support limited?
+7. Did the frozen ranking, tie, and inconclusive rules support the decision without a min-p default?
+8. What falsifier could have hurt it?
+9. What is the verification status?
+10. What dominant limitation must remain in the headline sentence?
+11. What evidence would change the decision?
+12. Did the inventory actually meet saturation and coverage criteria, or did execution merely stop?
+13. Did the consistency validator pass?

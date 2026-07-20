@@ -39,7 +39,7 @@ Do not infer approval from file access, tool availability, or a prior successful
 
 If safe data handling cannot be established, set `governance_status=blocked` and stop.
 
-## 4. Bound External and Costly Actions
+## 4. Bound External Actions and Reuse Compute Authorization
 
 Require explicit approval before:
 
@@ -51,6 +51,31 @@ Require explicit approval before:
 - creating or altering live experimental materials or procedures.
 
 Before requesting approval, provide the exact proposed action, target, expected duration or cost, scientific purpose, failure modes, rollback or stop mechanism, and outputs.
+
+For server, cluster, cloud, shared, paid, or otherwise nontrivial compute, one explicit authorization may cover several rounds. Record:
+
+```text
+compute_authorization_id
+authorized_system_account_or_project
+authorized_data
+allowed_job_classes
+maximum_concurrency
+per_job_runtime_limit
+cumulative_compute_or_cost_limit
+storage_and_output_scope
+network_or_egress_policy
+retry_policy
+authorization_expiry
+monitoring_and_stop_mechanism
+```
+
+Do not request renewed approval for registered coverage jobs wholly inside a valid envelope. Request it before changing systems, accounts, projects, data locations, job classes, costs, concurrency, duration, storage, network behavior, or external impact.
+
+An omitted envelope field is not unlimited permission. Resolve it from the documented approved launcher, account, project, scheduler, or institutional policy before submission; if no authoritative boundary exists, request clarification or renewed authorization.
+
+Track cumulative and remaining use after each job. Resource exhaustion, service interruption, or envelope expiry creates `search_status=resource_limited_pause` when eligible cells remain. Preserve the open queue and resume conditions; do not call the inventory saturated or coverage complete.
+
+If observed results change compute scheduling priority, record that adaptive resource decision in the search ledger because it can affect candidate selection.
 
 ## 5. Regulated and Physical Research
 
@@ -76,6 +101,9 @@ prohibited_actions
 data_controls
 required_oversight
 resource_limits
+compute_authorization_id
+compute_authorization_envelope
+resource_use
 approval_references
 stop_conditions
 ```

@@ -63,4 +63,6 @@ Do not build an arbitrary score from weak variables merely to improve a metric. 
 
 ## 6. Observational Completion Check
 
-Before promotion or mechanism rejection, confirm that relevant classes of proximity, cumulative contribution, weighting, natural scale, support, censoring, background contrast, and selection effects were either tested or declared scientifically irrelevant. If a feasible mechanism-matched class remains untested, use `active`, `weakened`, or `needs_data`, not `rejected`.
+Map scientifically relevant classes of proximity, cumulative contribution, weighting, natural scale, support, censoring, background contrast, interaction, and selection effects into finite coverage cells or record why they are duplicate, unsupported, or irrelevant.
+
+Before promotion or mechanism rejection, confirm that every eligible observational cell in the current inventory version was validly tested or explicitly classified under the coverage rules. If a feasible mechanism-matched class remains untested or only resource-deferred, use `active`, `weakened`, or `needs_data`, not `rejected`, and do not claim coverage completion.

@@ -35,20 +35,26 @@ Ask whether the observable represented the mechanism's scale, geometry, timing, 
 
 For observational support, geometry, censoring, or background questions, read `references/observational-data.md`.
 
-## 4. Permit Only a Bounded Exploratory Mutation
+## 4. Expand Formulations Without Result Shopping
 
-Use one registered mutation only when it addresses a named failure mode without changing the scientific question, adding unauthorized data, or exceeding the mutation budget. Examples include:
+Continue through remaining pre-result-frozen coverage cells when they represent distinct, scientifically justified observables, scales, support sets, or parameter regimes.
+
+Add a new formulation only when it addresses a named failure mode without changing the scientific question or adding unauthorized data. Freeze a finite batch of new cells before inspecting their outcomes. Examples include:
 
 - replace an indirect proxy with a more direct existing measurement;
 - change an absolute quantity to a scientifically justified contrast;
 - replace a fixed scale with a natural scale;
 - repair a statistic that was insensitive to the predicted shape;
-- test one mechanism-justified interaction or composite;
+- test a finite preregistered set of mechanism-justified interactions or composites;
 - correct a documented support, unit, or calibration error.
 
-Specify the mutation before running it, assign a new formulation ID, and label it `exploratory`. Do not rewrite the original frozen result.
+Specify every addition before running it, assign a new formulation and coverage-cell ID, record its parent and rationale, and label it `post_result_adaptive` and exploratory. Version the coverage matrix, append it to the existing selection family or a justified child family, and update the registered inference method. Do not rewrite the original frozen result.
 
-Do not mutate merely to find significance. Do not scan unregistered thresholds, subgroups, transformations, or models after a clean and sensitive null.
+Update the complete selection path, not only the final test count. A null-triggered proxy, sample, scale, threshold, model, or parameter change can affect generation, screening, ranking, and promotion even when it receives a new filename or code version. The Prior-exposure Audit remains in force.
+
+Do not add variants merely to find significance. Stop expanding a mechanism when no physically distinct observable or parameter regime remains supported by current data, later variants are only threshold nudges or duplicate proxies, the data cannot identify the distinction, or governance blocks the work.
+
+Compute scarcity may defer valid cells, but it does not make the formulation space scientifically complete.
 
 ## 5. Decide the Mechanism Status
 
@@ -62,6 +68,8 @@ Missing data, small samples, or invalid tests do not weaken a mechanism by thems
 
 ## 6. Stop Correctly
 
-Stop when the registered mutation budget is exhausted, the remaining mutations change the question, verification data are unavailable, governance blocks the work, or further progress needs new data or assumptions.
+Stop scientific formulation expansion when the registered data-supported prediction domain is covered, remaining variants are redundant or unsupported, verification data are unavailable, governance blocks the work, or progress needs new data or assumptions.
 
-Report the frozen result, sensitivity, support limits, mutation history, mechanism status, and the exact evidence needed to change belief.
+If execution resources end first, use `resource_limited_pause`, list every deferred cell, and preserve an exact resume point.
+
+Apply the frozen Decision Contract without promoting the least unfavorable nominal p-value. Report the frozen result, sensitivity, support limits, complete formulation history, selection-path handling, comparability status, mechanism status, and exact evidence needed to change belief.

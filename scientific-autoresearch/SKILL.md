@@ -1,35 +1,40 @@
 ---
 name: scientific-autoresearch
-description: "Use this skill when an agent must run a bounded, iterative scientific investigation over data, code, models, simulations, or approved experimental records: turn an open-ended question into mechanism-based claims, test and falsify them, learn from nulls, and preserve reproducible evidence across rounds. Do not use it for literature-only review, manuscript editing, routine execution of a fixed pipeline, or unauthorized live human, animal, clinical, field, or wet-lab actions."
+description: "Use this skill when an agent must systematically investigate the mechanisms, observables, models, or simulations testable with current data: freeze a decision contract and prior-exposure audit, build a versioned mechanism inventory and finite coverage cells, run falsification and complete-selection-path inference, learn from nulls, and stop scientifically only at audited inventory saturation plus coverage completion. Do not use it for literature-only review, manuscript editing, routine execution of a fixed pipeline, or unauthorized live human, animal, clinical, field, or wet-lab actions."
 license: MIT
 metadata:
-  version: "0.2.0"
+  version: "0.2.1"
 ---
 
 # Scientific Autoresearch
 
-Treat autoresearch as a bounded evidence loop:
+Treat autoresearch as a coverage-guided evidence loop:
 
 ```text
-question -> mechanism -> claim -> test -> falsification -> interpretation -> decision
+question -> decision contract -> exposure audit -> inventory -> coverage -> test -> audit
 ```
 
-Optimize belief, not significance. Preserve negative results, failed branches, and uncertainty. Never turn repeated search on the same evidence into confirmation.
+Search broadly within the finite space supported by current data; infer conservatively from the full search history. Bound the work by scientific scope, authorized data, governance, and reproducible execution—not by an arbitrary round or mechanism count.
 
 ## 1. Select the Execution Mode
 
 Choose the least expansive mode that satisfies the request and record it before acting.
 
-- `design_only`: Form hypotheses, review an analysis design, or propose tests. Do not execute analyses or create a run directory unless the user requests an artifact.
+- `design_only`: Build or review an inventory, coverage plan, claim card, or test. Do not execute analyses or create a run directory unless the user requests an artifact.
 - `single_round`: Execute one bounded analysis round and report. Use this by default when the user asks to test or analyze but does not request autonomous iteration.
-- `multi_round`: Iterate autonomously within a finite frozen budget. Use only when the user asks for an autonomous, iterative, or open-ended investigation.
+- `multi_round`: Iterate autonomously through the data-supported coverage space. Use only when the user asks for an autonomous, iterative, systematic, or open-ended investigation.
 
-For `multi_round`, obey any user budget. If none is supplied, freeze this conservative default before viewing outcomes:
+For `multi_round`, obey any explicit user limit, but do not impose a universal numeric cap on scientific rounds or mechanism count. Before viewing outcomes, freeze:
 
-- at most 3 executed rounds,
-- at most 4 active candidate mechanisms,
-- at most 1 post-result formulation mutation for any null formulation,
-- no new data acquisition, paid or nontrivial external compute, external submissions, live experiments, or changes to shared systems without explicit approval.
+- the scientific scope and authorized data products;
+- the final decision, comparable selection families, ranking evidence, and tie or inconclusive rules;
+- the prior-exposure audit and resulting restrictions on evidence stage;
+- the protocol for constructing, deduplicating, versioning, and auditing the mechanism inventory;
+- the rule that makes each mechanism's observable and formulation set finite;
+- the evidence partitions, complete-selection-path inference strategy, and stopping rules;
+- the execution envelope for systems, data looks, compute, cost, time, storage, and external actions.
+
+Rounds are immutable result-review-decision checkpoints, not the scientific stopping criterion. An execution limit controls what may run now; it does not shrink the scientific search space or convert untested cells into completed coverage. If a user limit or resource envelope is reached first, preserve the open queue and use a pause or bounded-stop status rather than claiming saturation.
 
 Never interpret “continue,” “do not stop,” or similar persistence language as permission to exceed safety, governance, data-access, compute, cost, or external-action boundaries.
 
@@ -46,80 +51,102 @@ Record:
 
 Keep raw inputs read-only. Write only to a dedicated output root. Minimize or de-identify case-level artifacts, and redact credentials, tokens, signed links, private identifiers, and secrets from logs and reproduction commands.
 
-Do not infer that an approval exists. Do not recruit participants, alter approved protocols, operate instruments, submit cluster or paid jobs, trigger external systems, or perform hazardous or regulated actions without explicit authorization and competent human oversight. If a required prerequisite is absent, set `governance_status=blocked`, preserve a design-only report if useful, and stop.
+Do not infer that an approval exists. Do not recruit participants, alter approved protocols, operate instruments, submit shared or paid jobs, trigger external systems, or perform hazardous or regulated actions without explicit authorization and competent human oversight. If a prerequisite is absent, set `governance_status=blocked`, preserve a design-only report if useful, and stop.
 
-Read `references/governance-safety.md` whenever data are sensitive, actions affect external systems, compute is costly, or the work is regulated or physical.
+An explicit compute approval may cover a finite multi-round authorization envelope. Record its systems, account or project, job classes, data and output scope, total and concurrent use, cost, storage, validity window, and stop mechanism. Do not request approval again for work wholly inside that envelope. Request renewed authorization before exceeding or changing a boundary, or if authorization expires, is revoked, or becomes unsafe.
 
-## 3. Freeze Round 0 Before Looking at Outcomes
+Read `references/governance-safety.md` whenever data are sensitive, actions affect external systems, compute is costly, or work is regulated or physical.
 
-Create a finite research plan before adaptive testing:
+## 3. Freeze the Data-Supported Search Space
+
+Read `references/coverage-search.md` and `references/decision-selection.md`, then create Round 0:
 
 1. State the scientific question and classify each claim using `references/claim-types.md`.
-2. Define a versioned claim card: claim ID, mechanism, target population or system, unit of inference, observable or outcome, comparator, expected direction, minimum meaningful effect, supported sample, assumptions, and primary or exploratory status.
-3. Register a small candidate portfolio. Do not generate an unlimited feature or model menu.
-4. Freeze the round, data-look, compute, cost, and candidate budgets plus success, futility, inconclusive, safety, and stopping boundaries.
-5. Separate discovery data from sealed verification data when possible. State what would compromise the seal.
-6. Register the search and inference ledger: claim families, planned variants, thresholds, number and timing of looks, multiplicity strategy, and every attempted branch.
-7. Estimate sensitivity, precision, power, or detectable-effect limits where inference depends on a null or small effect.
-8. Inventory data, code, model, environment, versions, hashes when practical, lineage, units, exclusions, and randomization sources.
-9. Select only the applicable domain adapters:
-   - observational, catalog, censoring, support, or geometry questions: `references/observational-data.md`;
-   - machine learning, benchmark optimization, or stochastic simulation: `references/ml-simulation.md`;
-   - causal claims, randomized or longitudinal designs, or experimental records: `references/causal-experimental.md`;
-   - novelty or literature-dependent premises: `references/literature-evidence.md`.
+2. Freeze `decision_contract.json`: the final decision, eligible candidate classes, comparable selection families, estimand, ranking evidence, decision rule, minimum meaningful difference, complexity and data-quality treatment, tie or equivalence rule, inconclusive rule, and complete-selection-path inference strategy. Never default to the smallest nominal p-value. A contract first created after outcomes were viewed is `post_result_adaptive`, not retrospectively frozen.
+3. Complete `prior_exposure_audit.json` for analyses, parameter attempts, data looks, selections, and results involving the same or overlapping data. Changing a sample, codebase, model, repository, workflow, or skill version does not restore confirmatory status.
+4. Build a versioned `mechanism_inventory`. For every proposed mechanism, record its distinct pathway, inclusion rationale, generation source, applicable regimes, required data products, support status, and whether it is nonredundant and testable with current data.
+5. For every eligible mechanism, register a finite set of coverage cells. Each cell must identify `mechanism_id`, `observable_id`, `formulation_id`, data product and version, supported sample, parameter or scale regime, comparator, expected signature, minimum meaningful effect, sensitivity requirement, and falsifier.
+6. Do not create a naive Cartesian product or claim pointwise coverage of a continuum. Freeze physically meaningful regimes, finite grids, marginalization plans, recovery maps, convergence rules, or adaptive refinement rules before inspecting their outcomes.
+7. Keep plausible mechanisms unsupported by current data in the inventory with `mechanism_status=needs_data`. Do not count them as executed coverage or evidence against the mechanism.
+8. Freeze complementary inventory-generation lenses, including mechanism-forward decomposition and data-product-to-mechanism reverse mapping. Add an independent third lens—such as literature, theory, expert elicitation, or failure-mode analysis—when the question makes it informative. Literature review is conditional, not universal.
+9. Separate exploratory development, internal validation, sealed-holdout verification, and independent external verification before candidate-specific results are inspected.
+10. Define every selection family using a comparability key that covers the target population, supported sample, estimand, evidence stage, and material data-quality regime. Keep noncomparable results as parallel conclusions or `support_limited_candidate` unless a prespecified valid mapping makes comparison possible.
+11. Append every test or choice capable of influencing candidate generation, modification, screening, retention, ranking, verification targeting, or promotion to the ledger. Choose a method that covers this complete selection path; do not force unrelated domains into one universal global-null method.
+12. Estimate sensitivity, precision, power, detectable-effect limits, or recovery performance where null, screening, or small-effect interpretation depends on them.
+13. Select only applicable adapters:
+   - observational support, censoring, geometry, or background: `references/observational-data.md`;
+   - machine learning, benchmark optimization, or simulation: `references/ml-simulation.md`;
+   - causal, randomized, longitudinal, or experimental claims: `references/causal-experimental.md`;
+   - literature-dependent premise or novelty: `references/literature-evidence.md`.
 
-Read `references/statistical-discipline.md` before any adaptive scan, repeated testing, stochastic comparison, or confirmatory inference.
+Read `references/statistical-discipline.md` before adaptive scans, repeated testing, stochastic comparisons, candidate ranking, or promotion.
 
-## 4. Execute One Scientific Round
+## 4. Execute One Coverage Round
 
-For each executed round:
+For each round:
 
-1. Freeze the exact claim card, inputs, code state, parameters, seed set, sample, exclusions, statistic, model, and planned falsifier before inspecting the result.
-2. Verify that the available data can test the claim. Separate unavailable, unsupported, missing, censored, nondetected, low-quality, ineligible, and true-zero cases when those distinctions matter.
-3. Match the observable, scale, representation, and statistic to the mechanism. Do not promote a convenient proxy as a direct measurement without calibration.
-4. Run the simplest test capable of changing belief. Add model flexibility only for a stated scientific reason.
-5. Estimate the effect in meaningful units and decompose statistical, systematic, calibration, model-choice, Monte Carlo, and sample-variance uncertainty as applicable.
-6. Run at least one falsification check that could genuinely weaken the claim. Read `references/falsification-toolkit.md` before selecting it.
-7. Save enough data-minimized diagnostics to reconstruct reported statistics and plots. Use aggregate or de-identified diagnostics when case-level data are sensitive.
-8. Interpret the result using the canonical fields in `references/status-schema.md`. Distinguish association, mechanism-consistency, causal evidence, internal validation, holdout verification, and external replication.
-9. If the result is weak or null, read `references/null-triage.md`. Preserve the frozen primary result. Any post-result redesign is exploratory and consumes the registered mutation budget.
-10. Complete `references/round-gate-checklist.md`, write immutable round artifacts, and select the next action only within the remaining budget.
+1. Select unresolved coverage cells without changing their frozen scientific meaning. A scheduler may run one or more frozen, sensitivity-audited low-cost screening stages within declared comparable screening families before deeper tests, but priority changes only execution order: unrun cells remain open.
+2. Freeze the exact claim card, inventory and family versions, inputs, code state, parameters, seed set, sample, exclusions, statistic, model, and falsifier before inspecting results.
+3. Verify that available data can test the cell. Separate unavailable, unsupported, missing, censored, nondetected, low-quality, ineligible, and true-zero cases when those distinctions matter.
+4. Match the observable, scale, representation, and statistic to the mechanism. Do not promote a convenient proxy as direct measurement without calibration.
+5. Run the simplest valid test capable of changing belief. Add flexibility only for a stated scientific reason.
+6. Estimate effects in meaningful units and decompose statistical, systematic, calibration, model-choice, Monte Carlo, and sample-variance uncertainty as applicable.
+7. Run at least one falsification check that could genuinely weaken the claim. Read `references/falsification-toolkit.md`.
+8. Save enough data-minimized diagnostics to reconstruct reported statistics and plots.
+9. Record specification timing, evidence stage, comparability, decision, result, coverage, verification, and execution statuses from `references/status-schema.md`. Preserve weak, null, inconclusive, invalid, failed, abandoned, and unfavorable branches.
+10. If evidence motivates a new mechanism or formulation, preserve the original result, assign new IDs, create a new inventory or coverage version, label the addition post-result adaptive and exploratory, extend the complete selection path, and reset any affected saturation audit.
+11. Complete `references/round-gate-checklist.md`, write immutable round artifacts, run the consistency validator, and select the next unresolved cells.
 
-Do not inspect a sealed holdout repeatedly. Freeze preprocessing, feature selection, formula, sample, model, hyperparameters, seed policy, and decision rule before one final verification evaluation. If verification evidence influenced development, mark it `compromised` and do not call it independent.
+Do not inspect a sealed holdout repeatedly. Freeze preprocessing, feature selection, formula, sample, model, hyperparameters, seed policy, and decision rule before one final verification evaluation. If verification evidence influenced development, mark it `compromised`.
 
-One seed may support deterministic reproduction or a smoke test. When stochastic variation could change the conclusion, use a predeclared seed set or another justified variance estimate; never select the luckiest seed.
+One seed may support a smoke test or exact reproduction. When stochastic variation could change ranking or interpretation, use a predeclared common seed or realization set, or another justified variance design. Never select the luckiest seed, checkpoint, or realization.
 
-## 5. Promote, Mutate, or Stop
+## 5. Audit Saturation, Coverage, and Evidence
+
+Set `inventory_saturated=true` only after the prespecified complementary audits find no new eligible, nonredundant, data-supported mechanism. Require one complete mechanism-forward audit and one complete data-product-reverse audit after the most recent eligible addition. When Round 0 declared an independent third lens informative, it must also be completed. Any new eligible mechanism increments the inventory version and resets the affected audit sequence.
+
+Set `coverage_complete=true` only when every eligible cell in that same inventory version is closed under the rules in `references/coverage-search.md`, and the full ledger and complete-selection-path inference have been audited.
+
+Scientific completion requires all four:
+
+```text
+inventory_saturated
+AND coverage_complete
+AND search_ledger_audited
+AND decision_contract_applied
+```
+
+Compute, cost, time, authorization, or user-limit exhaustion produces `resource_limited_pause`, `governance_blocked`, or `user_limited_stop` when eligible cells remain. These states are not scientific completion.
 
 Promote a candidate only after recording:
 
-- the exact estimand or scientific claim;
-- effect size, uncertainty, minimum meaningful scale, and dominant systematics;
-- supported sample and treatment of missing, censored, nondetected, or excluded cases;
-- complete search history and multiplicity handling;
-- whether the analysis was frozen, exploratory, scan-selected, internally checked, holdout-verified, or externally replicated;
-- a falsification result that could have hurt the claim;
-- literature context when novelty or prior evidence matters.
+- the exact claim, estimand, supported sample, effect, uncertainty, and minimum meaningful scale;
+- its comparability key and selection family, or a parallel or `support_limited_candidate` status;
+- the full generation, modification, screening, ranking, and promotion history and the inference that covers that path;
+- specification timing and evidence stage;
+- an actual falsifier and dominant alternatives or systematics;
+- verification status based on untouched evidence.
 
-Do not promote a same-data mutation as confirmation. Require untouched verification evidence or a valid selective or sequential inference method.
-
-Stop when any of these applies:
-
-- the frozen round, data-look, compute, cost, or mutation budget is exhausted;
-- a predeclared success, futility, safety, or inconclusive boundary is reached;
-- a candidate is frozen for verification or write-up;
-- all registered candidates are resolved as supported, null, inconclusive, invalid, rejected, or blocked;
-- continuation needs new data, a new scientific assumption, a new authorization, or human scientific judgment.
-
-Never stop merely because a favorable threshold was crossed. Never continue merely because no favorable result appeared.
+Apply the frozen Decision Contract, update `candidate_registry.csv`, and record `decision_contract_applied` plus the terminal `decision_status`. If its evidence rule does not separate eligible candidates, report `tie` or `inconclusive`; if none pass eligibility, use `no_eligible_candidate`. Do not force a winner. Do not promote a same-data adaptive formulation as confirmation. Require untouched verification evidence or a valid end-to-end null, selective, sequential, hierarchical, Bayesian model-comparison or model-averaging, or other justified method that covers the actual selection path.
 
 ## 6. Preserve Immutable Outputs
 
-Use this layout for executed runs unless the project defines an equivalent immutable convention:
+Use this layout unless the project defines an equivalent immutable convention:
 
 ```text
 runs/<run_id>/
   run_manifest.json
+  decision_contract.json
+  prior_exposure_audit.json
+  data_versions.json
+  inventories/
+    mechanism_inventory_v001.csv
+    coverage_matrix_v001.csv
+    saturation_audit_v001.json
+  search_ledger.jsonl
+  selection_families.json
+  execution_queue.csv
+  status_transitions.jsonl
   candidate_registry.csv
   rounds/round_000/
     report.md
@@ -129,34 +156,46 @@ runs/<run_id>/
     figures/                          # only when needed
     reproduce_commands.txt
     round_gate.md
-  final_report.md
+  pause_report.md                     # only when paused or blocked
+  consistency_report.json
+  final_report.md                     # only after complete_within_scope
 ```
 
-Never overwrite an earlier round. Record parent round, claim IDs, input hashes, code state, environment, actual seed set, artifact paths, and status fields in each inventory. Redact secrets and sensitive identifiers. Read `references/report-contract.md` before creating executed-run artifacts.
+Never overwrite an earlier contract, audit, inventory, coverage matrix, ledger entry, or round. Record lineage, data versions, hashes when permitted, code state, environment, actual seeds, family versions, resource use, artifact paths, and status transitions. Redact secrets and sensitive identifiers. Read `references/report-contract.md` before creating executed-run artifacts.
+
+Run `scripts/validate_run.py <run_dir> --output <run_dir>/consistency_report.json` before resuming an existing run and before issuing any pause or final report. Fix consistency errors or report the run as blocked or incomplete; a large collection of artifacts is not evidence that the search history is complete.
 
 ## Non-Negotiable Guardrails
 
-- Do not remove or redefine data because they weaken the result.
-- Do not hide attempted tests, thresholds, models, subgroups, transformations, or failed branches.
-- Do not confuse missingness, lack of support, or inadequate sensitivity with evidence for a null.
-- Do not call a broad mechanism rejected because one formulation failed.
-- Do not use post-hoc choices as confirmatory evidence.
-- Do not call same-data variants independent validation.
-- Do not call a support, quality, coverage, or availability variable a mechanism without a defensible scientific link.
-- Do not fabricate data, citations, approvals, provenance, commands, or results.
-- Do not expose personal data, credentials, confidential paths, or restricted information in artifacts.
+- Do not remove, redefine, or hide data because they weaken a result.
+- Do not hide attempted tests, data looks, thresholds, models, subgroups, transformations, weak effects, or failed branches.
+- Do not correct only the visible winners; account for every evaluable test that influenced the same selection or promotion decision.
+- Do not rank candidates by nominal p-value alone, compare incompatible targets or support regimes, or force a winner when the Decision Contract says tie or inconclusive.
+- Do not force scientifically unrelated claims into one unjustified universal null. Freeze and justify selection-family boundaries.
+- Do not restore confirmatory status merely by changing a sample, codebase, model, repository, workflow, or skill version after overlapping data were inspected.
+- Do not confuse missingness, lack of support, invalid execution, or inadequate sensitivity with evidence for a null.
+- Do not call a mechanism rejected because one formulation failed.
+- Do not use post-result choices as confirmatory evidence or same-data variants as independent validation.
+- Do not select seeds, checkpoints, or realizations because they improve the result.
+- Do not treat resource exhaustion, a favorable threshold, a completed round, or one promoted candidate as coverage completion.
+- Do not claim all physical possibilities were exhausted. Scope statements to the versioned mechanisms and observables testable with the available data products.
+- Do not fabricate data, citations, approvals, provenance, commands, results, or coverage.
+- Do not expose personal data, credentials, confidential paths, or restricted information.
 
 ## Reference Router
 
+- Coverage inventory, saturation, closure, and publication scope: `references/coverage-search.md`.
+- Decision Contract, prior exposure, comparability, and complete selection path: `references/decision-selection.md`.
 - Every executed run: `references/status-schema.md`, `references/report-contract.md`, and `references/round-gate-checklist.md`.
 - Claim classification: `references/claim-types.md`.
-- Adaptive search, multiple testing, holdouts, sensitivity, or stochasticity: `references/statistical-discipline.md`.
+- Selection families, multiplicity, holdouts, sensitivity, and stochasticity: `references/statistical-discipline.md`.
 - Null, weak, or sign-inconsistent result: `references/null-triage.md`.
 - Falsification design: `references/falsification-toolkit.md`.
-- Observational support, censoring, match geometry, or background contrast: `references/observational-data.md`.
-- Machine learning, benchmark, or stochastic simulation: `references/ml-simulation.md`.
+- Observational support, censoring, geometry, or background contrast: `references/observational-data.md`.
+- Machine learning, benchmark, or simulation: `references/ml-simulation.md`.
 - Causal or experimental claims: `references/causal-experimental.md`.
 - Sensitive, regulated, costly, external, or physical work: `references/governance-safety.md`.
 - Literature-dependent premise or novelty claim: `references/literature-evidence.md`.
 - Promotion or write-up review: `references/scientific-review-lens.md`.
 - Difficult research judgment: `references/thinking-principles.md`.
+- Machine consistency check before resume, pause, or finalization: `scripts/validate_run.py`.

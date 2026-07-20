@@ -1,172 +1,197 @@
 # Scientific Autoresearch
 
-![Scientific Autoresearch workflow](docs/scientific_autoresearch_flow.png)
-
-`scientific-autoresearch` is a skill for autonomous scientific research agents. It helps an agent move from a scientific question to mechanism-first hypotheses, testable claims, falsification checks, conservative interpretation, and reproducible round-by-round reports.
-
-The project was inspired by Andrej Karpathy's
-[`autoresearch`](https://github.com/karpathy/autoresearch) project and adapts
-agent-run iterative research to mechanism-first scientific searches.
-
-## What This Skill Is For
-
-Use this skill when the task is open-ended research rather than a known pipeline:
-
-- generate and maintain a portfolio of candidate mechanisms,
-- translate mechanisms into observables and tests,
-- distinguish support, missingness, nondetection, and true zero,
-- respond to null results without prematurely killing a broad mechanism,
-- redesign observables when raw measurements fail structurally,
-- track systematic uncertainties and physical effect sizes,
-- decide when to continue, freeze, demote, reject, request data, or write up.
-
-## Key Ideas
-
-The core loop is:
-
-```text
-question -> mechanism -> testable claim -> data/model -> falsification -> interpretation -> next question
+```mermaid
+flowchart TD
+    Q["Scientific question + authorized scope"] --> G{"Governance and resource gate"}
+    G -- "blocked or restricted" --> B["Design-only report or approval request"]
+    G -- "cleared" --> R0["Freeze Round 0: claims, budgets, search ledger, verification policy"]
+    R0 --> R["Execute one bounded round: test, uncertainty, falsification"]
+    R --> S{"Canonical evidence status"}
+    S -- "supported candidate" --> V["Freeze once, then verify on sealed or independent evidence"]
+    S -- "null, inconclusive, invalid, or artifact" --> T["Preserve result and triage the failure mode"]
+    T -- "one registered mutation remains" --> R
+    T -- "budget or authority exhausted" --> F["Stop with immutable final report"]
+    V --> F
 ```
 
-The skill emphasizes:
+`scientific-autoresearch` is a vendor-neutral [Agent Skill](https://agentskills.io) for bounded, mechanism-first scientific investigation. It helps an agent turn an open-ended question into testable claims, execute finite evidence rounds, learn from null results without result shopping, and preserve reproducible decisions.
 
-- **Mechanism-first research**: test why something should happen, not only which column correlates.
-- **Observable geometry**: match the observable to the mechanism, including proximity, cumulative contribution, natural scale, support, and background contrast.
-- **Failure-mode driven redesign**: when a raw observable fails structurally, ask whether it should be background-relative, normalized, signed, residualized, or matched-control corrected.
-- **Multi-factor mechanisms**: combine variables only when the mechanism justifies the composite.
-- **Null triage**: a failed formulation is not automatically a failed mechanism.
-- **Round gates**: every round must end with a checklist that prevents premature stopping.
-- **Conservative promotion**: effect size, systematics, search history, and reproducibility matter as much as p-values.
+Current version: **0.2.0**.
 
-## Inputs, Workflow, and Outputs
+## Scope
 
-This repository provides a promptable research protocol for LLM-based research assistants that can read Markdown instructions and work with local files.
+Use the skill for research that requires several of these capabilities:
 
-### Inputs
+- generate and maintain a finite portfolio of candidate mechanisms;
+- translate mechanisms into claim cards, observables, estimands, and falsifiers;
+- audit whether available data can support a claim;
+- separate exploration, confirmation, internal validation, sealed-holdout verification, and replication;
+- control adaptive search, multiplicity, stochastic variation, compute, and stopping;
+- distinguish a failed formulation from a failed mechanism;
+- produce immutable round-by-round evidence and decisions.
 
-A run should start with:
+Do not use it for literature-only review, manuscript editing, routine execution of a fixed pipeline, or unauthorized live human, animal, clinical, field, wet-lab, hazardous, or external-system actions.
 
-- a scientific question or candidate mechanism,
-- available data files, models, notebooks, scripts, papers, or simulations,
-- scope constraints such as allowed data, allowed tools, round budget, and stopping rules,
-- known quality limits, selection effects, masks, or missing-data concerns,
-- a requested output directory or naming convention when reproducibility artifacts should be saved.
+## Version 0.2.0 Highlights
 
-### Workflow
+- Three execution modes: `design_only`, `single_round`, and finite `multi_round`.
+- A mandatory scope, authorization, privacy, safety, and resource gate.
+- Conservative default budgets when autonomous work is requested without limits.
+- A search and inference ledger for adaptive testing and multiplicity.
+- Sealed verification evidence and explicit compromised-holdout handling.
+- Multi-seed and numerical-variation rules for machine learning and simulation.
+- Separate canonical fields for governance, mechanism, formulation, evidence role, verification, and next action.
+- `null` versus `inconclusive` based on support and sensitivity, not only a threshold test.
+- Immutable `runs/<run_id>/rounds/round_NNN/` outputs with privacy and secret-redaction rules.
+- Conditional adapters for observational data, machine learning and simulation, and causal or experimental work.
+- Output-quality evals and trigger eval queries following the Agent Skills evaluation pattern.
 
-The workflow diagram is included below.
+## Core Loop
 
-![Scientific Autoresearch workflow](docs/scientific_autoresearch_flow.png)
+```text
+question -> mechanism -> claim -> test -> falsification -> interpretation -> decision
+```
 
-### Outputs
-
-A well-run trial should produce:
-
-- `report.md` or `round_XX_report.md`: question, mechanism, method, result, interpretation, caveats, and next decision,
-- `inventory.json`: inputs, versions, hashes when practical, parameters, random seeds, sample counts, and output paths,
-- `summary.csv`: tested claims, features, models, metrics, status labels, and caveats,
-- `diagnostics.csv` or per-round diagnostics: per-object or per-case data needed to rebuild plots and statistics,
-- `figures/`: diagnostic or result plots,
-- `reproduce_commands.txt`: exact commands and environment notes,
-- `candidate_registry.csv` or `.json`: candidate mechanisms and formulations with status and caveats,
-- `candidate_board.csv` or `.md`: ranked or grouped current candidates, including diagnostics and confounder checks.
-
-The `round-gate-checklist.md` reference is mandatory for autoresearch runs. It is designed to prevent premature null conclusions and unexamined promotion.
+Every autonomous run begins by freezing a finite charter: allowed inputs and actions, governance status, claim cards, candidate and round budgets, data-look and mutation budgets, resource limits, verification policy, and stopping boundaries.
 
 ## Repository Layout
 
 ```text
 .
-|-- README.md
-|-- CITATION.cff
-|-- CITATION.bib
-|-- LICENSE
-|-- .gitignore
-|-- docs/
-|   `-- scientific_autoresearch_flow.png
-`-- scientific-autoresearch/
-    |-- SKILL.md
-    `-- references/
-        |-- claim-types.md
-        |-- falsification-toolkit.md
-        |-- null-triage.md
-        |-- report-contract.md
-        |-- round-gate-checklist.md
-        |-- scientific-review-lens.md
-        `-- thinking-principles.md
+├── README.md
+├── CHANGELOG.md
+├── CITATION.cff
+├── CITATION.bib
+├── LICENSE
+├── scripts/
+│   └── validate_skill.py
+└── scientific-autoresearch/
+    ├── SKILL.md
+    ├── evals/
+    │   ├── evals.json
+    │   └── eval_queries.json
+    └── references/
+        ├── causal-experimental.md
+        ├── claim-types.md
+        ├── falsification-toolkit.md
+        ├── governance-safety.md
+        ├── literature-evidence.md
+        ├── ml-simulation.md
+        ├── null-triage.md
+        ├── observational-data.md
+        ├── report-contract.md
+        ├── round-gate-checklist.md
+        ├── scientific-review-lens.md
+        ├── statistical-discipline.md
+        ├── status-schema.md
+        └── thinking-principles.md
 ```
 
-Only the `scientific-autoresearch/` folder is the installable skill. The repository-level `README.md`, `LICENSE`, and `.gitignore` are for open-source distribution.
+Only the `scientific-autoresearch/` directory is the installable skill. Repository-level scripts, citation files, and documentation support distribution and maintenance.
 
 ## Installation
 
-Place the `scientific-autoresearch/` directory wherever an LLM system loads
-reusable Markdown instructions or skills. For a Unix-like local skills
-directory, one minimal example is:
+Copy or link the installable directory into a skills directory recognized by your agent client:
 
 ```bash
-mkdir -p ~/.local/share/llm-skills
-cp -R scientific-autoresearch ~/.local/share/llm-skills/
+git clone https://github.com/JialeWW/scientific-autoresearch.git
+cp -R scientific-autoresearch/scientific-autoresearch /path/to/your/skills-directory/
 ```
+
+The installed path must end with:
+
+```text
+scientific-autoresearch/SKILL.md
+```
+
+Discovery and configuration vary by client. The skill itself contains no client-specific metadata or tool dependency.
 
 ## Basic Usage
 
-Ask the LLM research assistant to use the skill for an open-ended scientific trial:
+### Design only
 
 ```text
-Use the scientific-autoresearch skill.
-
-Goal:
-Investigate whether the available data contain a physically interpretable signal related to [scientific question].
-
-Use only the files in the current working directory.
-Start with Round 0: inventory, data-quality audit, candidate portfolio, and proposed first round.
-Then proceed autonomously until a natural decision boundary.
-After each round, report the current result, main caveat, and next planned round.
+Use the scientific-autoresearch skill to turn this mechanism into a claim card,
+minimal test, uncertainty plan, and falsifier. Do not execute an analysis.
 ```
 
-## Example Use Cases
+### One executed round
 
-The skill is most useful when a project needs to:
+```text
+Use the scientific-autoresearch skill to run one bounded analysis round over
+the approved local data. Preserve immutable outputs and stop after reporting.
+```
 
-- compare multiple candidate mechanisms before choosing a primary test,
-- turn qualitative explanations into observables and falsification checks,
-- audit whether a dataset can support a proposed claim,
-- redesign an observable when a raw measurement fails structurally,
-- keep exploratory scans separate from confirmatory interpretation,
-- produce round-by-round reports with inputs, tested claims, caveats, and next decisions.
+### Bounded autonomous run
 
-## Interpretation Standard
+```text
+Use the scientific-autoresearch skill to investigate this question for at most
+three rounds and four active candidates. Do not acquire new data or submit
+external compute. Freeze the verification policy before looking at outcomes.
+```
 
-Promote a result only when it has:
+## Executed-Run Outputs
 
-- a clear mechanism,
-- a mechanism-matched observable,
-- a supported sample definition,
-- a meaningful effect size,
-- an uncertainty and systematic-error budget,
-- falsification or robustness checks that could have hurt it,
-- transparent search history,
-- reproducible diagnostics.
+The default immutable layout is:
 
-Exploratory results are valuable, but they should be labeled as exploratory.
+```text
+runs/<run_id>/
+  run_manifest.json
+  candidate_registry.csv
+  rounds/round_000/
+    report.md
+    inventory.json
+    summary.csv
+    diagnostics.<csv|parquet|jsonl>   # conditional
+    figures/                          # conditional
+    reproduce_commands.txt
+    round_gate.md
+  final_report.md
+```
+
+Sensitive diagnostics must be minimized or de-identified. Reproduction records must redact credentials, tokens, signed links, private identifiers, and restricted paths.
+
+## Validation
+
+Run the repository validator:
+
+```bash
+python scripts/validate_skill.py scientific-autoresearch
+```
+
+The validator checks required frontmatter, naming, description length, reference routing, JSON eval files, line limits, and release-version consistency. A compatible implementation of the Agent Skills reference validator can provide an additional specification check:
+
+```bash
+skills-ref validate scientific-autoresearch
+```
+
+## Evaluation
+
+`scientific-autoresearch/evals/evals.json` contains behavioral cases for:
+
+- design-only mode;
+- observational support and geometry;
+- sealed-test machine-learning work;
+- costly simulation and approval boundaries;
+- sensitive human data and result-shopping pressure;
+- null triage and bounded mutations;
+- causal identification limits.
+
+`scientific-autoresearch/evals/eval_queries.json` contains balanced should-trigger and should-not-trigger prompts for testing the frontmatter description. Run evals in isolated contexts and compare v0.2.0 with the previous version or a no-skill baseline.
+
+## Scientific Interpretation Standard
+
+Promote a result only when it has a clear claim and estimand, mechanism-matched evidence, adequate support and sensitivity, meaningful effect scale, decomposed uncertainty, transparent search history, a falsifier that could have hurt it, and correctly labeled verification evidence.
+
+Exploratory results remain valuable, but they remain exploratory until prospectively verified.
 
 ## Inspiration
 
-This skill was inspired by Andrej Karpathy's
-[`autoresearch`](https://github.com/karpathy/autoresearch) project, which
-demonstrated an autonomous agent loop for bounded research experiments over a
-small LLM training setup. `scientific-autoresearch` adapts the broader idea of
-agent-run iterative research to mechanism-first scientific searches, with
-emphasis on support audits, falsification checks, uncertainty tracking, and
-conservative interpretation.
+This project was inspired by Andrej Karpathy's [`autoresearch`](https://github.com/karpathy/autoresearch) project and adapts iterative agent-run experimentation to general scientific inference, with additional emphasis on governance, bounded autonomy, support audits, falsification, adaptive-search control, and reproducibility.
 
 ## Citation
 
-If you use this skill, please cite the release metadata in
-[`CITATION.cff`](CITATION.cff). A BibTeX entry for LaTeX and Zotero import is
-also provided in [`CITATION.bib`](CITATION.bib). For manuscripts, cite the tagged
-GitHub release.
+Use the metadata in [`CITATION.cff`](CITATION.cff) or [`CITATION.bib`](CITATION.bib). For manuscripts, cite the tagged release.
 
 ## License
 

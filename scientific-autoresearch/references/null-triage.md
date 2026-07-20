@@ -1,61 +1,67 @@
 # Null Triage
 
-Use this when a round gives a null, weak, or sign-inconsistent result.
+Use this file after a null, weak, unstable, or sign-inconsistent result. Preserve the frozen result before redesigning anything.
 
-## 1. Scope the Null
+## 1. Write the Narrow Result
 
-Write the narrow null:
+Use this form:
 
 ```text
-This observable, in this supported sample, with this statistic and these cuts, is unsupported.
+This formulation, in this supported sample, with this estimand, statistic, sensitivity, and frozen choices, did not support the predicted effect.
 ```
 
-Do not broaden it until justified.
+Do not broaden a formulation-level result to a mechanism-level rejection without additional evidence.
 
-## 2. Check Mechanism-Observable Fit
+## 2. Check Validity, Support, and Sensitivity
 
 Ask:
 
-- Did the observable directly represent the mechanism?
-- Did the chosen window, aperture, threshold, time range, scale, or quality cut match the physical or statistical scale of the mechanism?
-- Were zeros, nondetections, unsupported cases, and ineligible cases treated consistently with the claim?
-- Was the statistic sensitive to the expected signal shape?
+- Could the available data detect or exclude the minimum meaningful effect?
+- Were unavailable, unsupported, missing, censored, nondetected, low-quality, and true-zero cases treated correctly?
+- Did the implementation compute the stated estimand?
+- Did convergence, calibration, leakage, measurement, or data-quality failures invalidate the test?
+- Are uncertainty intervals wide enough that meaningful effects remain compatible?
 
-If the answer is no, keep the mechanism active and mutate the formulation.
+Use:
 
-## 3. Mutation Options
+- `null` only for an adequately supported and sensitive formulation compatible with no meaningful effect;
+- `inconclusive` when precision or support is inadequate;
+- `artifact` or `invalid` for measurement, selection, leakage, implementation, or assumption failures;
+- `needs_data` at mechanism level when current data cannot test the mechanism.
 
-Choose one simple mutation before asking the user:
+## 3. Check Mechanism-Observable Fit
 
-- Use a more direct proxy already present in the data.
-- Change from an absolute observable to a contrast against a meaningful background.
-- Change a fixed window to a scale tied to the object, process, instrument, or model.
-- Split a broad candidate into formulation-level subclaims.
-- Test a minimal statistic before adding model freedom.
-- Save the scan grid if multiple choices are explored.
+Ask whether the observable represented the mechanism's scale, geometry, timing, background, sign, cumulative structure, natural unit, or interacting factors. Check whether the statistic was sensitive to the expected signal shape.
 
-If the null has structured zeros, support/background dependence, sample-expansion failure, quality-class sign changes, or strong redshift/volume/depth confounding, treat this as a background/contrast redesign trigger. Before declaring the broader mechanism exhausted, test one scientifically justified contrast formulation or document why no valid background can be built from the current data.
+For observational support, geometry, censoring, or background questions, read `references/observational-data.md`.
 
-## 4. Demotion Conditions
+## 4. Permit Only a Bounded Exploratory Mutation
 
-Demote a mechanism only when at least one is true:
+Use one registered mutation only when it addresses a named failure mode without changing the scientific question, adding unauthorized data, or exceeding the mutation budget. Examples include:
 
-- Multiple mechanism-matched formulations fail.
-- A decisive falsification check contradicts the mechanism.
-- The supported sample is too small or biased for the mechanism to be testable.
-- The required data are absent.
-- Continuing would require a new scientific assumption from the user.
+- replace an indirect proxy with a more direct existing measurement;
+- change an absolute quantity to a scientifically justified contrast;
+- replace a fixed scale with a natural scale;
+- repair a statistic that was insensitive to the predicted shape;
+- test one mechanism-justified interaction or composite;
+- correct a documented support, unit, or calibration error.
 
-## 5. Report Language
+Specify the mutation before running it, assign a new formulation ID, and label it `exploratory`. Do not rewrite the original frozen result.
 
-Good:
+Do not mutate merely to find significance. Do not scan unregistered thresholds, subgroups, transformations, or models after a clean and sensitive null.
 
-```text
-The fixed-window count formulation is null; the broader mechanism remains active pending a better scale-matched proxy.
-```
+## 5. Decide the Mechanism Status
 
-Bad:
+- Keep `active` when the formulation poorly represented the mechanism and a registered better formulation remains.
+- Use `needs_data` when the required support, precision, measurement, or independent verification is absent.
+- Use `weakened` when one or more adequately sensitive mechanism-matched formulations fail.
+- Use `rejected` only after a decisive falsifier or several adequately sensitive, mechanism-matched tests contradict the mechanism.
+- Use `needs_human_judgment` when plausible next formulations require different scientific assumptions.
 
-```text
-The mechanism is exhausted because one count test is null.
-```
+Missing data, small samples, or invalid tests do not weaken a mechanism by themselves.
+
+## 6. Stop Correctly
+
+Stop when the registered mutation budget is exhausted, the remaining mutations change the question, verification data are unavailable, governance blocks the work, or further progress needs new data or assumptions.
+
+Report the frozen result, sensitivity, support limits, mutation history, mechanism status, and the exact evidence needed to change belief.

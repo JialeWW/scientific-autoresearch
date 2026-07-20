@@ -1,60 +1,72 @@
 # Round Gate Checklist
 
-Use this checklist at the end of every autoresearch round. It is meant to prevent premature stopping and unexamined null conclusions.
+Complete this checklist at the end of every executed round. Answer concisely and mark non-applicable adapter items with a reason.
 
-## Round Gate
+## Universal Round Gate
 
-Before ending a round, answer each item briefly in the round report:
+- **Identity**: Are run ID, round ID, parent round, claim IDs, inputs, code state, parameters, and actual seed set frozen and recorded?
+- **Governance**: Is the work inside authorized data, action, output, cost, and oversight boundaries?
+- **Claim fit**: Does the statistic or model estimate the stated claim and estimand?
+- **Support**: Which cases or conditions can and cannot test the claim? Are missing, unsupported, censored, low-quality, ineligible, and true-zero states separated when relevant?
+- **Plan status**: Which choices were frozen before the result, and which are exploratory or scan-selected?
+- **Search ledger**: Are all related tests, variants, thresholds, data looks, and failed branches recorded?
+- **Evidence scale**: What is the effect in meaningful units, and how does it compare with the minimum meaningful effect and dominant systematic floor?
+- **Sensitivity**: Could the design detect or exclude a meaningful effect? Is the result `null` or `inconclusive`?
+- **Uncertainty**: Are statistical, systematic, calibration, model-choice, stochastic, and sample-variance components handled as applicable?
+- **Falsification**: What result could have weakened the claim, and what happened?
+- **Verification**: Is evidence unverified, internal-only, holdout-verified, externally replicated, compromised, or not applicable?
+- **Privacy and reproducibility**: Are artifacts sufficient to audit the result while minimizing sensitive data and redacting secrets?
+- **Statuses**: Are governance, mechanism, formulation, evidence-role, verification, and next-action fields taken from `references/status-schema.md`?
+- **Budget**: What rounds, candidates, mutations, data looks, compute, cost, and time remain?
+- **Decision**: Does the next action follow from the evidence and stay inside the frozen budget?
 
-- Mechanism stated: What mechanism or claim did this round test?
-- Observable fit: Why does the observable match the mechanism's geometry?
-- Data availability: Which cases are in-footprint/observable/exposed, out-of-footprint/unobservable, in-footprint but nondetected, detected, excluded, ineligible, or true zero?
-- Supported sample: Were available, missing, unsupported, ineligible, nondetected, censored, and true-zero cases separated?
-- Support/match scale audit: What are the number of matches per target, nearest-match distance/window, typical match distance/window, upper-tail distance/window, and physical/natural-unit conversion? Are the matches within the scale where the mechanism can operate?
-- Response-correction guardrail: Did the analysis avoid using availability, support, footprint, exposure, or missingness classes to subtract/normalize/residualize the scientific response unless independently justified?
-- Evidence scale: What is the effect size in meaningful units, and is it large enough to matter?
-- Uncertainty/systematics: What statistical, model-choice, calibration, selection, or sample-variance uncertainty could dominate?
-- Falsification: What check could have hurt the claim, and what happened?
-- Null triage: If weak/null, is the failure specific to a proxy, window, threshold, support definition, statistic, or quality cut?
-- Multi-factor mechanism: If single variables are weak, do they point in a consistent direction that justifies a mechanism-matched composite observable?
-- Observable redesign: If weak/null with structured failures, many zeros, or support/background dependence, is a background-relative, normalized, signed, residualized, or matched-control observable scientifically justified?
-- Background/contrast trigger: If raw absolute observables are weak/null with structured zeros, support dependence, sample-expansion failure, quality-class sign changes, or redshift/volume/depth confounding, was a background/contrast audit completed or explicitly ruled impossible?
-- Contrast side: If a contrast was used, was it constructed on the side required by the mechanism? State whether it is predictor-side contrast, response-side residualization, or both. Do not treat response-side residualization as proof of predictor-side excess or deficit.
-- Candidate status: Which label applies now: `primary_candidate`, `active_needs_better_observable`, `support_limited_candidate`, `diagnostic`, `confounder_check`, `null_result`, `rejected`, or `needs_human_judgment`?
-- Next mutation: What feasible same-data mutation remains, or why is none scientifically justified?
-- Reproducibility: Were report, diagnostics, inventory/parameters, outputs, and reproduce commands saved?
+## Conditional Adapter Gates
 
-## Mechanism Coverage Checklist
+### Observational Data
 
-Before labeling a mechanism `null_result`, `rejected`, or exhausted, include this checklist:
+- Were availability, support, nondetection, censoring, and true zero separated?
+- Does the observable match the mechanism's scale and geometry?
+- Are match distances or windows, natural units, support completeness, background construction, and predictor-versus-response contrast handled correctly?
 
-- Proximity / nearest-triggering geometry tested or scientifically irrelevant.
-- Cumulative / additive / path-integrated weighting tested or scientifically irrelevant.
-- Physically normalized scale, resolution element, or natural unit tested when the mechanism has one; fixed apertures alone are not enough to exhaust such a mechanism unless scale normalization is impossible or scientifically unjustified.
-- Data availability, footprint, exposure, sensitivity, completeness, or support mask assessed. If unavailable, the support proxy is labeled approximate.
-- Support/match geometry is compatible with the mechanism's physical, temporal, spectral, instrumental, or natural scale. If matches are mostly outside that scale, the variable is treated as footprint/background/environment/selection support rather than mechanism support.
-- Support, missingness, nondetection, censoring, and true-zero cases separated.
-- Background-relative, contrast, residual, or matched-control formulation considered when support/background/exposure varies.
-- Predictor-side contrast tested when the mechanism predicts excess/deficit in the predictor, foreground, exposure, environment, treatment, stimulus, or input. If only the response was residualized, label it as a robustness check rather than mechanism-complete contrast.
-- If a background/contrast trigger is present and current data can support a valid background, at least one pre-declared contrast formulation is tested before declaring the mechanism exhausted. If not, the report explains why no valid background exists.
-- Dominant systematics, selection effects, and confounders checked.
+### Machine Learning or Simulation
 
-If a relevant geometry class is untested but feasible with current data, do not mark the mechanism exhausted. Use `active_needs_better_observable`, `weakened`, or `support_limited_candidate`.
+- Did discovery remain separate from sealed test or benchmark evidence?
+- Were preprocessing and tuning confined to discovery data?
+- Is stochastic or numerical variation quantified with a frozen seed or realization policy?
+- Are search size, compute cost, convergence, leakage, and baseline comparisons recorded?
+
+### Causal or Experimental Work
+
+- Is the causal estimand or experimental unit explicit?
+- Are identification assumptions, randomization, blinding, controls, batches, replicates, protocol deviations, and stopping rules handled as applicable?
+- Are live or regulated actions covered by documented authorization and competent oversight?
+
+### Literature-Dependent Claims
+
+- Are search scope, dates, source verification, conflicting or null evidence, and novelty boundaries recorded?
+
+## Mechanism Rejection Gate
+
+Before using `mechanism_status=rejected`, confirm:
+
+- the formulation was mechanism-matched and valid;
+- support and sensitivity were adequate;
+- the main relevant scale, geometry, timing, background, interaction, or prediction classes were tested or declared irrelevant;
+- dominant confounders, selection effects, leakage, and systematics were addressed;
+- a decisive falsifier or several independent, adequately sensitive failures support rejection.
+
+If not, use `active`, `weakened`, `needs_data`, or `needs_human_judgment`.
 
 ## Trial Completion Gate
 
-A trial can stop only when one of these is true:
+Stop when at least one frozen condition applies:
 
-- A candidate is strong enough to freeze for verification or write-up.
-- All active candidates are promoted, rejected, blocked by missing data, or downgraded with a completed Mechanism Coverage Checklist.
-- Every feasible same-data mutation has been run or explicitly documented as scientifically unjustified.
-- Continuing requires new data, a new scientific assumption, a quality fix, or human scientific judgment.
-- The user-specified round budget is exhausted.
+- the round, candidate, mutation, data-look, compute, cost, or time budget is exhausted;
+- a predeclared success, futility, safety, or inconclusive boundary is reached;
+- a candidate is frozen for verification or write-up;
+- every registered candidate has a justified terminal or blocked status;
+- continuation requires new data, authorization, resources, assumptions, or human judgment.
 
-The final report must list:
+Do not require “every feasible mutation”; require resolution of the finite registered portfolio. Do not continue only because no favorable result appeared.
 
-- strongest current candidate,
-- rejected/null mechanisms and their coverage-checklist status,
-- active exploratory or support-limited candidates,
-- what remains untested,
-- what new data or assumptions would be required to continue.
+The final report must list the strongest candidate, all terminal and blocked statuses, verification level, remaining uncertainty, untested questions, search scope, and exact requirements for continuation.

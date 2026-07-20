@@ -1,49 +1,69 @@
 # Scientific Review Lens
 
-Use this lens inside the autoresearch loop to keep a promising metric from becoming an overclaimed scientific result.
+Use this lens before promoting a candidate, claiming verification, or writing a final scientific interpretation.
 
-## 1. Question and Significance
+## Question and Significance
 
-- State the research question in one sentence.
-- State why this test matters: a gap, decision, uncertainty, anomaly, mechanism, calibration, or model choice.
-- State the claim type before choosing the statistic.
+- State the question and claim type in one sentence.
+- State the gap, decision, uncertainty, anomaly, calibration, or mechanism the result addresses.
+- Explain why the minimum meaningful effect matters.
 
-## 2. Method Fit
+## Method Fit
 
-- Match data support to the claim.
-- Explain why each proxy or model output stands in for the scientific quantity of interest.
-- Check that the statistic, fit, threshold, aperture, window, or classifier measures the stated estimand.
-- Prefer a minimal test first, then justify added model freedom.
+- Verify that the supported sample, unit of inference, proxy, model, statistic, scale, control, and uncertainty model test the stated estimand.
+- Separate causal identification from estimation.
+- Prefer a minimal test; justify every added degree of freedom.
+- Check that governance and resource limits did not distort the design silently.
 
-## 3. Findings and Evidence Strength
+## Evidence Strength
 
-- Report direction, magnitude, uncertainty, sample support, and failure cases.
-- Distinguish a useful effect from a formally significant but scientifically tiny effect.
-- Record the search space if formulas, windows, cuts, models, or thresholds were explored.
-- Say what observation would reduce belief in the current interpretation.
+- Report direction, magnitude, interval or uncertainty, sensitivity, sample support, and failure cases.
+- Compare the effect with measurement precision, intrinsic variation, calibration limits, and the dominant systematic floor.
+- Record the complete search space, data looks, multiplicity handling, and stochastic variation.
+- State which observation would reduce belief.
 
-## 4. Interpretation
+## Evidence Independence
 
-Use claim language that matches the evidence:
+Classify support correctly:
 
-- **Measurement**: the quantity was estimated with an uncertainty model.
-- **Association**: two supported quantities vary together.
-- **Mechanism-consistent**: the direction, scale, and controls fit a mechanism but do not establish it.
-- **Selection/artifact concern**: support, calibration, background, or quality may explain the result.
-- **Validation**: an external sample, simulation truth, or independent method tests the same claim.
+```text
+same-data consistency
+alternate proxy
+alternate model
+resampling or cross-validation
+known-truth simulation or control
+sealed holdout
+independent sample or experiment
+```
 
-## 5. Limitations and Next Gap
+Do not present internal checks as replication. If verification evidence influenced development, mark it compromised.
 
-- Name the dominant limitation before suggesting the next analysis.
-- Separate a data limitation from a model limitation and a conceptual limitation.
-- Ask whether the next step verifies the current claim, broadens it, or changes the question.
+## Interpretation Boundary
+
+Use language that matches the design:
+
+- measurement: a quantity was estimated under an uncertainty model;
+- association: supported quantities vary together;
+- mechanism-consistent: direction, scale, controls, and predictions fit a mechanism without proving it;
+- causal: a defined effect is identified under explicit assumptions;
+- selection or artifact concern: support, leakage, calibration, quality, or measurement may explain the result;
+- verified or replicated: untouched or independent evidence tested a frozen claim.
+
+## Literature and Novelty
+
+- Verify the literature premise and include conflicting or null evidence.
+- State whether novelty lies in data, measurement, method, population, scale, mechanism test, or replication.
+- Do not claim novelty from an incomplete search.
 
 ## Promotion Audit
 
-Before a candidate becomes a headline result, answer:
+Before promotion, answer:
 
-1. What exact estimand is promoted?
-2. What sample is supported, and are zeros/nondetections included?
-3. Was this formula/window/threshold fixed or discovered by a scan?
-4. Which support is internal consistency, alternate proxy, alternate sample, simulation/control, or external validation?
-5. What limitation must remain in the headline sentence?
+1. What exact claim or estimand is promoted?
+2. Which sample and support conditions does it cover?
+3. Was the formulation frozen or discovered through search?
+4. Was sensitivity adequate and multiplicity handled?
+5. What falsifier could have hurt it?
+6. What is the verification status?
+7. What dominant limitation must remain in the headline sentence?
+8. What evidence would change the decision?

@@ -1,0 +1,82 @@
+[
+  {
+    "query": "Run a bounded autonomous investigation of why the expanded sample erased our original signal, including new mechanism-matched observables and falsification checks.",
+    "should_trigger": true
+  },
+  {
+    "query": "We have several physical explanations for this anomaly. Build a candidate portfolio, test them over three rounds, and keep a reproducible search ledger.",
+    "should_trigger": true
+  },
+  {
+    "query": "Figure out whether the fragmentation in these simulations is physical or a numerical artifact, and decide the next convergence experiment.",
+    "should_trigger": true
+  },
+  {
+    "query": "Our primary result is null. Diagnose whether the proxy, support definition, scale, or background formulation failed before we reject the mechanism.",
+    "should_trigger": true
+  },
+  {
+    "query": "Autonomously improve this scientific prediction model while protecting the held-out benchmark and reporting all failed model families.",
+    "should_trigger": true
+  },
+  {
+    "query": "Test whether this environmental association is causal, state the identification assumptions, and run falsification checks against the main alternatives.",
+    "should_trigger": true
+  },
+  {
+    "query": "Investigate which of these proposed mechanisms explains the sensor anomaly and stop after a finite evidence budget.",
+    "should_trigger": true
+  },
+  {
+    "query": "Use injection and recovery to validate whether our detection pipeline can recover effects of a scientifically meaningful scale.",
+    "should_trigger": true
+  },
+  {
+    "query": "Analyze this survey catalog for a background-relative excess, carefully separating footprint, nondetection, and true zero.",
+    "should_trigger": true
+  },
+  {
+    "query": "Design and execute a reproducible two-round test of whether this treatment effect depends on baseline severity, while preserving the prespecified primary result.",
+    "should_trigger": true
+  },
+  {
+    "query": "Summarize these five papers and give me a literature review.",
+    "should_trigger": false
+  },
+  {
+    "query": "Rewrite the discussion section of my manuscript in a more concise style.",
+    "should_trigger": false
+  },
+  {
+    "query": "Run the existing analysis.sh exactly once and tell me whether it exits successfully.",
+    "should_trigger": false
+  },
+  {
+    "query": "Explain in simple terms what a p-value means.",
+    "should_trigger": false
+  },
+  {
+    "query": "Make a scatter plot of column temperature against column pressure using the specified axes and labels.",
+    "should_trigger": false
+  },
+  {
+    "query": "Convert this comma-separated file to JSON without changing the values.",
+    "should_trigger": false
+  },
+  {
+    "query": "Debug the syntax error in model.py and add a unit test for the fixed function.",
+    "should_trigger": false
+  },
+  {
+    "query": "Format these references as BibTeX and remove duplicates.",
+    "should_trigger": false
+  },
+  {
+    "query": "Write a grant abstract based on the results I already provided.",
+    "should_trigger": false
+  },
+  {
+    "query": "Give me a step-by-step live biological procedure I can perform today without institutional review or supervision.",
+    "should_trigger": false
+  }
+]

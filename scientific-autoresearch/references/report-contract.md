@@ -1,97 +1,123 @@
-# Report Contract
+# Report and Artifact Contract
 
-Every autoresearch step should be understandable without the conversation.
+Apply the full contract to executed rounds. In `design_only` mode, return advice or a single design report unless the user requests more artifacts.
 
-## Required Sections
+## 1. Canonical Immutable Layout
 
-1. **Question**
-   - What is being tested?
-   - What scientific claim type is it?
-   - Why does this test matter for the larger scientific question?
+Use an equivalent project convention if one already exists; otherwise use:
 
-2. **Mechanism**
-   - Why might the claim be true?
-   - What sign, scale, or qualitative behavior is expected?
-   - Mechanism-level status before and after this round.
+```text
+runs/<run_id>/
+  run_manifest.json
+  candidate_registry.csv
+  rounds/
+    round_000/
+      report.md
+      inventory.json
+      summary.csv
+      diagnostics.<csv|parquet|jsonl>   # conditional
+      figures/                          # conditional
+      reproduce_commands.txt
+      round_gate.md
+  final_report.md
+```
 
-3. **Inputs**
-   - Files, versions, hashes when practical.
-   - Sample definition and support logic.
-   - Data availability audit: in-footprint/observable/exposed, out-of-footprint/unobservable, nondetected, detected, excluded, ineligible, and true-zero cases.
-   - Units and coordinate/time/feature conventions.
-   - Support/match scale audit: number of matches per target, nearest-match distance/window, typical match distance/window, upper-tail distance/window, and physical/natural-unit conversion.
+Never overwrite or silently amend a closed round. Write a new round or amendment with a parent reference.
 
-4. **Method**
-   - Formula or model.
-   - Statistic or fitting method.
-   - Random seed.
-   - Inclusion/exclusion criteria.
-   - Estimand: exactly what comparison, relation, detection, or prediction is being measured?
-   - Formulation-level status: untested, exploratory, null, artifact, primary candidate, or frozen.
+## 2. Run Manifest
 
-5. **Result**
-   - Main metric.
-   - Sample size.
-   - Uncertainty or p-value if relevant.
-   - Figure and table paths.
-   - Effect scale or practical/scientific magnitude when it can be estimated.
+Record at least:
 
-6. **Falsification / Robustness**
-   - What could have killed the result?
-   - What happened under those checks?
-   - Did any raw absolute observable trigger a background/contrast redesign audit? If yes, what contrast was tested or why was no valid background available?
+```text
+run_id
+question
+execution_mode
+created_at
+output_root
+governance_status
+authorized_inputs
+authorized_actions
+prohibited_actions
+round_budget
+candidate_budget
+mutation_budget
+data_look_budget
+compute_and_cost_budget
+success_boundary
+futility_boundary
+inconclusive_boundary
+safety_boundary
+verification_policy
+```
 
-7. **Evidence Audit**
-   - Is the result frozen, exploratory, scan-selected, or a follow-up to a prior scan?
-   - Were zeros, nondetections, unsupported cases, or low-quality cases excluded, and does that change the claim?
-   - Were availability/support/footprint/missingness classes used only for diagnosis and stratification, or were they used to correct the response? If used for correction, what independent physical or instrumental justification supports that choice?
-   - Label supporting checks as same-data internal consistency, alternate proxy, alternate sample, external validation, simulation, or control.
+## 3. Round Report
 
-8. **Interpretation**
-   - What the result supports.
-   - What it does not prove.
-   - Main limitations.
+Include:
 
-9. **Decision**
-   - Continue, freeze, demote, reject, or ask for judgment.
-   - Next step if continuing.
-   - If the result is null, state whether the next action is mechanism demotion or formulation mutation, and why.
+1. **Question and claim card**: claim ID, type, mechanism, estimand, expected direction, minimum meaningful effect, supported sample, and frozen or exploratory status.
+2. **Inputs and lineage**: data, code, model, environment, versions, hashes when allowed, units, transformations, and parent round.
+3. **Governance**: permissions, restrictions, privacy controls, resource limits, and required oversight.
+4. **Method**: exact sample rules, formula or model, statistic, seed set, uncertainty plan, search-ledger entry, and planned falsifier.
+5. **Result**: effect, uncertainty, sensitivity, sample size, diagnostic paths, and practical or physical magnitude.
+6. **Falsification**: alternative explanation, expected outcomes, observed result, and status consequence.
+7. **Search and evidence audit**: all related attempts, data looks, multiplicity handling, and verification status.
+8. **Interpretation**: what is measured or supported, what is not proven, main systematics, literature context when needed, and limitations.
+9. **Decision**: canonical statuses, next action, reason, remaining budget, and next frozen question if continuing.
 
-## Minimal Inventory JSON
+## 4. Inventory
+
+Record actual values, not defaults:
 
 ```json
 {
-  "question": "",
-  "claim_type": "",
+  "run_id": "",
+  "round_id": "",
+  "parent_round_id": null,
+  "claim_ids": [],
   "inputs": [],
+  "code_state": {},
+  "environment": {},
+  "parameters": {},
+  "seed_set": [],
   "sample_counts": {},
-  "main_method": "",
-  "estimand": "",
-  "mechanism_status_before": "",
-  "mechanism_status_after": "",
+  "search_ledger_entries": [],
+  "uncertainty_components": [],
+  "governance_status": "",
+  "mechanism_status": "",
   "formulation_status": "",
-  "random_seed": 42,
-  "main_result": {},
-  "evidence_status": "",
-  "robustness_checks": [],
-  "decision": "",
+  "evidence_role": "",
+  "verification_status": "",
+  "next_action": "",
   "outputs": {}
 }
 ```
 
-## Reproducibility Checklist
+## 5. Summary and Diagnostics
 
-- Can another agent rebuild every plotted point?
-- Are missing, zero, and unsupported cases distinguished?
-- Was data availability checked before interpreting nondetections or missing matches?
-- Does every support flag or match definition have a unit-checked physical-scale audit?
-- Were support or missingness classes kept out of response correction unless independently justified?
-- Are random seeds and random counts recorded?
-- Are failed tests visible?
-- Is the claimed estimand the one actually computed?
-- Is a scan-selected result labeled as such?
-- Are internal consistency checks distinguished from independent validation?
-- If null, is it clear whether only the formulation failed or the broader mechanism is weakened?
-- Did the agent attempt a same-data formulation mutation before asking for user direction?
-- If raw observables failed structurally, did the agent complete or rule out a background/contrast redesign before declaring the mechanism exhausted?
-- Is the next step justified by the result?
+`summary.csv` must contain every tested formulation, including failed and invalid branches. Include claim ID, formulation ID, role, supported sample, effect, uncertainty, sensitivity, search status, canonical statuses, and main caveat.
+
+Create diagnostics only when they add reconstruction or audit value. Use CSV, Parquet, JSONL, or another suitable machine-readable format. For large or sensitive data, use aggregate, sampled, or de-identified diagnostics rather than copying raw records.
+
+Never include direct identifiers, unnecessary quasi-identifiers, credentials, restricted paths, or secrets. Record the transformation from raw to diagnostic data without exposing protected values.
+
+## 6. Reproduction Record
+
+Record exact commands or equivalent steps, code commit and dirty state, environment or dependency lock, hardware or numerical precision when relevant, seed set, and expected output paths.
+
+Redact tokens, passwords, signed links, private endpoints, personal identifiers, and confidential filesystem details. Use placeholders and document how an authorized user supplies them securely.
+
+## 7. Final Report
+
+Build the final report only from closed rounds. List:
+
+- strongest supported or provisionally supported candidate;
+- null, inconclusive, artifact, invalid, weakened, and rejected results;
+- active or data-limited candidates;
+- verification and replication status;
+- complete search scope and remaining multiplicity concerns;
+- dominant uncertainty and systematics;
+- governance or resource constraints;
+- what remains untested;
+- the exact data, approval, assumption, or resource required to continue.
+
+Complete the Trial Completion Gate in `references/round-gate-checklist.md`.

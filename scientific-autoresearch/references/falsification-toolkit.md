@@ -1,73 +1,84 @@
 # Falsification Toolkit
 
-Use checks that can genuinely change the conclusion.
+Choose checks that could change the conclusion. Distinguish falsification from generic specification robustness.
 
-## Randomization
+## Falsification Matrix
 
-- Shuffle labels or responses.
-- Randomize positions, times, identities, or pairings.
-- Preserve relevant structure such as redshift, exposure, batch, field, or support when needed.
+Register each important check before running it:
 
-## Matched Controls
+```text
+claim_or_mechanism
+main_alternative
+test_or_control
+prediction_under_claim
+prediction_under_alternative
+decision_consequence
+sensitivity_or_power
+result
+status_change
+```
 
-- Match on known confounders.
-- Compare against cases with similar support, quality, redshift, time, or instrument conditions.
-- Use random controls only if the random process represents the null hypothesis.
+A useful check has different expected outcomes under the claim and its main alternative. If every outcome can be rationalized as support, the claim is not falsifiable enough.
 
-## Jackknife and Influence
+## Randomization and Placebos
 
-- Leave one object/field/batch out.
-- Remove known special cases only if the criterion is stated.
-- Report whether sign, scale, or significance changes.
+- Shuffle labels, responses, positions, times, identities, or pairings according to the null-generating process.
+- Preserve field, site, batch, redshift, exposure, time, clustering, or other dependence when required.
+- Use placebo timing, locations, outcomes, or exposures that target the proposed pathway.
+- Use a random control only when the random process represents the scientific null.
 
-## Alternative Models
+## Matched and Negative Controls
 
-- Change baseline model.
-- Change calibration.
-- Change background estimate.
-- Change measurement aperture or window.
-- Change proxy formula within physically motivated bounds.
+- Match on predeclared confounders and support conditions.
+- Use negative-control outcomes or exposures to expose confounding, leakage, or selection.
+- Use positive controls to verify that the design can recover a known effect.
+- Keep control construction independent of the observed target result when possible.
 
-## Simulation and Injection
+## Influence and Stability
 
-- Generate mock data with no signal.
-- Generate mock data with known signal.
-- Inject synthetic features or effects into real backgrounds.
-- Test recovery, bias, and false-positive rate.
+- Leave one independent unit, site, field, batch, or time block out.
+- Report whether sign, scale, uncertainty, or status changes.
+- Remove special cases only under a predeclared criterion; otherwise report the analysis as exploratory.
+- Examine leverage and influence without deleting inconvenient cases.
 
-## Quality and Support Splits
+Influence analysis diagnoses dependence on cases. It is not independent verification.
 
-- High-quality subset.
-- Low-systematic subset.
-- Independent instrument/survey/batch.
-- Supported-only versus unsupported diagnostic.
+## Alternative Models and Measurements
 
-## Multiple Testing Discipline
+- Change a defensible baseline, calibration, background, likelihood, measurement method, scale, or proxy.
+- State which assumption the alternative tests.
+- Keep the estimand fixed when calling the change a robustness check.
+- If the estimand changes, create a new formulation ID.
 
-- Record the search space.
-- Save full grids when scanning.
-- Use max-stat or conservative language for broad searches.
-- Do not promote the winner without a physical reason.
+## Simulation, Injection, and Known Truth
+
+- Generate null data with the relevant dependence and support structure.
+- Generate known nonzero effects over a meaningful scale range.
+- Inject signals into realistic backgrounds.
+- Measure bias, coverage, calibration, false-positive rate, recovery, and failure regions.
+- Verify that the pipeline fails when the mechanism-specific component is removed.
+
+## Invariance and Conservation
+
+Test invariances, symmetries, units, conservation laws, monotonicity, or limiting behavior predicted by the claim. A violation may reveal implementation error or a false mechanism.
+
+## Multiple Testing and Adaptive Search
+
+- Record the full search space and all data looks.
+- Save complete grids, not only the winner.
+- Use a justified multiplicity or selective-inference method, or reserve sealed verification evidence.
+- Keep a scan winner exploratory until verified.
+- Do not use favorable physical storytelling as a substitute for selection control.
 
 ## Promotion Audit
 
-Before calling an exploratory branch a primary result:
+Before promotion, ask:
 
-- Restate the estimand in plain language.
-- State whether the result includes supported zeros or only nonzero/detected cases.
-- State which choices were fixed before seeing the result and which came from a scan.
-- Freeze the promoted formula, window, threshold, sample, and statistic for the next check.
-- Rank evidence by independence: same-data variant < alternate proxy < alternate sample < external validation.
-- Ask whether the strongest check could have made the candidate worse, not only whether it can agree.
+1. What exact result would have weakened the claim?
+2. Was the check frozen before the result it evaluates?
+3. Was support and sensitivity sufficient for the check to fail meaningfully?
+4. Does the check target the main alternative or only reproduce the same assumptions?
+5. Is the evidence same-data consistency, alternate proxy, alternate sample, holdout verification, simulation truth, or external replication?
+6. Did the candidate survive because the mechanism predicted the result, or because the explanation changed afterward?
 
-## Before Asking for Human Judgment
-
-Ask only after this checklist:
-
-- Does the next step require new data?
-- Does the next step change the scientific question?
-- Does the next step require a new scientific assumption rather than a new observable?
-- Are multiple interpretations equally plausible and impossible to separate with current data?
-- Has at least one same-data formulation mutation been attempted after a null?
-
-If the current data can support a better mechanism-matched observable, run that mutation first and document it as exploratory.
+Record the answer and its consequence for `mechanism_status`, `formulation_status`, and `verification_status`.

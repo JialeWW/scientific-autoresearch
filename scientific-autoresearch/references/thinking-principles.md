@@ -1,106 +1,51 @@
 # Thinking Principles
 
+Use these principles when mechanism framing is ambiguous, evidence conflicts, or the next decision is unclear.
+
 ## Mechanism Before Metric
 
-A useful scientific test begins with a proposed mechanism or explanation. A metric only matters after the mechanism is clear.
-
-Bad:
+Start with why an effect could occur and what it predicts. A metric matters only after the mechanism, estimand, support, and failure condition are clear.
 
 ```text
-Find the variable with the smallest p-value.
+If mechanism M contributes to outcome Y, then observable X should change in direction D, by a meaningful scale E, in supported sample S.
 ```
 
-Better:
+## Result Is Not Claim
 
-```text
-If mechanism M contributes to observable Y, then proxy X should change Y in direction D, within the supported sample S.
-```
+A result is a number, fit, feature, detection, or comparison. A claim states what that result changes. Verify that the computed estimand matches the sentence used to describe it.
 
-## Exploration Versus Confirmation
+## Exploration Is Not Confirmation
 
-Exploration is allowed. The danger is pretending exploration was confirmation.
-
-For exploratory steps:
-
-- Report the search space.
-- Save failed attempts.
-- Use conservative language.
-- Use follow-up tests to freeze the result.
-
-For confirmatory steps:
-
-- Predefine formula, sample, statistic, and main robustness checks.
-- Do not change them after seeing results unless the result is explicitly reclassified as exploratory.
-
-## Result Versus Claim
-
-A result is a number, fit, feature, detection, or comparison. A scientific claim says what that result changes.
-
-Before elevating a result:
-
-- Check that the computed estimand matches the sentence used to describe it.
-- Check whether removing zeros, nondetections, or unsupported cases narrowed the question.
-- Check whether the effect has a meaningful scale, not only a small p-value or high score.
-- Check whether agreement across variants is internal consistency or genuinely new evidence.
+Exploration is valuable when its search scope and failures remain visible. A data-dependent result becomes a frozen candidate for future verification, not a retrospective confirmatory result.
 
 ## Formulation Is Not Mechanism
 
-A mechanism can be plausible while one observable fails. A null result should be written as:
+A formulation combines a mechanism, observable, support definition, statistic, and analysis choices. A failed formulation may weaken a mechanism only when it was valid, adequately sensitive, and mechanism-matched.
 
-```text
-This formulation is unsupported under this sample and statistic.
-```
+## Support Is Part of the Science
 
-Do not write:
+Rows in a table are not automatically a testable sample. Separate cases that were not observed, observed but nondetected, observed and zero, censored, low quality, ineligible, or excluded by a frozen rule.
 
-```text
-This mechanism is false.
-```
+## Sensitivity Precedes Null Interpretation
 
-unless multiple mechanism-matched formulations, controls, and supported samples all fail or a decisive falsifier exists.
-
-Useful status split:
-
-- Mechanism status: active, weakened, support-limited, needs data, rejected.
-- Formulation status: untested, exploratory, null, artifact, primary candidate, frozen.
-
-## Support Is Science
-
-A sample is not just rows in a table. It is a set of cases where the claim can be tested.
-
-Always separate:
-
-- Not observed.
-- Observed but nondetected.
-- Observed and zero.
-- Observed but low quality.
-- Physically ineligible.
-- Excluded by predeclared rule.
-
-Many false discoveries come from confusing these categories.
+A small p-value is not a meaningful effect, and a large p-value is not evidence of absence. Compare uncertainty with the minimum meaningful effect and ask what the design could detect or exclude.
 
 ## Failure Modes Are Features
 
-Before running a test, name what could make it fail:
+Name selection, calibration, background, hidden covariates, leakage, outliers, flexible formulas, implementation errors, and proxy mismatch before testing. If no possible result can weaken the explanation, the claim is too vague.
 
-- A selection effect.
-- A calibration artifact.
-- A background model.
-- A hidden covariate.
-- A single outlier.
-- A flexible formula.
-- A mismatch between proxy and physical quantity.
+## Evidence Has Levels
 
-If no failure mode exists, the claim is too vague.
+Same-data consistency, alternate proxies, cross-validation, simulations, sealed holdouts, and external replication carry different evidential weight. Label them separately.
 
-## Stop Conditions
+## Negative Results Must Stay Visible
 
-Stop and ask for human judgment when:
+Preserve null, inconclusive, invalid, and failed branches. They constrain future search and prevent rediscovery of the same mistake.
 
-- The next step changes the scientific question.
-- The next step requires new data.
-- Multiple physical interpretations remain equally plausible.
-- The model can be tuned indefinitely.
-- The result is ready to freeze into a reproducible claim.
+## Autonomy Must Be Bounded
 
-Before stopping after a null, first ask whether a better observable can be constructed from the same data without changing the question. If yes, continue one documented mutation round.
+Freeze finite rounds, candidates, mutations, data looks, compute, and cost. Stop when progress needs new data, assumptions, authorization, or human judgment. Do not optimize until a favorable result appears.
+
+## Governance Is Not an Afterthought
+
+Scientific usefulness does not create authority. Respect data-use, privacy, ethics, safety, resource, and external-action boundaries before execution.

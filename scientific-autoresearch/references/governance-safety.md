@@ -9,7 +9,7 @@ Choose one or more classes:
 - local computation over ordinary existing data;
 - secondary analysis of confidential, personal, health, genomic, location, or otherwise sensitive data;
 - external data acquisition or access-controlled resources;
-- paid, shared, cluster, or high-impact computation;
+- resource-constrained, shared, paid, or high-impact computation;
 - prospective human-participant, animal, clinical, field, or wet-lab research;
 - hazardous, dual-use, environmental-release, device-control, or other safety-sensitive work;
 - external communication, publication, submission, deployment, or modification of shared systems.
@@ -44,7 +44,7 @@ If safe data handling cannot be established, set `governance_status=blocked` and
 Require explicit approval before:
 
 - downloading or purchasing new data;
-- submitting paid, cluster, cloud, or materially costly jobs;
+- submitting shared, paid, or materially costly computation;
 - contacting people or organizations;
 - publishing, uploading, submitting, deploying, or changing shared systems;
 - operating instruments, devices, robots, lab equipment, or field systems;
@@ -52,11 +52,11 @@ Require explicit approval before:
 
 Before requesting approval, provide the exact proposed action, target, expected duration or cost, scientific purpose, failure modes, rollback or stop mechanism, and outputs.
 
-For server, cluster, cloud, shared, paid, or otherwise nontrivial compute, one explicit authorization may cover several rounds. Record:
+For nontrivial computation, one explicit authorization may cover several rounds, regardless of execution or access method. Record:
 
 ```text
 compute_authorization_id
-authorized_system_account_or_project
+authorized_execution_context
 authorized_data
 allowed_job_classes
 maximum_concurrency
@@ -69,9 +69,9 @@ authorization_expiry
 monitoring_and_stop_mechanism
 ```
 
-Do not request renewed approval for registered coverage jobs wholly inside a valid envelope. Request it before changing systems, accounts, projects, data locations, job classes, costs, concurrency, duration, storage, network behavior, or external impact.
+Do not request renewed approval for registered coverage jobs wholly inside a valid envelope. Request it before changing the execution context, data scope, job class, cost, concurrency, duration, storage, network behavior, or external impact.
 
-An omitted envelope field is not unlimited permission. Resolve it from the documented approved launcher, account, project, scheduler, or institutional policy before submission; if no authoritative boundary exists, request clarification or renewed authorization.
+An omitted envelope field is not unlimited permission. Resolve it from the documented execution policy or responsible authority; if no authoritative boundary exists, request clarification or renewed authorization.
 
 Track cumulative and remaining use after each job. Resource exhaustion, service interruption, or envelope expiry creates `search_status=resource_limited_pause` when eligible cells remain. Preserve the open queue and resume conditions; do not call the inventory saturated or coverage complete.
 

@@ -52,7 +52,7 @@ Specify every addition before running it, assign a new formulation and coverage-
 
 Update the complete selection path, not only the final test count. A null-triggered proxy, sample, scale, threshold, model, or parameter change can affect generation, screening, ranking, and promotion even when it receives a new filename or code version. The Prior-exposure Audit remains in force.
 
-Do not add variants merely to find significance. Stop expanding a mechanism when no physically distinct observable or parameter regime remains supported by current data, later variants are only threshold nudges or duplicate proxies, the data cannot identify the distinction, or governance blocks the work.
+Do not add variants merely to find significance. Stop expanding a mechanism when no substantively distinct observable or parameter regime remains supported by current data, later variants are only threshold nudges or duplicate proxies, the data cannot identify the distinction, or governance blocks the work.
 
 Compute scarcity may defer valid cells, but it does not make the formulation space scientifically complete.
 

@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.2 - 2026-07-21
+
+- Added a pre-ranking substantive-eligibility and mechanism-alignment gate, while retaining scientifically justified constrained and factorial designs.
+- Separated target, analysis, selection, and reporting populations and required validated transport before cross-population promotion.
+- Added conditional measurement-error sensitivity before ranking or promotion whenever uncertainty can affect support or selection.
+- Required a prespecified mapping, validation, and discordance rule between screening statistics and decision- or prediction-scale evidence.
+- Generalized compute authorization and measurement-sensitivity rules across execution and access methods, without project-specific assumptions.
+- Upgraded the run validator to 1.4.0 with structured gates, non-overwriting schema initialization, legacy compatibility, and separate reporting of metadata consistency and numerical reproduction.
+
 ## 0.2.1 - 2026-07-20
 
 - Replaced fixed mechanism and round caps with a versioned mechanism inventory, finite data-supported coverage cells, and coverage-completion stopping.

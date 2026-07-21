@@ -7,9 +7,14 @@ Use this protocol whenever a search will generate, modify, compare, rank, retain
 Before candidate-specific outcomes are inspected, write `decision_contract.json`. Define:
 
 - the decision that the search is intended to support;
+- the target, analysis, selection, and reporting populations;
 - the candidate classes eligible for that decision;
+- the substantive eligibility rule applied before statistical ranking;
+- the measurement-error policy, including what makes a sensitivity analysis required;
+- the transportability requirement and the evidence needed to pass it;
 - the selection families within which candidates may be compared;
 - the evidence used for eligibility, ranking, falsification, and promotion;
+- the mapping from any screening statistic to the decision or prediction scale, including what happens when they disagree;
 - the decision rule that maps that evidence to an action or status;
 - the estimand and minimum scientifically meaningful difference;
 - how uncertainty, robustness, predictive adequacy, mechanistic specificity, complexity, and data quality enter the decision;
@@ -20,6 +25,12 @@ Before candidate-specific outcomes are inspected, write `decision_contract.json`
 - the freeze time, version, and conditions under which the contract may be amended.
 
 The contract may choose a frequentist, Bayesian, predictive, decision-theoretic, or hybrid rule, but it must be interpretable for the scientific question. The smallest nominal p-value is never a default ranking rule.
+
+Here, population means the scientific target domain, system class, distribution, or ensemble—not a particular dataset split. Record concrete support with `supported_sample_id`; train/test or discovery/verification partitions may share one population when they sample the same target definition.
+
+Substantive eligibility is a gate, not a post-result plausibility score. Freeze `mechanism_alignment` as `direct`, `calibrated_proxy`, `diagnostic_only`, `unsupported`, `not_assessed`, or `not_applicable`. Diagnostics and unsupported proxies remain in the record but cannot become a mechanistic or substantive leader through statistical strength alone.
+
+When screening and decision evidence differ, freeze one `evidence_scale_mapping` record per distinct family and screening-statistic relation: both statistics or models, their estimands and scales, the scale relation, the validation or calibration rule, and the discordance rule. A family may have multiple records for genuinely different screening statistics, but each `(selection_family_id, screening_statistic)` pair must have exactly one mapping. A `not_applicable` record is exclusive for its family and cannot coexist with an active mapping. A rank statistic can support monotone association while remaining silent about raw-scale slope, calibration, residual structure, or predictive loss. Unless a prespecified mapping is validated, a screen may prioritize execution but cannot substitute for the decision-scale test. Preserve disagreements and apply the frozen tie, inconclusive, parallel, or rejection rule rather than selecting whichever scale looks favorable.
 
 If the contract changes after outcome inspection, preserve the earlier version, record the trigger, mark the change `post_result_adaptive`, and treat decisions affected by the change as exploratory unless a valid adaptive procedure already covered it. If no contract existed before outcomes were viewed, the first retrospective contract is also `post_result_adaptive`; it cannot create a pre-result freeze retroactively.
 
@@ -56,6 +67,8 @@ Different target populations, supported samples, estimands, or materially differ
 1. prespecify and validate a transport, standardization, calibration, or common predictive-loss mapping;
 2. retain them as parallel conclusions; or
 3. label a promising but noncomparable result `support_limited_candidate`.
+
+Record the family fields separately rather than hiding them in an opaque key: target population, supported sample, estimand, data-quality regime, evidence stage, and transportability requirement and status. If analysis, selection, or reporting populations differ from the frozen target, validate the declared transport before a terminal ranking; otherwise report the result in parallel or as support limited. A result-inspired target change creates a new Decision Contract version and cannot replace the original decision.
 
 Do not create an artificial universal family across unrelated scientific decisions. Conversely, do not split one selection path into narrow families merely to avoid accounting for selection.
 
@@ -97,7 +110,7 @@ Priority is an execution property, not scientific evidence. When resources end, 
 
 At decision time:
 
-1. exclude candidates that fail eligibility or support requirements, without erasing them;
+1. exclude candidates that fail substantive alignment, required measurement-error sensitivity, support, or transportability gates, without erasing them;
 2. compare only within frozen, justified selection families;
 3. apply the declared selection-path inference;
 4. use the Decision Contract's ranking, tie, and inconclusive rules;

@@ -9,6 +9,7 @@ audit, data-version registry, status transitions, and stop-state claims.
 Usage:
     python validate_run.py RUN_DIR
     python validate_run.py RUN_DIR --output RUN_DIR/consistency_report.json
+    python validate_run.py --init RUN_DIR
     python validate_run.py --self-test
 """
 
@@ -20,6 +21,7 @@ import json
 import re
 import sys
 import tempfile
+import unicodedata
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -27,8 +29,10 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 
-VALIDATOR_VERSION = "1.3.0"
+VALIDATOR_VERSION = "1.4.0"
+ARTIFACT_SCHEMA_VERSION = "1.4.0"
 REPORT_SCHEMA_VERSION = "1.0"
+REQUIRED_SENTINEL = "__REQUIRED__"
 
 GOVERNANCE_STATUSES = {"not_assessed", "cleared", "restricted", "blocked"}
 EXECUTION_MODES = {"design_only", "single_round", "multi_round"}
@@ -141,6 +145,71 @@ TERMINAL_RUN_DECISION_STATUSES = {
     "inconclusive",
     "no_eligible_candidate",
 }
+PROMOTED_DECISION_STATUSES = {"eligible", "leading", "tie"}
+TRANSPORTABILITY_REQUIREMENTS = {
+    "same_population",
+    "validation_required",
+    "parallel_only",
+}
+TRANSPORTABILITY_STATUSES = {
+    "not_required",
+    "planned",
+    "passed",
+    "failed",
+    "inconclusive",
+}
+MECHANISM_ALIGNMENTS = {
+    "direct",
+    "calibrated_proxy",
+    "diagnostic_only",
+    "unsupported",
+    "not_assessed",
+    "not_applicable",
+}
+PROMOTABLE_MECHANISM_ALIGNMENTS = {"direct", "calibrated_proxy", "not_applicable"}
+DATA_SUPPORT_STATUSES = {
+    "supported",
+    "support_limited",
+    "diagnostic_only",
+    "unsupported",
+    "not_assessed",
+    "not_applicable",
+}
+COVERAGE_ELIGIBLE_MECHANISM_STATUSES = {
+    "active",
+    "provisionally_supported",
+    "weakened",
+}
+DECISION_ELIGIBLE_DATA_SUPPORT_STATUSES = {"supported"}
+MEASUREMENT_ERROR_SENSITIVITIES = {
+    "not_applicable",
+    "not_required",
+    "planned",
+    "passed",
+    "failed",
+    "inconclusive",
+}
+PROMOTABLE_MEASUREMENT_ERROR_SENSITIVITIES = {
+    "not_applicable",
+    "not_required",
+    "passed",
+}
+EVIDENCE_SCALE_RELATIONS = {
+    "same_scale",
+    "monotone_only",
+    "calibrated_mapping",
+    "separate_roles",
+    "not_applicable",
+}
+EVIDENCE_SCALE_MAPPING_FIELDS = {
+    "screening_statistic",
+    "screening_estimand_and_scale",
+    "decision_model_or_statistic",
+    "decision_estimand_and_scale",
+    "scale_relation",
+    "validation_or_calibration_rule",
+    "discordance_rule",
+}
 
 STATUS_VALUES = {
     "governance_status": GOVERNANCE_STATUSES,
@@ -160,6 +229,24 @@ STATUS_VALUES = {
     "decision_status": DECISION_STATUSES,
     "confirmatory_status": CONFIRMATORY_STATUSES,
     "future_verification_status": FUTURE_VERIFICATION_STATUSES,
+    "data_support_status": DATA_SUPPORT_STATUSES,
+    "mechanism_alignment": MECHANISM_ALIGNMENTS,
+    "measurement_error_sensitivity": MEASUREMENT_ERROR_SENSITIVITIES,
+    "transportability_requirement": TRANSPORTABILITY_REQUIREMENTS,
+    "transportability_status": TRANSPORTABILITY_STATUSES,
+}
+
+STRICT_TRANSITION_STATUS_FIELDS = {
+    "data_support_status",
+    "mechanism_alignment",
+    "measurement_error_sensitivity",
+    "transportability_requirement",
+    "transportability_status",
+}
+FROZEN_CLASSIFICATION_FIELDS = {
+    "data_support_status",
+    "mechanism_alignment",
+    "transportability_requirement",
 }
 
 # These maps reject scientifically impossible shortcuts while preserving
@@ -418,6 +505,30 @@ ALLOWED_STATUS_TRANSITIONS["comparability_status"] = {
 ALLOWED_STATUS_TRANSITIONS["comparison_status"] = ALLOWED_STATUS_TRANSITIONS[
     "comparability_status"
 ]
+ALLOWED_STATUS_TRANSITIONS["mechanism_alignment"] = {
+    state: set() for state in MECHANISM_ALIGNMENTS
+}
+ALLOWED_STATUS_TRANSITIONS["data_support_status"] = {
+    state: set() for state in DATA_SUPPORT_STATUSES
+}
+ALLOWED_STATUS_TRANSITIONS["transportability_requirement"] = {
+    state: set() for state in TRANSPORTABILITY_REQUIREMENTS
+}
+ALLOWED_STATUS_TRANSITIONS["measurement_error_sensitivity"] = {
+    "planned": {"passed", "failed", "inconclusive"},
+    "not_applicable": set(),
+    "not_required": set(),
+    "passed": set(),
+    "failed": set(),
+    "inconclusive": set(),
+}
+ALLOWED_STATUS_TRANSITIONS["transportability_status"] = {
+    "planned": {"passed", "failed", "inconclusive"},
+    "not_required": set(),
+    "passed": set(),
+    "failed": set(),
+    "inconclusive": set(),
+}
 
 INVENTORY_REQUIRED_FIELDS = {
     "inventory_version",
@@ -466,6 +577,30 @@ COVERAGE_REQUIRED_FIELDS = {
     "ledger_entry_ids",
 }
 COVERAGE_REQUIRED_COLUMNS = COVERAGE_REQUIRED_FIELDS | {"round_id", "blocker"}
+STRICT_COVERAGE_REQUIRED_FIELDS = {
+    "mechanism_alignment",
+    "measurement_error_sensitivity",
+}
+STRICT_DECISION_CONTRACT_FIELDS = {
+    "target_population",
+    "analysis_population",
+    "selection_population",
+    "reporting_population",
+    "substantive_eligibility_rule",
+    "measurement_error_policy",
+    "transportability_requirement",
+    "transportability_status",
+    "evidence_scale_mapping",
+}
+STRICT_SELECTION_FAMILY_FIELDS = {
+    "target_population",
+    "supported_sample_id",
+    "estimand",
+    "data_quality_regime",
+    "evidence_stage",
+    "transportability_requirement",
+    "transportability_status",
+}
 CANDIDATE_REQUIRED_FIELDS = {
     "candidate_id",
     "inventory_version",
@@ -506,6 +641,58 @@ EXECUTION_QUEUE_COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
         "resume_action",
     ),
 }
+INIT_CANONICAL_FILES = {
+    "run_manifest.json",
+    "decision_contract.json",
+    "prior_exposure_audit.json",
+    "data_versions.json",
+    "inventories/mechanism_inventory_v001.csv",
+    "inventories/coverage_matrix_v001.csv",
+    "inventories/saturation_audit_v001.json",
+    "search_ledger.jsonl",
+    "selection_families.json",
+    "execution_queue.csv",
+    "status_transitions.jsonl",
+    "candidate_registry.csv",
+    "rounds/round_000/report.md",
+    "rounds/round_000/inventory.json",
+    "rounds/round_000/summary.csv",
+    "rounds/round_000/reproduce_commands.txt",
+    "rounds/round_000/round_gate.md",
+    "consistency_report.json",
+}
+ROUND_SUMMARY_COLUMNS = (
+    "inventory_version",
+    "coverage_cell_id",
+    "mechanism_id",
+    "observable_id",
+    "formulation_id",
+    "mechanism_alignment",
+    "measurement_error_sensitivity",
+    "selection_family_id",
+    "selection_family_version",
+    "comparison_key",
+    "comparability_status",
+    "transportability_requirement",
+    "transportability_status",
+    "prior_exposure_status",
+    "data_support_status",
+    "effect_summary",
+    "uncertainty_summary",
+    "sensitivity_summary",
+    "specification_timing",
+    "evidence_stage",
+    "execution_tier",
+    "governance_status",
+    "inventory_status",
+    "coverage_status",
+    "search_status",
+    "execution_status",
+    "result_status",
+    "mechanism_status",
+    "verification_status",
+    "main_caveat",
+)
 
 
 @dataclass(frozen=True)
@@ -519,7 +706,15 @@ class Issue:
 
 
 def _blank(value: Any) -> bool:
-    return value is None or (isinstance(value, str) and not value.strip())
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return not value.strip() or value.strip() == REQUIRED_SENTINEL
+    if isinstance(value, Mapping) and value:
+        return all(_blank(item) for item in value.values())
+    if isinstance(value, (list, tuple, set)) and value:
+        return all(_blank(item) for item in value)
+    return False
 
 
 def _first(record: Mapping[str, Any], *keys: str, default: Any = None) -> Any:
@@ -571,6 +766,11 @@ def _ids(value: Any) -> list[str]:
     return [str(item).strip() for item in _list(value) if not _blank(item)]
 
 
+def _normalized_screening_statistic(value: Any) -> str:
+    text = unicodedata.normalize("NFKC", str(value or ""))
+    return re.sub(r"\s+", " ", text).strip().casefold()
+
+
 def _version(value: Any) -> str:
     text = str(value or "").strip().lower()
     text = re.sub(r"^version[_-]?", "", text)
@@ -578,6 +778,22 @@ def _version(value: Any) -> str:
     if text.isdigit():
         return str(int(text))
     return text
+
+
+def _parse_schema_version(value: Any) -> tuple[int, int, int] | None:
+    match = re.fullmatch(
+        r"v?(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:[-+][0-9A-Za-z.-]+)?",
+        str(value or "").strip(),
+    )
+    if not match:
+        return None
+    return tuple(int(part or 0) for part in match.groups())
+
+
+def _schema_at_least(value: Any, minimum: str) -> bool:
+    parsed = _parse_schema_version(value)
+    threshold = _parse_schema_version(minimum)
+    return parsed is not None and threshold is not None and parsed >= threshold
 
 
 def _lens(value: Any) -> str:
@@ -613,6 +829,7 @@ class RunValidator:
         self.csv_headers: dict[str, set[str]] = {}
         self.counts: dict[str, int] = {}
         self.manifest: dict[str, Any] = {}
+        self.strict_schema = False
         self.active_version = ""
         self.active_inventory: list[dict[str, str]] = []
         self.active_coverage: list[dict[str, str]] = []
@@ -810,6 +1027,7 @@ class RunValidator:
             "run_id": self.manifest.get("run_id"),
             "inventory_version": self.manifest.get("inventory_version"),
             "artifact_versions": {
+                "artifact_schema": self.manifest.get("artifact_schema_version"),
                 "inventory": self.manifest.get("inventory_version"),
                 "decision_contract": _first(
                     self.manifest,
@@ -872,6 +1090,23 @@ class RunValidator:
 
     def _validate_manifest(self) -> None:
         location = "run_manifest.json"
+        schema_value = self.manifest.get("artifact_schema_version")
+        parsed_schema = _parse_schema_version(schema_value)
+        self.strict_schema = _schema_at_least(
+            schema_value, ARTIFACT_SCHEMA_VERSION
+        )
+        if not _blank(schema_value) and parsed_schema is None:
+            self.error(
+                "invalid_artifact_schema_version",
+                location,
+                "artifact_schema_version must be a parseable semantic version such as '1.4.0'.",
+            )
+        elif not self.strict_schema:
+            self.warn(
+                "legacy_artifact_schema",
+                location,
+                f"Artifact schema {ARTIFACT_SCHEMA_VERSION} gates were not checked; keep the run legacy or migrate its current artifacts before declaring artifact_schema_version>={ARTIFACT_SCHEMA_VERSION}.",
+            )
         self._required(
             self.manifest,
             location,
@@ -1076,12 +1311,28 @@ class RunValidator:
                 location,
                 "specification_timing",
             )
-            self._status(
+            mechanism_status = self._status(
                 row.get("mechanism_status"),
                 MECHANISM_STATUSES,
                 location,
                 "mechanism_status",
             )
+            if self.strict_schema:
+                data_support = self._status(
+                    row.get("data_support_status"),
+                    DATA_SUPPORT_STATUSES,
+                    location,
+                    "data_support_status",
+                )
+                if (
+                    mechanism_status == "needs_data"
+                    and data_support in {"supported", "not_assessed"}
+                ):
+                    self.error(
+                        "invalid_mechanism_data_support_pair",
+                        location,
+                        "mechanism_status='needs_data' requires an assessed noneligible data-support classification, not 'supported' or 'not_assessed'.",
+                    )
             for product_id in _ids(row.get("required_data_products")):
                 if product_id not in data_products:
                     self.error(
@@ -1112,7 +1363,13 @@ class RunValidator:
                 )
 
     def _validate_coverage(self) -> None:
-        self._validate_versioned_headers("coverage_matrix_", COVERAGE_REQUIRED_COLUMNS)
+        required_columns = COVERAGE_REQUIRED_COLUMNS | (
+            STRICT_COVERAGE_REQUIRED_FIELDS if self.strict_schema else set()
+        )
+        required_fields = COVERAGE_REQUIRED_FIELDS | (
+            STRICT_COVERAGE_REQUIRED_FIELDS if self.strict_schema else set()
+        )
+        self._validate_versioned_headers("coverage_matrix_", required_columns)
         mechanism_ids_by_version: dict[str, set[str]] = defaultdict(set)
         for row in self.all_inventory:
             mechanism_ids_by_version[row.get("__file_version__", "")].add(
@@ -1132,7 +1389,7 @@ class RunValidator:
             if status_raw.startswith("covered_by:"):
                 row["covered_by_cell_id"] = status_raw.split(":", 1)[1].strip()
                 row["coverage_status"] = "covered_by"
-            self._required(row, location, COVERAGE_REQUIRED_FIELDS)
+            self._required(row, location, required_fields)
             file_version = row.get("__file_version__", "")
             row_version = _version(row.get("inventory_version"))
             if row_version != file_version:
@@ -1207,6 +1464,19 @@ class RunValidator:
             self._status(
                 row.get("execution_tier"), EXECUTION_TIERS, location, "execution_tier"
             )
+            if self.strict_schema:
+                self._status(
+                    row.get("mechanism_alignment"),
+                    MECHANISM_ALIGNMENTS,
+                    location,
+                    "mechanism_alignment",
+                )
+                self._status(
+                    row.get("measurement_error_sensitivity"),
+                    MEASUREMENT_ERROR_SENSITIVITIES,
+                    location,
+                    "measurement_error_sensitivity",
+                )
 
             valid_results = {"supported", "null", "inconclusive", "artifact"}
             if coverage_status == "tested_valid":
@@ -1485,6 +1755,30 @@ class RunValidator:
             return _comparison_key_value(components)
         return ""
 
+    def _family_transport_gate(
+        self, family: Mapping[str, Any] | None
+    ) -> tuple[bool, str]:
+        if family is None:
+            return False, "selection-family record is missing"
+        requirement = str(family.get("transportability_requirement", "")).strip()
+        status = str(family.get("transportability_status", "")).strip()
+        same_target = _comparison_key_value(family.get("target_population")) == (
+            _comparison_key_value(self.decision_contract.get("target_population"))
+        )
+        if requirement == "same_population":
+            if not same_target:
+                return False, "family and decision target populations differ"
+            if status != "not_required":
+                return False, "same_population requires transportability_status=not_required"
+            return True, ""
+        if requirement == "validation_required":
+            if status != "passed":
+                return False, "required transport validation has not passed"
+            return True, ""
+        if requirement == "parallel_only":
+            return False, "parallel_only families cannot enter the decision"
+        return False, "transportability requirement is missing or invalid"
+
     def _validate_selection_families(self) -> None:
         known_cell_ids = {row.get("coverage_cell_id", "") for row in self.all_coverage}
         ledger_by_id = {
@@ -1562,6 +1856,69 @@ class RunValidator:
             self._require_one(family, location, "inference method or policy", ("inference_method", "inference_policy", "adaptive_inference_policy"))
             status = str(_first(family, "comparison_status", "comparability_status", default="")).strip()
             self._status(status, COMPARISON_STATUSES, location, "comparison_status")
+            if self.strict_schema:
+                self._required(family, location, STRICT_SELECTION_FAMILY_FIELDS)
+                self._status(
+                    family.get("evidence_stage"),
+                    EVIDENCE_STAGES,
+                    location,
+                    "evidence_stage",
+                )
+                requirement = self._status(
+                    family.get("transportability_requirement"),
+                    TRANSPORTABILITY_REQUIREMENTS,
+                    location,
+                    "transportability_requirement",
+                )
+                transport_status = self._status(
+                    family.get("transportability_status"),
+                    TRANSPORTABILITY_STATUSES,
+                    location,
+                    "transportability_status",
+                )
+                decision_target = self.decision_contract.get("target_population")
+                family_target = family.get("target_population")
+                if requirement == "same_population":
+                    if (
+                        role == "current"
+                        and not _blank(decision_target)
+                        and _comparison_key_value(family_target)
+                        != _comparison_key_value(decision_target)
+                    ):
+                        self.error(
+                            "family_same_population_mismatch",
+                            location,
+                            "same_population is invalid when family and Decision Contract target populations differ.",
+                        )
+                    if transport_status != "not_required":
+                        self.error(
+                            "invalid_family_transportability_status",
+                            location,
+                            "same_population requires transportability_status=not_required.",
+                        )
+                if requirement == "validation_required" and transport_status == "not_required":
+                    self.error(
+                        "invalid_family_transportability_status",
+                        location,
+                        "validation_required cannot use transportability_status=not_required.",
+                    )
+                if requirement == "parallel_only":
+                    if transport_status != "not_required":
+                        self.error(
+                            "invalid_family_transportability_status",
+                            location,
+                            "parallel_only requires transportability_status=not_required.",
+                        )
+                    if status not in {
+                        "parallel_conclusion",
+                        "support_limited_candidate",
+                        "not_eligible_for_decision",
+                    }:
+                        self.error(
+                            "parallel_only_family_comparable",
+                            location,
+                            "parallel_only family must remain parallel, support-limited, or not eligible for the decision.",
+                        )
             if status == "comparable_within_family" and not self._comparison_key(family):
                 self.error("missing_comparison_key", location, "Comparable family requires a comparison key or all comparison-key components.")
 
@@ -1841,6 +2198,247 @@ class RunValidator:
         self._require_one(self.decision_contract, location, "freeze time", ("frozen_at", "freeze_time"))
         self._require_one(self.decision_contract, location, "amendment policy", ("amendment_policy", "contract_amendment_policy"))
 
+        if self.strict_schema:
+            self._required(
+                self.decision_contract, location, STRICT_DECISION_CONTRACT_FIELDS
+            )
+            scale_mapping = self.decision_contract.get("evidence_scale_mapping")
+            if not _blank(scale_mapping):
+                if isinstance(scale_mapping, Mapping):
+                    scale_mappings = [scale_mapping]
+                elif isinstance(scale_mapping, list) and scale_mapping:
+                    scale_mappings = scale_mapping
+                else:
+                    scale_mappings = []
+                    self.error(
+                        "invalid_evidence_scale_mapping",
+                        location,
+                        "evidence_scale_mapping must be one object or a nonempty list of objects.",
+                    )
+                for index, mapping in enumerate(scale_mappings, start=1):
+                    mapping_location = (
+                        f"{location}#evidence_scale_mapping[{index}]"
+                        if isinstance(scale_mapping, list)
+                        else f"{location}#evidence_scale_mapping"
+                    )
+                    if not isinstance(mapping, Mapping):
+                        self.error(
+                            "invalid_evidence_scale_mapping",
+                            mapping_location,
+                            "Each evidence-scale mapping must be an object.",
+                        )
+                        continue
+                    scale_relation = str(
+                        mapping.get("scale_relation", "")
+                    ).strip()
+                    required_scale_fields = (
+                        {"scale_relation", "reason"}
+                        if scale_relation == "not_applicable"
+                        else EVIDENCE_SCALE_MAPPING_FIELDS
+                    )
+                    missing_scale_fields = sorted(
+                        field
+                        for field in required_scale_fields
+                        if _blank(mapping.get(field))
+                    )
+                    if missing_scale_fields:
+                        self.error(
+                            "incomplete_evidence_scale_mapping",
+                            mapping_location,
+                            f"Evidence-scale mapping has blank or missing fields {missing_scale_fields}.",
+                        )
+                    if (
+                        not _blank(scale_relation)
+                        and scale_relation not in EVIDENCE_SCALE_RELATIONS
+                    ):
+                        self.error(
+                            "invalid_evidence_scale_relation",
+                            mapping_location,
+                            f"scale_relation={scale_relation!r} is not one of {sorted(EVIDENCE_SCALE_RELATIONS)}.",
+                        )
+                if isinstance(scale_mapping, list) and len(scale_mapping) > 1:
+                    eligible_families, declared_families, _ = (
+                        self._contract_selection_family_policy()
+                    )
+                    mapping_ids: set[str] = set()
+                    mapped_families: set[str] = set()
+                    mapping_scopes_by_family: dict[
+                        str, list[tuple[str, str]]
+                    ] = defaultdict(list)
+                    active_scopes_by_family_and_statistic: dict[
+                        tuple[str, str], list[str]
+                    ] = defaultdict(list)
+                    for index, mapping in enumerate(scale_mappings, start=1):
+                        if not isinstance(mapping, Mapping):
+                            continue
+                        mapping_location = (
+                            f"{location}#evidence_scale_mapping[{index}]"
+                        )
+                        mapping_id = str(mapping.get("mapping_id", "")).strip()
+                        family_ids = set(_ids(mapping.get("selection_family_ids")))
+                        if _blank(mapping_id) or not family_ids:
+                            self.error(
+                                "incomplete_evidence_scale_mapping_scope",
+                                mapping_location,
+                                "Multiple mappings require a nonempty mapping_id and selection_family_ids.",
+                            )
+                        elif mapping_id in mapping_ids:
+                            self.error(
+                                "duplicate_evidence_scale_mapping_id",
+                                mapping_location,
+                                f"mapping_id {mapping_id!r} is duplicated.",
+                            )
+                        else:
+                            mapping_ids.add(mapping_id)
+                        scope_label = mapping_id or f"mapping[{index}]"
+                        scale_relation = str(
+                            mapping.get("scale_relation", "")
+                        ).strip()
+                        normalized_statistic = _normalized_screening_statistic(
+                            mapping.get("screening_statistic")
+                        )
+                        for family_id in family_ids:
+                            mapping_scopes_by_family[family_id].append(
+                                (scope_label, scale_relation)
+                            )
+                            if (
+                                scale_relation != "not_applicable"
+                                and normalized_statistic
+                            ):
+                                active_scopes_by_family_and_statistic[
+                                    (family_id, normalized_statistic)
+                                ].append(scope_label)
+                        unknown_families = family_ids - declared_families
+                        if unknown_families:
+                            self.error(
+                                "unknown_evidence_scale_mapping_family",
+                                mapping_location,
+                                f"Mapping references undeclared selection families {sorted(unknown_families)}.",
+                            )
+                        mapped_families.update(family_ids & eligible_families)
+                    for (
+                        family_id,
+                        normalized_statistic,
+                    ), scope_labels in active_scopes_by_family_and_statistic.items():
+                        if len(scope_labels) > 1:
+                            self.error(
+                                "ambiguous_evidence_scale_mapping_scope",
+                                location,
+                                "Selection family "
+                                f"{family_id!r} has multiple mappings for normalized "
+                                f"screening_statistic={normalized_statistic!r}: "
+                                f"{scope_labels}.",
+                            )
+                    for family_id, scopes in mapping_scopes_by_family.items():
+                        if len(scopes) > 1 and any(
+                            relation == "not_applicable" for _, relation in scopes
+                        ):
+                            self.error(
+                                "ambiguous_evidence_scale_mapping_scope",
+                                location,
+                                "Selection family "
+                                f"{family_id!r} has a not_applicable mapping together "
+                                f"with another mapping: {[label for label, _ in scopes]}.",
+                            )
+                    unmapped_families = eligible_families - mapped_families
+                    if unmapped_families:
+                        self.error(
+                            "unmapped_eligible_selection_family",
+                            location,
+                            f"Eligible selection families lack an evidence-scale mapping: {sorted(unmapped_families)}.",
+                        )
+                elif scale_mappings and isinstance(scale_mappings[0], Mapping):
+                    mapping = scale_mappings[0]
+                    if "selection_family_ids" in mapping:
+                        eligible_families, declared_families, _ = (
+                            self._contract_selection_family_policy()
+                        )
+                        family_ids = set(_ids(mapping.get("selection_family_ids")))
+                        mapping_location = (
+                            f"{location}#evidence_scale_mapping[1]"
+                            if isinstance(scale_mapping, list)
+                            else f"{location}#evidence_scale_mapping"
+                        )
+                        unknown_families = family_ids - declared_families
+                        if unknown_families:
+                            self.error(
+                                "unknown_evidence_scale_mapping_family",
+                                mapping_location,
+                                f"Mapping references undeclared selection families {sorted(unknown_families)}.",
+                            )
+                        unmapped_families = eligible_families - (
+                            family_ids & eligible_families
+                        )
+                        if unmapped_families:
+                            self.error(
+                                "unmapped_eligible_selection_family",
+                                location,
+                                f"Eligible selection families lack an evidence-scale mapping: {sorted(unmapped_families)}.",
+                            )
+            requirement = self._status(
+                self.decision_contract.get("transportability_requirement"),
+                TRANSPORTABILITY_REQUIREMENTS,
+                location,
+                "transportability_requirement",
+            )
+            transport_status = self._status(
+                self.decision_contract.get("transportability_status"),
+                TRANSPORTABILITY_STATUSES,
+                location,
+                "transportability_status",
+            )
+            populations = {
+                _comparison_key_value(self.decision_contract.get(field))
+                for field in (
+                    "target_population",
+                    "analysis_population",
+                    "selection_population",
+                    "reporting_population",
+                )
+            }
+            if requirement == "same_population":
+                if len(populations) != 1:
+                    self.error(
+                        "same_population_mismatch",
+                        location,
+                        "same_population requires identical target, analysis, selection, and reporting populations.",
+                    )
+                if transport_status != "not_required":
+                    self.error(
+                        "invalid_transportability_status",
+                        location,
+                        "same_population requires transportability_status=not_required.",
+                    )
+            if requirement == "validation_required" and transport_status == "not_required":
+                self.error(
+                    "invalid_transportability_status",
+                    location,
+                    "validation_required cannot use transportability_status=not_required.",
+                )
+            if requirement == "parallel_only" and transport_status != "not_required":
+                self.error(
+                    "invalid_transportability_status",
+                    location,
+                    "parallel_only requires transportability_status=not_required.",
+                )
+            run_decision = str(self.manifest.get("decision_status", "")).strip()
+            if (
+                requirement == "validation_required"
+                and run_decision in {"leading", "tie"}
+                and transport_status != "passed"
+            ):
+                self.error(
+                    "transport_validation_not_passed",
+                    location,
+                    "A terminal leading or tie decision requires passed transport validation.",
+                )
+            if requirement == "parallel_only" and run_decision in {"leading", "tie"}:
+                self.error(
+                    "parallel_only_terminal_decision",
+                    location,
+                    "parallel_only cannot yield a terminal leading or tie decision.",
+                )
+
         manifest_version = _first(self.manifest, "decision_contract_version", "decision_contract_id")
         contract_version = _first(self.decision_contract, "decision_contract_version", "contract_version", "decision_contract_id")
         if not _blank(manifest_version) and not _blank(contract_version) and str(manifest_version) != str(contract_version):
@@ -2097,6 +2695,10 @@ class RunValidator:
             (row.get("__file_version__", ""), row.get("mechanism_id", ""))
             for row in self.all_inventory
         }
+        inventory_by_key = {
+            (row.get("__file_version__", ""), row.get("mechanism_id", "")): row
+            for row in self.all_inventory
+        }
         coverage_cells = {
             (row.get("__file_version__", ""), row.get("coverage_cell_id", "")): row
             for row in self.all_coverage
@@ -2150,6 +2752,7 @@ class RunValidator:
                     f"mechanism_id {mechanism_id!r} is absent from inventory version {version!r}.",
                 )
             candidate_cell_ids = _ids(row.get("coverage_cell_ids"))
+            candidate_coverage_rows: list[dict[str, str]] = []
             for cell_id in candidate_cell_ids:
                 coverage_row = coverage_cells.get((version, cell_id))
                 if coverage_row is None:
@@ -2159,6 +2762,7 @@ class RunValidator:
                         f"coverage cell {cell_id!r} is absent from inventory version {version!r}.",
                     )
                     continue
+                candidate_coverage_rows.append(coverage_row)
                 if coverage_row.get("selection_family_id") != family_id:
                     self.error(
                         "candidate_coverage_family_mismatch",
@@ -2281,7 +2885,7 @@ class RunValidator:
             )
             if (
                 active_candidate
-                and decision in {"eligible", "leading", "tie"}
+                and decision in PROMOTED_DECISION_STATUSES
                 and family_id not in eligible_family_ids
             ):
                 self.error(
@@ -2289,6 +2893,45 @@ class RunValidator:
                     row_location,
                     f"Candidate decision_status={decision!r} requires family {family_id!r} in eligible_selection_family_ids.",
                 )
+            if self.strict_schema and decision in PROMOTED_DECISION_STATUSES:
+                inventory_row = inventory_by_key.get((version, mechanism_id))
+                data_support = (
+                    str(inventory_row.get("data_support_status", "")).strip()
+                    if inventory_row is not None
+                    else ""
+                )
+                if data_support not in DECISION_ELIGIBLE_DATA_SUPPORT_STATUSES:
+                    self.error(
+                        "candidate_data_support_gate_failed",
+                        row_location,
+                        f"Candidate cannot be promoted with data_support_status={data_support!r}; direct decision eligibility requires 'supported'.",
+                    )
+                for coverage_row in candidate_coverage_rows:
+                    cell_id = coverage_row.get("coverage_cell_id", "")
+                    alignment = coverage_row.get("mechanism_alignment", "")
+                    if alignment not in PROMOTABLE_MECHANISM_ALIGNMENTS:
+                        self.error(
+                            "candidate_mechanism_alignment_gate_failed",
+                            row_location,
+                            f"Candidate cannot be promoted from coverage cell {cell_id!r} with mechanism_alignment={alignment!r}.",
+                        )
+                    sensitivity = coverage_row.get(
+                        "measurement_error_sensitivity", ""
+                    )
+                    if sensitivity not in PROMOTABLE_MEASUREMENT_ERROR_SENSITIVITIES:
+                        self.error(
+                            "candidate_measurement_error_gate_failed",
+                            row_location,
+                            f"Candidate cannot be promoted from coverage cell {cell_id!r} with measurement_error_sensitivity={sensitivity!r}.",
+                        )
+                if active_candidate:
+                    transport_passed, reason = self._family_transport_gate(family)
+                    if not transport_passed:
+                        self.error(
+                            "candidate_family_transport_gate_failed",
+                            row_location,
+                            f"Candidate cannot be promoted because its family transport gate failed: {reason}.",
+                        )
 
             candidate_key = _comparison_key_value(row.get("comparison_key"))
             family_key = self._comparison_key(family) if family is not None else ""
@@ -2496,6 +3139,9 @@ class RunValidator:
 
         chains: dict[tuple[str, str, str, str], str] = {}
         final_states: dict[tuple[str, str, str, str], str] = {}
+        final_transition_records: dict[
+            tuple[str, str, str, str], Mapping[str, Any]
+        ] = {}
         transition_ids: set[str] = set()
         for index, transition in enumerate(transitions, start=1):
             location = transition.get("__source__", f"transition {index}")
@@ -2547,6 +3193,8 @@ class RunValidator:
             if not any(key in transition for key in ("evidence_paths", "artifact_paths", "evidence_artifacts")):
                 self.error("transition_without_evidence_paths", location, "Transition must explicitly record evidence paths, even when the list is empty.")
             allowed = STATUS_VALUES.get(field)
+            if field in STRICT_TRANSITION_STATUS_FIELDS and not self.strict_schema:
+                allowed = None
             if allowed is None:
                 self.warn("unknown_transition_field", location, f"No canonical status vocabulary is registered for {field!r}.")
             else:
@@ -2563,16 +3211,22 @@ class RunValidator:
                             f"{field} transition must change state; both values are {old!r}.",
                         )
                     elif new not in transition_map.get(old, set()):
+                        version_note = (
+                            " This classification is frozen; record a changed value in a successor version."
+                            if field in FROZEN_CLASSIFICATION_FIELDS
+                            else ""
+                        )
                         self.error(
                             "illegal_status_transition",
                             location,
-                            f"Illegal {field} transition {old!r} -> {new!r}.",
+                            f"Illegal {field} transition {old!r} -> {new!r}.{version_note}",
                         )
             key = (entity_type, entity_id, field, transition_version)
             if key in chains and old != chains[key]:
                 self.error("broken_transition_chain", location, f"Transition starts at {old!r}, but previous state was {chains[key]!r}.")
             chains[key] = new
             final_states[key] = new
+            final_transition_records[key] = transition
 
         run_id = str(self.manifest.get("run_id", ""))
         for key, final in final_states.items():
@@ -2600,6 +3254,43 @@ class RunValidator:
                 row = next((item for item in self.active_coverage if item.get("coverage_cell_id") == entity_id), None)
                 if row and field in row:
                     current = str(row.get(field, ""))
+            elif transition_version == self.active_version and entity_type in {
+                "selection_family",
+                "selection-family",
+                "family",
+            }:
+                transition = final_transition_records[key]
+                requested_family_version = str(
+                    _first(
+                        transition,
+                        "selection_family_version",
+                        "family_version",
+                        "entity_version",
+                        default="",
+                    )
+                ).strip()
+                family = next(
+                    (
+                        item
+                        for item in self.families
+                        if self._family_id(item) == entity_id
+                        and (
+                            not requested_family_version
+                            or str(
+                                _first(
+                                    item,
+                                    "selection_family_version",
+                                    "family_version",
+                                    default="",
+                                )
+                            ).strip()
+                            == requested_family_version
+                        )
+                    ),
+                    None,
+                )
+                if family and field in family:
+                    current = str(family.get(field, ""))
             if current is not None and current != final:
                 self.error("transition_final_state_mismatch", "status transitions", f"Final transition for {key!r} is {final!r}, current artifact says {current!r}.")
 
@@ -2723,7 +3414,10 @@ class RunValidator:
     def _validate_completion_and_pause(self) -> None:
         closed = [row for row in self.active_coverage if row.get("coverage_status") in CLOSED_COVERAGE_STATUSES]
         open_rows = [row for row in self.active_coverage if row.get("coverage_status") not in CLOSED_COVERAGE_STATUSES]
-        computed_complete = not open_rows
+        computed_complete = not open_rows and (
+            bool(self.active_coverage)
+            or self.manifest.get("inventory_status") == "saturated"
+        )
         manifest_complete = _bool(self.manifest.get("coverage_complete"))
         inventory_saturated = _bool(self.manifest.get("inventory_saturated"))
         ledger_audited = _bool(self.manifest.get("search_ledger_audited"))
@@ -2732,6 +3426,103 @@ class RunValidator:
         search_status = self.manifest.get("search_status")
         self.counts["closed_coverage_cells"] = len(closed)
         self.counts["open_coverage_cells"] = len(open_rows)
+
+        if (
+            self.strict_schema
+            and self.manifest.get("inventory_status") == "saturated"
+            and manifest_complete is True
+        ):
+            covered_mechanism_ids = {
+                str(row.get("mechanism_id", "")).strip()
+                for row in self.active_coverage
+                if not _blank(row.get("mechanism_id"))
+            }
+            preserved_coverage_by_key = {
+                (
+                    str(row.get("__file_version__", "")),
+                    str(row.get("coverage_cell_id", "")).strip(),
+                ): row
+                for row in self.all_coverage
+                if not _blank(row.get("coverage_cell_id"))
+            }
+
+            def has_closed_rejection_evidence(
+                coverage_row: Mapping[str, Any],
+                seen: set[tuple[str, str]] | None = None,
+            ) -> bool:
+                status = str(coverage_row.get("coverage_status", ""))
+                if status == "tested_valid":
+                    return True
+                if status != "covered_by":
+                    return False
+                source_key = (
+                    str(coverage_row.get("__file_version__", "")),
+                    str(coverage_row.get("coverage_cell_id", "")).strip(),
+                )
+                visited = set(seen or set())
+                if source_key in visited:
+                    return False
+                visited.add(source_key)
+                target_id = str(
+                    _first(
+                        coverage_row,
+                        "covered_by_cell_id",
+                        "coverage_equivalent_to",
+                        default="",
+                    )
+                ).strip()
+                target = preserved_coverage_by_key.get(
+                    (source_key[0], target_id)
+                )
+                return target is not None and has_closed_rejection_evidence(
+                    target, visited
+                )
+
+            rejection_evidence_mechanism_ids = {
+                str(row.get("mechanism_id", "")).strip()
+                for row in self.all_coverage
+                if not _blank(row.get("mechanism_id"))
+                and has_closed_rejection_evidence(row)
+            }
+            for row in self.active_inventory:
+                mechanism_id = str(row.get("mechanism_id", "")).strip()
+                data_support = _lens(row.get("data_support_status"))
+                mechanism_status = str(row.get("mechanism_status", "")).strip()
+                requires_coverage = (
+                    bool(mechanism_id)
+                    and mechanism_status in COVERAGE_ELIGIBLE_MECHANISM_STATUSES
+                    and _blank(row.get("duplicate_of"))
+                )
+                if requires_coverage and mechanism_id not in covered_mechanism_ids:
+                    self.error(
+                        "eligible_mechanism_without_coverage",
+                        row.get("__source__", "active mechanism inventory"),
+                        f"Active, nonduplicate mechanism {mechanism_id!r} has no finite coverage cell in the active inventory version.",
+                    )
+                if (
+                    mechanism_status == "rejected"
+                    and mechanism_id
+                    and mechanism_id not in rejection_evidence_mechanism_ids
+                ):
+                    self.error(
+                        "rejected_mechanism_without_coverage_history",
+                        row.get("__source__", "active mechanism inventory"),
+                        f"Rejected mechanism {mechanism_id!r} has no preserved tested_valid coverage or covered_by chain to tested_valid evidence.",
+                    )
+                if mechanism_status == "needs_human_judgment":
+                    self.error(
+                        "unresolved_human_judgment_at_completion",
+                        row.get("__source__", "active mechanism inventory"),
+                        f"Mechanism {mechanism_id!r} still needs human judgment and cannot be included in saturated coverage completion.",
+                    )
+                if data_support == "not_assessed" and _blank(
+                    row.get("duplicate_of")
+                ):
+                    self.error(
+                        "unresolved_data_support_at_completion",
+                        row.get("__source__", "active mechanism inventory"),
+                        f"Mechanism {mechanism_id!r} has data_support_status='not_assessed' at saturated coverage completion.",
+                    )
 
         if manifest_complete is not None and manifest_complete != computed_complete:
             self.error(
@@ -2850,10 +3641,299 @@ def _write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def initialize_run(run_dir: Path) -> dict[str, Any]:
+    root = run_dir.resolve()
+    if root.exists():
+        if not root.is_dir():
+            return {
+                "init": "refused",
+                "run_directory": str(root),
+                "reason": "Target exists and is not a directory.",
+            }
+        try:
+            if any(root.iterdir()):
+                return {
+                    "init": "refused",
+                    "run_directory": str(root),
+                    "reason": "Target directory is not empty; no files were changed.",
+                }
+        except OSError as exc:
+            return {
+                "init": "failed",
+                "run_directory": str(root),
+                "reason": f"Cannot inspect target directory: {exc}",
+            }
+    else:
+        try:
+            root.mkdir(parents=True, exist_ok=False)
+        except OSError as exc:
+            return {
+                "init": "failed",
+                "run_directory": str(root),
+                "reason": f"Cannot create target directory: {exc}",
+            }
+
+    created_at = datetime.now(timezone.utc).isoformat()
+    run_id = root.name or "TODO-run-id"
+    todo = REQUIRED_SENTINEL
+    created: list[str] = []
+
+    def write_text(relative: str, payload: str) -> None:
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("x", encoding="utf-8", newline="") as handle:
+            handle.write(payload)
+        created.append(relative)
+
+    def write_json(relative: str, value: Any) -> None:
+        write_text(relative, json.dumps(value, ensure_ascii=False, indent=2) + "\n")
+
+    def write_jsonl(relative: str, rows: Sequence[Mapping[str, Any]]) -> None:
+        write_text(relative, "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows))
+
+    def write_csv(
+        relative: str,
+        fieldnames: Sequence[str],
+        rows: Sequence[Mapping[str, Any]] = (),
+    ) -> None:
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("x", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+        created.append(relative)
+
+    manifest = {
+        "run_id": run_id,
+        "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
+        "question": todo,
+        "scientific_scope": todo,
+        "execution_mode": "design_only",
+        "created_at": created_at,
+        "output_root": str(root),
+        "governance_status": "not_assessed",
+        "authorized_inputs": [todo],
+        "authorized_actions": [todo],
+        "prohibited_actions": [todo],
+        "data_product_scope": [todo],
+        "data_versions_file": "data_versions.json",
+        "data_version_set_id": "data-v001",
+        "decision_contract_version": "dc-v001",
+        "prior_exposure_audit_version": "pe-v001",
+        "inventory_version": "v001",
+        "inventory_status": "draft",
+        "search_status": "inventory_building",
+        "inventory_saturated": False,
+        "coverage_complete": False,
+        "search_ledger_audited": False,
+        "decision_contract_applied": False,
+        "decision_status": "not_evaluated",
+        "inventory_audit_protocol": todo,
+        "inventory_generation_lenses": [
+            "mechanism_forward",
+            "data_product_reverse",
+        ],
+        "coverage_unit_definition": todo,
+        "coverage_closure_rules": sorted(CLOSED_COVERAGE_STATUSES),
+        "saturation_rule": todo,
+        "saturation_required_sources": [
+            "mechanism_forward",
+            "data_product_reverse",
+        ],
+        "selection_family_policy": todo,
+        "complete_selection_path_policy": todo,
+        "evidence_partition_policy": todo,
+        "data_look_policy": todo,
+        "compute_authorization_id": todo,
+        "execution_resource_envelope": {"status": "not_assessed", "details": todo},
+        "resource_pause_policy": todo,
+        "user_specified_limits": {"status": "not_assessed", "details": todo},
+        "safety_boundary": todo,
+        "verification_policy": todo,
+        "consistency_validator_version": VALIDATOR_VERSION,
+        "last_consistency_check": None,
+    }
+    decision_contract = {
+        "decision_contract_version": "dc-v001",
+        "decision_id": todo,
+        "decision_question": todo,
+        "target_population": todo,
+        "analysis_population": todo,
+        "selection_population": todo,
+        "reporting_population": todo,
+        "eligible_candidate_classes": [todo],
+        "substantive_eligibility_rule": todo,
+        "measurement_error_policy": todo,
+        "transportability_requirement": todo,
+        "transportability_status": todo,
+        "eligible_selection_family_ids": [],
+        "declared_selection_family_ids": [],
+        "selection_family_comparison_keys": {},
+        "comparison_groups": [],
+        "ranked_selection_family_ids": [],
+        "comparison_key_definition": todo,
+        "comparability_rule": todo,
+        "estimand": todo,
+        "ranking_evidence": {"criterion": todo},
+        "evidence_scale_mapping": {
+            "screening_statistic": todo,
+            "screening_estimand_and_scale": todo,
+            "decision_model_or_statistic": todo,
+            "decision_estimand_and_scale": todo,
+            "scale_relation": todo,
+            "validation_or_calibration_rule": todo,
+            "discordance_rule": todo,
+            "reason": todo,
+        },
+        "decision_rule": todo,
+        "minimum_meaningful_difference": todo,
+        "complexity_and_data_quality_rule": todo,
+        "tie_rule": todo,
+        "inconclusive_rule": todo,
+        "complete_selection_path_method": todo,
+        "specification_timing": todo,
+        "freeze_time": todo,
+        "amendment_policy": todo,
+    }
+    prior_exposure = {
+        "prior_exposure_audit_version": "pe-v001",
+        "audit_status": "incomplete",
+        "prior_exposure_status": "not_assessed",
+        "confirmatory_status": "unknown",
+        "future_verification_status": todo,
+        "sources_checked": [],
+        "overlap_unit": todo,
+        "overlapping_data": [],
+        "prior_analyses": [],
+        "prior_parameter_attempts": [],
+        "prior_data_looks": [],
+        "prior_holdout_exposure": todo,
+        "unknown_gaps": [todo],
+        "resulting_evidence_stage_limits": [todo],
+        "audited_at": todo,
+        "sample_code_or_skill_change_restores_confirmatory": False,
+    }
+    data_versions = {
+        "data_version_set_id": "data-v001",
+        "data_versions": [],
+    }
+    selection_families = {"families": [], "history": []}
+    saturation_audit = {
+        "inventory_version": "v001",
+        "inventory_saturated": False,
+        "audits": [],
+    }
+    round_inventory = {
+        "run_id": run_id,
+        "round_id": "round_000",
+        "parent_round_id": None,
+        "inventory_version": "v001",
+        "decision_contract_version": "dc-v001",
+        "prior_exposure_audit_version": "pe-v001",
+        "coverage_cell_ids": [],
+        "selection_family_versions": [],
+        "inputs": [],
+        "data_version_ids": [],
+        "code_state": {"status": todo},
+        "environment": {"status": todo},
+        "parameters": {},
+        "seed_set": [],
+        "sample_counts": {},
+        "ledger_entry_ids": [],
+        "uncertainty_components": [],
+        "resource_use": {},
+        "status_transitions": [],
+        "outputs": {},
+    }
+    consistency_placeholder = {
+        "report_schema_version": REPORT_SCHEMA_VERSION,
+        "validator_version": VALIDATOR_VERSION,
+        "checked_at": None,
+        "run_directory_label": root.name,
+        "run_id": run_id,
+        "inventory_version": "v001",
+        "artifact_versions": {
+            "artifact_schema": ARTIFACT_SCHEMA_VERSION,
+            "inventory": "v001",
+            "decision_contract": "dc-v001",
+            "prior_exposure_audit": "pe-v001",
+            "data_version_set": "data-v001",
+        },
+        "valid": False,
+        "error_count": 1,
+        "warning_count": 0,
+        "errors": [
+            {
+                "code": "not_yet_validated",
+                "location": "consistency_report.json",
+                "message": "TODO: replace by running the validator.",
+            }
+        ],
+        "warnings": [],
+        "counts": {},
+        "checked_files": {},
+    }
+
+    try:
+        write_json("run_manifest.json", manifest)
+        write_json("decision_contract.json", decision_contract)
+        write_json("prior_exposure_audit.json", prior_exposure)
+        write_json("data_versions.json", data_versions)
+        write_csv(
+            "inventories/mechanism_inventory_v001.csv",
+            sorted(INVENTORY_REQUIRED_COLUMNS),
+        )
+        write_csv(
+            "inventories/coverage_matrix_v001.csv",
+            sorted(COVERAGE_REQUIRED_COLUMNS | STRICT_COVERAGE_REQUIRED_FIELDS),
+        )
+        write_json("inventories/saturation_audit_v001.json", saturation_audit)
+        write_jsonl("search_ledger.jsonl", [])
+        write_json("selection_families.json", selection_families)
+        write_csv(
+            "execution_queue.csv",
+            tuple(EXECUTION_QUEUE_COLUMN_ALIASES),
+        )
+        write_jsonl("status_transitions.jsonl", [])
+        write_csv("candidate_registry.csv", sorted(CANDIDATE_REQUIRED_FIELDS))
+        write_text(
+            "rounds/round_000/report.md",
+            "# Round 000 draft\n\n- Question: TODO\n- Scope and governance: TODO\n- Decision Contract: TODO\n- Coverage plan: TODO\n- Next admissible action: TODO\n",
+        )
+        write_json("rounds/round_000/inventory.json", round_inventory)
+        write_csv("rounds/round_000/summary.csv", ROUND_SUMMARY_COLUMNS)
+        write_text(
+            "rounds/round_000/reproduce_commands.txt",
+            "TODO: record exact, secret-free reproduction commands before execution.\n",
+        )
+        write_text(
+            "rounds/round_000/round_gate.md",
+            "# Round 000 gate\n\n- [ ] Freeze scope and governance.\n- [ ] Complete the Decision Contract and prior-exposure audit.\n- [ ] Freeze inventory, coverage, selection-family, and evidence-scale rules.\n- [ ] Run the consistency validator before execution.\n",
+        )
+        write_json("consistency_report.json", consistency_placeholder)
+    except (OSError, csv.Error, ValueError) as exc:
+        return {
+            "init": "failed",
+            "run_directory": str(root),
+            "reason": f"Initialization stopped without overwriting any file: {exc}",
+            "created_files": sorted(created),
+        }
+
+    return {
+        "init": "created",
+        "run_directory": str(root),
+        "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
+        "created_files": sorted(created),
+        "next_command": f"{Path(__file__).name} {root}",
+    }
+
+
 def _build_self_test_fixture(root: Path) -> None:
     (root / "inventories").mkdir(parents=True)
     manifest = {
         "run_id": "self-test-run",
+        "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
         "question": "Does the test mechanism predict the registered observable?",
         "scientific_scope": "synthetic self-test",
         "execution_mode": "multi_round",
@@ -2925,6 +4005,8 @@ def _build_self_test_fixture(root: Path) -> None:
         "expected_signature",
         "minimum_meaningful_effect",
         "sensitivity_requirement",
+        "mechanism_alignment",
+        "measurement_error_sensitivity",
         "falsifier",
         "selection_family_id",
         "selection_family_version",
@@ -2960,6 +4042,8 @@ def _build_self_test_fixture(root: Path) -> None:
                 "expected_signature": "positive",
                 "minimum_meaningful_effect": "0.1",
                 "sensitivity_requirement": "power at least 0.8 at effect 0.1",
+                "mechanism_alignment": "direct",
+                "measurement_error_sensitivity": "passed",
                 "falsifier": "effect below registered threshold",
                 "selection_family_id": "SF001",
                 "selection_family_version": "sf-v001",
@@ -3063,6 +4147,13 @@ def _build_self_test_fixture(root: Path) -> None:
         "decision_id": "DEC001",
         "comparability_status": "comparable_within_family",
         "comparison_key": "synthetic-population|S001|registered-effect|clean|exploratory",
+        "target_population": "synthetic-population",
+        "supported_sample_id": "S001",
+        "estimand": "registered synthetic effect",
+        "data_quality_regime": "clean",
+        "evidence_stage": "exploratory",
+        "transportability_requirement": "same_population",
+        "transportability_status": "not_required",
         "included_cell_ids": ["C001"],
         "selection_path_ledger_entry_ids": ["L000", "L001"],
         "selection_path_complete": True,
@@ -3089,6 +4180,27 @@ def _build_self_test_fixture(root: Path) -> None:
             "comparison_key_definition": "target population, sample, estimand, quality, and evidence stage",
             "comparability_rule": "compare only candidates with the same registered comparison key",
             "estimand": "registered synthetic effect",
+            "target_population": "synthetic-population",
+            "analysis_population": "synthetic-population",
+            "selection_population": "synthetic-population",
+            "reporting_population": "synthetic-population",
+            "substantive_eligibility_rule": "candidate must address the registered target population",
+            "measurement_error_policy": "promotion requires a passed registered sensitivity analysis",
+            "transportability_requirement": "same_population",
+            "transportability_status": "not_required",
+            "evidence_scale_mapping": [
+                {
+                    "mapping_id": "ESM001",
+                    "selection_family_ids": ["SF001"],
+                    "screening_statistic": "registered synthetic screen score",
+                    "screening_estimand_and_scale": "screen score on its registered unitless calibration scale",
+                    "decision_model_or_statistic": "registered synthetic effect",
+                    "decision_estimand_and_scale": "registered synthetic effect in outcome units",
+                    "scale_relation": "calibrated_mapping",
+                    "validation_or_calibration_rule": "use the frozen synthetic calibration",
+                    "discordance_rule": "decision-scale evidence governs when screening and decision evidence disagree",
+                }
+            ],
             "ranking_evidence": {"criterion": "effect size with calibrated uncertainty and falsifier performance"},
             "decision_rule": "select a leading candidate only when the registered evidence threshold is met",
             "minimum_meaningful_difference": 0.1,
@@ -3259,6 +4371,107 @@ def _build_self_test_fixture(root: Path) -> None:
             handle.write(json.dumps(transition) + "\n")
 
 
+def _convert_self_test_fixture_to_zero_coverage(
+    root: Path,
+    *,
+    data_support_status: str,
+    mechanism_status: str = "active",
+) -> None:
+    manifest_path = root / "run_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["decision_status"] = "no_eligible_candidate"
+    _write_json(manifest_path, manifest)
+
+    inventory_path = root / "inventories" / "mechanism_inventory_v001.csv"
+    with inventory_path.open("r", encoding="utf-8", newline="") as handle:
+        inventory_rows = list(csv.DictReader(handle))
+    inventory_rows[0]["data_support_status"] = data_support_status
+    inventory_rows[0]["mechanism_status"] = mechanism_status
+    _write_csv(inventory_path, list(inventory_rows[0]), inventory_rows)
+
+    coverage_path = root / "inventories" / "coverage_matrix_v001.csv"
+    with coverage_path.open("r", encoding="utf-8", newline="") as handle:
+        coverage_headers = list(csv.DictReader(handle).fieldnames or [])
+    _write_csv(coverage_path, coverage_headers, [])
+
+    ledger_path = root / "search_ledger.jsonl"
+    ledger_entries = [
+        json.loads(line)
+        for line in ledger_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    historical_ledger_entries = [
+        item
+        for item in ledger_entries
+        if _version(item.get("inventory_version")) == "0"
+    ]
+    ledger_path.write_text(
+        "".join(json.dumps(item) + "\n" for item in historical_ledger_entries),
+        encoding="utf-8",
+    )
+
+    families_path = root / "selection_families.json"
+    families = json.loads(families_path.read_text(encoding="utf-8"))
+    families["families"][0]["included_cell_ids"] = []
+    families["families"][0]["selection_path_ledger_entry_ids"] = ["L000"]
+    _write_json(families_path, families)
+
+    candidate_path = root / "candidate_registry.csv"
+    with candidate_path.open("r", encoding="utf-8", newline="") as handle:
+        candidate_headers = list(csv.DictReader(handle).fieldnames or [])
+    _write_csv(candidate_path, candidate_headers, [])
+
+    transition_path = root / "status_transitions.jsonl"
+    transitions = [
+        json.loads(line)
+        for line in transition_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    transitions = [
+        item
+        for item in transitions
+        if item.get("entity_type") not in {"coverage_cell", "cell", "coverage"}
+    ]
+    transition_path.write_text(
+        "".join(json.dumps(item) + "\n" for item in transitions),
+        encoding="utf-8",
+    )
+
+
+def _downgrade_self_test_fixture_to_legacy(root: Path) -> None:
+    manifest_path = root / "run_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest.pop("artifact_schema_version", None)
+    _write_json(manifest_path, manifest)
+
+    for path in (root / "inventories").glob("coverage_matrix_*.csv"):
+        with path.open("r", encoding="utf-8", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        fields = [
+            field
+            for field in rows[0]
+            if field not in STRICT_COVERAGE_REQUIRED_FIELDS
+        ]
+        _write_csv(
+            path,
+            fields,
+            [{field: row[field] for field in fields} for row in rows],
+        )
+
+    contract_path = root / "decision_contract.json"
+    contract = json.loads(contract_path.read_text(encoding="utf-8"))
+    for field in STRICT_DECISION_CONTRACT_FIELDS:
+        contract.pop(field, None)
+    _write_json(contract_path, contract)
+
+    families_path = root / "selection_families.json"
+    families = json.loads(families_path.read_text(encoding="utf-8"))
+    for record in families["families"] + families["history"]:
+        for field in STRICT_SELECTION_FAMILY_FIELDS:
+            record.pop(field, None)
+    _write_json(families_path, families)
+
+
 def run_self_test() -> dict[str, Any]:
     with tempfile.TemporaryDirectory(prefix="scientific-autoresearch-validator-") as temp_dir:
         temp_root = Path(temp_dir)
@@ -3273,6 +4486,377 @@ def run_self_test() -> dict[str, Any]:
                 "reason": "valid fixture was rejected",
                 "valid_fixture_report": valid_report,
             }
+
+        not_applicable_scale_root = temp_root / "not-applicable-scale-run"
+        not_applicable_scale_root.mkdir()
+        _build_self_test_fixture(not_applicable_scale_root)
+        not_applicable_scale_path = (
+            not_applicable_scale_root / "decision_contract.json"
+        )
+        not_applicable_scale_contract = json.loads(
+            not_applicable_scale_path.read_text(encoding="utf-8")
+        )
+        not_applicable_scale_contract["evidence_scale_mapping"] = {
+            "scale_relation": "not_applicable",
+            "reason": "no selection-influencing screen-to-decision transfer",
+        }
+        _write_json(not_applicable_scale_path, not_applicable_scale_contract)
+        not_applicable_scale_report = validate_run(not_applicable_scale_root)
+        not_applicable_scale_valid = not_applicable_scale_report["valid"]
+
+        distinct_screening_root = temp_root / "distinct-screening-scope-run"
+        distinct_screening_root.mkdir()
+        _build_self_test_fixture(distinct_screening_root)
+        distinct_screening_path = distinct_screening_root / "decision_contract.json"
+        distinct_screening_contract = json.loads(
+            distinct_screening_path.read_text(encoding="utf-8")
+        )
+        distinct_first_mapping = distinct_screening_contract[
+            "evidence_scale_mapping"
+        ][0]
+        distinct_second_mapping = dict(distinct_first_mapping)
+        distinct_second_mapping["mapping_id"] = "ESM002"
+        distinct_second_mapping["screening_statistic"] = (
+            "secondary registered synthetic screen score"
+        )
+        distinct_screening_contract["evidence_scale_mapping"].append(
+            distinct_second_mapping
+        )
+        _write_json(distinct_screening_path, distinct_screening_contract)
+        distinct_screening_report = validate_run(distinct_screening_root)
+        distinct_screening_valid = distinct_screening_report["valid"]
+
+        zero_eligible_reports: dict[str, dict[str, Any]] = {}
+        zero_eligible_cases = {
+            "diagnostic_only": ("diagnostic_only", "needs_data"),
+            "unsupported": ("unsupported", "needs_data"),
+            "not_applicable": ("not_applicable", "needs_data"),
+            "support_limited": ("support_limited", "needs_data"),
+        }
+        for case, (data_support, mechanism_status) in zero_eligible_cases.items():
+            zero_eligible_root = temp_root / f"zero-eligible-{case}-run"
+            zero_eligible_root.mkdir()
+            _build_self_test_fixture(zero_eligible_root)
+            _convert_self_test_fixture_to_zero_coverage(
+                zero_eligible_root,
+                data_support_status=data_support,
+                mechanism_status=mechanism_status,
+            )
+            zero_eligible_reports[case] = validate_run(zero_eligible_root)
+        zero_eligible_completion_valid = all(
+            report["valid"] for report in zero_eligible_reports.values()
+        )
+
+        eligible_without_coverage_root = (
+            temp_root / "eligible-mechanism-without-coverage-run"
+        )
+        eligible_without_coverage_root.mkdir()
+        _build_self_test_fixture(eligible_without_coverage_root)
+        _convert_self_test_fixture_to_zero_coverage(
+            eligible_without_coverage_root,
+            data_support_status="supported",
+            mechanism_status="weakened",
+        )
+        eligible_without_coverage_report = validate_run(
+            eligible_without_coverage_root
+        )
+        eligible_without_coverage_codes = {
+            item["code"] for item in eligible_without_coverage_report["errors"]
+        }
+        eligible_without_coverage_detected = (
+            "eligible_mechanism_without_coverage"
+            in eligible_without_coverage_codes
+            and not eligible_without_coverage_report["valid"]
+        )
+
+        active_nonsupported_reports: dict[str, dict[str, Any]] = {}
+        for data_support in (
+            "support_limited",
+            "diagnostic_only",
+            "unsupported",
+            "not_applicable",
+        ):
+            active_nonsupported_root = (
+                temp_root / f"active-{data_support}-without-coverage-run"
+            )
+            active_nonsupported_root.mkdir()
+            _build_self_test_fixture(active_nonsupported_root)
+            _convert_self_test_fixture_to_zero_coverage(
+                active_nonsupported_root,
+                data_support_status=data_support,
+                mechanism_status="active",
+            )
+            active_nonsupported_reports[data_support] = validate_run(
+                active_nonsupported_root
+            )
+        active_nonsupported_detected = all(
+            not report["valid"]
+            and any(
+                item["code"] == "eligible_mechanism_without_coverage"
+                for item in report["errors"]
+            )
+            for report in active_nonsupported_reports.values()
+        )
+        active_nonsupported_codes = {
+            item["code"]
+            for report in active_nonsupported_reports.values()
+            for item in report["errors"]
+        }
+
+        draft_zero_cell_root = temp_root / "draft-zero-cell-complete-run"
+        draft_zero_cell_root.mkdir()
+        _build_self_test_fixture(draft_zero_cell_root)
+        _convert_self_test_fixture_to_zero_coverage(
+            draft_zero_cell_root,
+            data_support_status="diagnostic_only",
+        )
+        draft_manifest_path = draft_zero_cell_root / "run_manifest.json"
+        draft_manifest = json.loads(
+            draft_manifest_path.read_text(encoding="utf-8")
+        )
+        draft_manifest.update(
+            {
+                "inventory_status": "draft",
+                "inventory_saturated": False,
+                "coverage_complete": True,
+                "search_status": "inventory_building",
+                "decision_contract_applied": False,
+                "decision_status": "not_evaluated",
+            }
+        )
+        _write_json(draft_manifest_path, draft_manifest)
+        draft_zero_cell_report = validate_run(draft_zero_cell_root)
+        draft_zero_cell_codes = {
+            item["code"] for item in draft_zero_cell_report["errors"]
+        }
+        draft_zero_cell_detected = (
+            "coverage_completion_mismatch" in draft_zero_cell_codes
+            and not draft_zero_cell_report["valid"]
+        )
+
+        invalid_data_support_reports: dict[str, dict[str, Any]] = {}
+        for invalid_status in ("available", "testable_current_data", "suported"):
+            invalid_support_root = temp_root / f"invalid-support-{invalid_status}-run"
+            invalid_support_root.mkdir()
+            _build_self_test_fixture(invalid_support_root)
+            _convert_self_test_fixture_to_zero_coverage(
+                invalid_support_root,
+                data_support_status=invalid_status,
+            )
+            invalid_data_support_reports[invalid_status] = validate_run(
+                invalid_support_root
+            )
+        invalid_data_support_detected = all(
+            not report["valid"]
+            and any(
+                item["code"] == "invalid_status"
+                and "data_support_status" in item["message"]
+                for item in report["errors"]
+            )
+            for report in invalid_data_support_reports.values()
+        )
+        invalid_data_support_codes = {
+            item["code"]
+            for report in invalid_data_support_reports.values()
+            for item in report["errors"]
+        }
+
+        human_judgment_root = temp_root / "human-judgment-completion-run"
+        human_judgment_root.mkdir()
+        _build_self_test_fixture(human_judgment_root)
+        _convert_self_test_fixture_to_zero_coverage(
+            human_judgment_root,
+            data_support_status="support_limited",
+            mechanism_status="needs_human_judgment",
+        )
+        human_judgment_report = validate_run(human_judgment_root)
+        human_judgment_codes = {
+            item["code"] for item in human_judgment_report["errors"]
+        }
+        human_judgment_detected = (
+            "unresolved_human_judgment_at_completion" in human_judgment_codes
+            and not human_judgment_report["valid"]
+        )
+
+        unassessed_needs_data_root = (
+            temp_root / "unassessed-needs-data-completion-run"
+        )
+        unassessed_needs_data_root.mkdir()
+        _build_self_test_fixture(unassessed_needs_data_root)
+        _convert_self_test_fixture_to_zero_coverage(
+            unassessed_needs_data_root,
+            data_support_status="not_assessed",
+            mechanism_status="needs_data",
+        )
+        unassessed_needs_data_report = validate_run(
+            unassessed_needs_data_root
+        )
+        unassessed_needs_data_codes = {
+            item["code"] for item in unassessed_needs_data_report["errors"]
+        }
+        unassessed_needs_data_detected = (
+            {
+                "invalid_mechanism_data_support_pair",
+                "unresolved_data_support_at_completion",
+            }.issubset(unassessed_needs_data_codes)
+            and not unassessed_needs_data_report["valid"]
+        )
+
+        rejected_with_history_root = temp_root / "rejected-with-history-run"
+        rejected_with_history_root.mkdir()
+        _build_self_test_fixture(rejected_with_history_root)
+        _convert_self_test_fixture_to_zero_coverage(
+            rejected_with_history_root,
+            data_support_status="supported",
+            mechanism_status="rejected",
+        )
+        rejected_evidence_path = (
+            rejected_with_history_root
+            / "inventories"
+            / "coverage_matrix_v000.csv"
+        )
+        with rejected_evidence_path.open(
+            "r", encoding="utf-8", newline=""
+        ) as handle:
+            rejected_evidence_rows = list(csv.DictReader(handle))
+        rejected_evidence_rows[0]["coverage_status"] = "tested_valid"
+        rejected_evidence_rows[0]["execution_status"] = "completed"
+        rejected_evidence_rows[0]["result_status"] = "null"
+        _write_csv(
+            rejected_evidence_path,
+            list(rejected_evidence_rows[0]),
+            rejected_evidence_rows,
+        )
+        rejected_with_history_report = validate_run(rejected_with_history_root)
+        rejected_with_history_valid = rejected_with_history_report["valid"]
+
+        rejected_without_evidence_reports: dict[str, dict[str, Any]] = {}
+        for status in ("eligible_untested", "not_testable_current_data"):
+            rejected_without_evidence_root = (
+                temp_root / f"rejected-with-{status}-only-run"
+            )
+            rejected_without_evidence_root.mkdir()
+            _build_self_test_fixture(rejected_without_evidence_root)
+            _convert_self_test_fixture_to_zero_coverage(
+                rejected_without_evidence_root,
+                data_support_status="supported",
+                mechanism_status="rejected",
+            )
+            rejected_history_coverage_path = (
+                rejected_without_evidence_root
+                / "inventories"
+                / "coverage_matrix_v000.csv"
+            )
+            with rejected_history_coverage_path.open(
+                "r", encoding="utf-8", newline=""
+            ) as handle:
+                rejected_history_rows = list(csv.DictReader(handle))
+            rejected_history_rows[0]["coverage_status"] = status
+            _write_csv(
+                rejected_history_coverage_path,
+                list(rejected_history_rows[0]),
+                rejected_history_rows,
+            )
+            rejected_without_evidence_reports[status] = validate_run(
+                rejected_without_evidence_root
+            )
+        rejected_without_evidence_detected = all(
+            not report["valid"]
+            and any(
+                item["code"]
+                == "rejected_mechanism_without_coverage_history"
+                for item in report["errors"]
+            )
+            for report in rejected_without_evidence_reports.values()
+        )
+        rejected_without_evidence_codes = {
+            item["code"]
+            for report in rejected_without_evidence_reports.values()
+            for item in report["errors"]
+        }
+
+        legacy_root = temp_root / "legacy-run"
+        legacy_root.mkdir()
+        _build_self_test_fixture(legacy_root)
+        _downgrade_self_test_fixture_to_legacy(legacy_root)
+        legacy_report = validate_run(legacy_root)
+        legacy_valid = (
+            legacy_report["valid"]
+            and legacy_report["warning_count"] == 1
+            and [item["code"] for item in legacy_report["warnings"]]
+            == ["legacy_artifact_schema"]
+        )
+
+        init_root = temp_root / "initialized-run"
+        init_report = initialize_run(init_root)
+        initialized_files = {
+            str(path.relative_to(init_root))
+            for path in init_root.rglob("*")
+            if path.is_file()
+        }
+
+        def initialized_header(relative: str) -> set[str]:
+            with (init_root / relative).open(
+                "r", encoding="utf-8", newline=""
+            ) as handle:
+                return set(next(csv.reader(handle)))
+
+        init_headers_valid = (
+            initialized_header("inventories/mechanism_inventory_v001.csv")
+            == INVENTORY_REQUIRED_COLUMNS
+            and initialized_header("inventories/coverage_matrix_v001.csv")
+            == COVERAGE_REQUIRED_COLUMNS | STRICT_COVERAGE_REQUIRED_FIELDS
+            and initialized_header("candidate_registry.csv")
+            == CANDIDATE_REQUIRED_FIELDS
+            and initialized_header("execution_queue.csv")
+            == set(EXECUTION_QUEUE_COLUMN_ALIASES)
+            and initialized_header("rounds/round_000/summary.csv")
+            == set(ROUND_SUMMARY_COLUMNS)
+        )
+        init_validation_report = validate_run(init_root)
+        init_validation_codes = {
+            item["code"] for item in init_validation_report["errors"]
+        }
+        init_consistency_placeholder = json.loads(
+            (init_root / "consistency_report.json").read_text(encoding="utf-8")
+        )
+        init_structure_valid = (
+            init_report.get("init") == "created"
+            and initialized_files == INIT_CANONICAL_FILES
+            and init_headers_valid
+            and not init_validation_report["valid"]
+            and "missing_required_field" in init_validation_codes
+            and init_consistency_placeholder.get("valid") is False
+            and not init_validation_codes
+            & {
+                "missing_artifact",
+                "active_version_artifact_missing",
+                "missing_snapshot_columns",
+                "missing_candidate_columns",
+                "invalid_artifact_schema_version",
+                "coverage_completion_mismatch",
+            }
+        )
+        manifest_before_refusal = (init_root / "run_manifest.json").read_text(
+            encoding="utf-8"
+        )
+        init_refusal_report = initialize_run(init_root)
+        init_file_target = temp_root / "existing-init-target"
+        init_file_target.write_text("preserve me\n", encoding="utf-8")
+        init_file_refusal_report = initialize_run(init_file_target)
+        init_overwrite_refused = (
+            init_refusal_report.get("init") == "refused"
+            and (init_root / "run_manifest.json").read_text(encoding="utf-8")
+            == manifest_before_refusal
+            and {
+                str(path.relative_to(init_root))
+                for path in init_root.rglob("*")
+                if path.is_file()
+            }
+            == initialized_files
+            and init_file_refusal_report.get("init") == "refused"
+            and init_file_target.read_text(encoding="utf-8") == "preserve me\n"
+        )
 
         family_root = temp_root / "broken-family-run"
         family_root.mkdir()
@@ -3309,6 +4893,163 @@ def run_self_test() -> dict[str, Any]:
             "illegal_status_transition" in transition_codes and not transition_report["valid"]
         )
 
+        strict_transition_root = temp_root / "strict-transition-fields-run"
+        strict_transition_root.mkdir()
+        _build_self_test_fixture(strict_transition_root)
+        strict_transition_path = strict_transition_root / "status_transitions.jsonl"
+        strict_transitions = [
+            json.loads(line)
+            for line in strict_transition_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        strict_transition_faults = (
+            (
+                "data_support_status",
+                "mechanism",
+                "M001",
+                "supported",
+                "support_limited",
+            ),
+            (
+                "mechanism_alignment",
+                "coverage_cell",
+                "C001",
+                "direct",
+                "diagnostic_only",
+            ),
+            (
+                "measurement_error_sensitivity",
+                "coverage_cell",
+                "C001",
+                "passed",
+                "planned",
+            ),
+            (
+                "transportability_requirement",
+                "selection_family",
+                "SF001",
+                "same_population",
+                "validation_required",
+            ),
+            (
+                "transportability_status",
+                "selection_family",
+                "SF001",
+                "passed",
+                "planned",
+            ),
+        )
+        for index, (
+            field,
+            entity_type,
+            entity_id,
+            old,
+            new,
+        ) in enumerate(strict_transition_faults, start=1):
+            strict_transitions.append(
+                {
+                    "transition_id": f"STRICT-T{index:03d}",
+                    "entity_type": entity_type,
+                    "entity_id": entity_id,
+                    "status_field": field,
+                    "from_status": old,
+                    "to_status": new,
+                    "inventory_version": "v001",
+                    "round_id": "round_001",
+                    "changed_at": "2000-01-01T00:00:00Z",
+                    "evidence": "injected illegal strict transition",
+                    "evidence_paths": [],
+                }
+            )
+        strict_transition_path.write_text(
+            "".join(json.dumps(item) + "\n" for item in strict_transitions),
+            encoding="utf-8",
+        )
+        strict_transition_report = validate_run(strict_transition_root)
+        strict_transition_codes = {
+            item["code"] for item in strict_transition_report["errors"]
+        }
+        strict_transition_messages = " ".join(
+            item["message"]
+            for item in strict_transition_report["errors"]
+            if item["code"] == "illegal_status_transition"
+        )
+        strict_transition_warning_codes = {
+            item["code"] for item in strict_transition_report["warnings"]
+        }
+        strict_transition_detected = (
+            all(
+                field in strict_transition_messages
+                for field in STRICT_TRANSITION_STATUS_FIELDS
+            )
+            and "unknown_transition_field" not in strict_transition_warning_codes
+            and not strict_transition_report["valid"]
+        )
+
+        family_transition_mismatch_root = (
+            temp_root / "family-transition-final-state-mismatch-run"
+        )
+        family_transition_mismatch_root.mkdir()
+        _build_self_test_fixture(family_transition_mismatch_root)
+        family_transition_families_path = (
+            family_transition_mismatch_root / "selection_families.json"
+        )
+        family_transition_families = json.loads(
+            family_transition_families_path.read_text(encoding="utf-8")
+        )
+        family_transition_families["families"][0][
+            "transportability_requirement"
+        ] = "validation_required"
+        family_transition_families["families"][0][
+            "transportability_status"
+        ] = "planned"
+        _write_json(
+            family_transition_families_path, family_transition_families
+        )
+        family_transition_path = (
+            family_transition_mismatch_root / "status_transitions.jsonl"
+        )
+        family_transition_records = [
+            json.loads(line)
+            for line in family_transition_path.read_text(
+                encoding="utf-8"
+            ).splitlines()
+            if line.strip()
+        ]
+        family_transition_records.append(
+            {
+                "transition_id": "FAMILY-TRANSPORT-T001",
+                "entity_type": "selection_family",
+                "entity_id": "SF001",
+                "selection_family_version": "sf-v001",
+                "status_field": "transportability_status",
+                "from_status": "planned",
+                "to_status": "passed",
+                "inventory_version": "v001",
+                "round_id": "round_001",
+                "changed_at": "2000-01-01T00:00:00Z",
+                "evidence": "injected legal transition with stale artifact state",
+                "evidence_paths": [],
+            }
+        )
+        family_transition_path.write_text(
+            "".join(json.dumps(item) + "\n" for item in family_transition_records),
+            encoding="utf-8",
+        )
+        family_transition_mismatch_report = validate_run(
+            family_transition_mismatch_root
+        )
+        family_transition_mismatch_codes = {
+            item["code"] for item in family_transition_mismatch_report["errors"]
+        }
+        family_transition_mismatch_detected = (
+            "transition_final_state_mismatch"
+            in family_transition_mismatch_codes
+            and "illegal_status_transition"
+            not in family_transition_mismatch_codes
+            and not family_transition_mismatch_report["valid"]
+        )
+
         history_root = temp_root / "corrupt-history-run"
         history_root.mkdir()
         _build_self_test_fixture(history_root)
@@ -3325,6 +5066,39 @@ def run_self_test() -> dict[str, Any]:
             for item in history_report["errors"]
         ) and not history_report["valid"]
         history_codes = {item["code"] for item in history_report["errors"]}
+
+        strict_family_history_root = temp_root / "incomplete-family-history-run"
+        strict_family_history_root.mkdir()
+        _build_self_test_fixture(strict_family_history_root)
+        strict_family_history_path = (
+            strict_family_history_root / "selection_families.json"
+        )
+        strict_family_history_value = json.loads(
+            strict_family_history_path.read_text(encoding="utf-8")
+        )
+        for field in STRICT_SELECTION_FAMILY_FIELDS:
+            strict_family_history_value["history"][0].pop(field, None)
+        _write_json(strict_family_history_path, strict_family_history_value)
+        strict_family_history_report = validate_run(strict_family_history_root)
+        strict_family_history_errors = [
+            item
+            for item in strict_family_history_report["errors"]
+            if item["code"] == "missing_required_field"
+            and "#history" in item["location"]
+        ]
+        strict_family_history_messages = " ".join(
+            item["message"] for item in strict_family_history_errors
+        )
+        strict_family_history_detected = (
+            all(
+                field in strict_family_history_messages
+                for field in STRICT_SELECTION_FAMILY_FIELDS
+            )
+            and not strict_family_history_report["valid"]
+        )
+        strict_family_history_codes = {
+            item["code"] for item in strict_family_history_report["errors"]
+        }
 
         candidate_contract_root = temp_root / "candidate-contract-mismatch-run"
         candidate_contract_root.mkdir()
@@ -3566,11 +5340,344 @@ def run_self_test() -> dict[str, Any]:
             and not tie_report["valid"]
         )
 
+        ineligible_support_candidate_reports: dict[str, dict[str, Any]] = {}
+        for data_support in ("support_limited", "diagnostic_only"):
+            ineligible_support_candidate_root = (
+                temp_root / f"{data_support}-promoted-candidate-run"
+            )
+            ineligible_support_candidate_root.mkdir()
+            _build_self_test_fixture(ineligible_support_candidate_root)
+            ineligible_support_inventory_path = (
+                ineligible_support_candidate_root
+                / "inventories"
+                / "mechanism_inventory_v001.csv"
+            )
+            with ineligible_support_inventory_path.open(
+                "r", encoding="utf-8", newline=""
+            ) as handle:
+                ineligible_support_inventory_rows = list(csv.DictReader(handle))
+            ineligible_support_inventory_rows[0]["data_support_status"] = (
+                data_support
+            )
+            _write_csv(
+                ineligible_support_inventory_path,
+                list(ineligible_support_inventory_rows[0]),
+                ineligible_support_inventory_rows,
+            )
+            ineligible_support_candidate_reports[data_support] = validate_run(
+                ineligible_support_candidate_root
+            )
+        support_limited_candidate_codes = {
+            item["code"]
+            for report in ineligible_support_candidate_reports.values()
+            for item in report["errors"]
+        }
+        support_limited_candidate_detected = (
+            all(
+                not report["valid"]
+                and any(
+                    item["code"] == "candidate_data_support_gate_failed"
+                    for item in report["errors"]
+                )
+                for report in ineligible_support_candidate_reports.values()
+            )
+        )
+
+        alignment_root = temp_root / "misaligned-candidate-run"
+        alignment_root.mkdir()
+        _build_self_test_fixture(alignment_root)
+        alignment_path = alignment_root / "inventories" / "coverage_matrix_v001.csv"
+        alignment_rows = list(
+            csv.DictReader(alignment_path.open("r", encoding="utf-8", newline=""))
+        )
+        alignment_rows[0]["mechanism_alignment"] = "diagnostic_only"
+        _write_csv(alignment_path, list(alignment_rows[0].keys()), alignment_rows)
+        alignment_report = validate_run(alignment_root)
+        alignment_codes = {item["code"] for item in alignment_report["errors"]}
+        alignment_detected = (
+            "candidate_mechanism_alignment_gate_failed" in alignment_codes
+            and not alignment_report["valid"]
+        )
+
+        measurement_root = temp_root / "planned-measurement-error-run"
+        measurement_root.mkdir()
+        _build_self_test_fixture(measurement_root)
+        measurement_path = (
+            measurement_root / "inventories" / "coverage_matrix_v001.csv"
+        )
+        measurement_rows = list(
+            csv.DictReader(measurement_path.open("r", encoding="utf-8", newline=""))
+        )
+        measurement_rows[0]["measurement_error_sensitivity"] = "planned"
+        _write_csv(
+            measurement_path, list(measurement_rows[0].keys()), measurement_rows
+        )
+        measurement_report = validate_run(measurement_root)
+        measurement_codes = {item["code"] for item in measurement_report["errors"]}
+        measurement_detected = (
+            "candidate_measurement_error_gate_failed" in measurement_codes
+            and not measurement_report["valid"]
+        )
+
+        population_root = temp_root / "same-population-mismatch-run"
+        population_root.mkdir()
+        _build_self_test_fixture(population_root)
+        population_path = population_root / "decision_contract.json"
+        population_contract = json.loads(population_path.read_text(encoding="utf-8"))
+        population_contract["selection_population"] = "selected-subpopulation"
+        _write_json(population_path, population_contract)
+        population_report = validate_run(population_root)
+        population_codes = {item["code"] for item in population_report["errors"]}
+        population_detected = (
+            "same_population_mismatch" in population_codes
+            and not population_report["valid"]
+        )
+
+        family_transport_root = temp_root / "unvalidated-family-transport-run"
+        family_transport_root.mkdir()
+        _build_self_test_fixture(family_transport_root)
+        family_transport_path = family_transport_root / "selection_families.json"
+        family_transport_value = json.loads(
+            family_transport_path.read_text(encoding="utf-8")
+        )
+        transported_family = family_transport_value["families"][0]
+        transported_family["target_population"] = "transported-population"
+        transported_family["transportability_requirement"] = "validation_required"
+        transported_family["transportability_status"] = "planned"
+        _write_json(family_transport_path, family_transport_value)
+        family_transport_report = validate_run(family_transport_root)
+        family_transport_codes = {
+            item["code"] for item in family_transport_report["errors"]
+        }
+        family_transport_detected = (
+            "candidate_family_transport_gate_failed" in family_transport_codes
+            and not family_transport_report["valid"]
+        )
+
+        missing_scale_root = temp_root / "missing-evidence-scale-mapping-run"
+        missing_scale_root.mkdir()
+        _build_self_test_fixture(missing_scale_root)
+        missing_scale_path = missing_scale_root / "decision_contract.json"
+        missing_scale_contract = json.loads(
+            missing_scale_path.read_text(encoding="utf-8")
+        )
+        missing_scale_contract.pop("evidence_scale_mapping")
+        _write_json(missing_scale_path, missing_scale_contract)
+        missing_scale_report = validate_run(missing_scale_root)
+        missing_scale_detected = any(
+            item["code"] == "missing_required_field"
+            and "evidence_scale_mapping" in item["message"]
+            for item in missing_scale_report["errors"]
+        ) and not missing_scale_report["valid"]
+        missing_scale_codes = {
+            item["code"] for item in missing_scale_report["errors"]
+        }
+
+        incomplete_scale_root = temp_root / "incomplete-evidence-scale-mapping-run"
+        incomplete_scale_root.mkdir()
+        _build_self_test_fixture(incomplete_scale_root)
+        incomplete_scale_path = incomplete_scale_root / "decision_contract.json"
+        incomplete_scale_contract = json.loads(
+            incomplete_scale_path.read_text(encoding="utf-8")
+        )
+        incomplete_scale_contract["evidence_scale_mapping"][0][
+            "discordance_rule"
+        ] = ""
+        _write_json(incomplete_scale_path, incomplete_scale_contract)
+        incomplete_scale_report = validate_run(incomplete_scale_root)
+        incomplete_scale_codes = {
+            item["code"] for item in incomplete_scale_report["errors"]
+        }
+        incomplete_scale_detected = (
+            "incomplete_evidence_scale_mapping" in incomplete_scale_codes
+            and not incomplete_scale_report["valid"]
+        )
+
+        incomplete_endpoints_root = temp_root / "incomplete-scale-endpoints-run"
+        incomplete_endpoints_root.mkdir()
+        _build_self_test_fixture(incomplete_endpoints_root)
+        incomplete_endpoints_path = (
+            incomplete_endpoints_root / "decision_contract.json"
+        )
+        incomplete_endpoints_contract = json.loads(
+            incomplete_endpoints_path.read_text(encoding="utf-8")
+        )
+        incomplete_endpoint_mapping = incomplete_endpoints_contract[
+            "evidence_scale_mapping"
+        ][0]
+        incomplete_endpoint_mapping["screening_estimand_and_scale"] = ""
+        incomplete_endpoint_mapping["decision_estimand_and_scale"] = ""
+        _write_json(incomplete_endpoints_path, incomplete_endpoints_contract)
+        incomplete_endpoints_report = validate_run(incomplete_endpoints_root)
+        incomplete_endpoints_codes = {
+            item["code"] for item in incomplete_endpoints_report["errors"]
+        }
+        incomplete_endpoints_detected = (
+            "incomplete_evidence_scale_mapping" in incomplete_endpoints_codes
+            and any(
+                "screening_estimand_and_scale" in item["message"]
+                and "decision_estimand_and_scale" in item["message"]
+                for item in incomplete_endpoints_report["errors"]
+            )
+            and not incomplete_endpoints_report["valid"]
+        )
+
+        mapping_scope_root = temp_root / "invalid-evidence-scale-scope-run"
+        mapping_scope_root.mkdir()
+        _build_self_test_fixture(mapping_scope_root)
+        mapping_scope_path = mapping_scope_root / "decision_contract.json"
+        mapping_scope_contract = json.loads(
+            mapping_scope_path.read_text(encoding="utf-8")
+        )
+        first_mapping = mapping_scope_contract["evidence_scale_mapping"][0]
+        first_mapping["selection_family_ids"] = ["SF_UNKNOWN"]
+        second_mapping = dict(first_mapping)
+        second_mapping["mapping_id"] = "ESM002"
+        mapping_scope_contract["evidence_scale_mapping"].append(second_mapping)
+        _write_json(mapping_scope_path, mapping_scope_contract)
+        mapping_scope_report = validate_run(mapping_scope_root)
+        mapping_scope_codes = {
+            item["code"] for item in mapping_scope_report["errors"]
+        }
+        mapping_scope_detected = (
+            "unknown_evidence_scale_mapping_family" in mapping_scope_codes
+            and "unmapped_eligible_selection_family" in mapping_scope_codes
+            and not mapping_scope_report["valid"]
+        )
+
+        single_mapping_scope_root = (
+            temp_root / "invalid-single-evidence-scale-scope-run"
+        )
+        single_mapping_scope_root.mkdir()
+        _build_self_test_fixture(single_mapping_scope_root)
+        single_mapping_scope_path = (
+            single_mapping_scope_root / "decision_contract.json"
+        )
+        single_mapping_scope_contract = json.loads(
+            single_mapping_scope_path.read_text(encoding="utf-8")
+        )
+        single_mapping_scope_contract["evidence_scale_mapping"][0][
+            "selection_family_ids"
+        ] = ["SF_UNKNOWN"]
+        _write_json(single_mapping_scope_path, single_mapping_scope_contract)
+        single_mapping_scope_report = validate_run(single_mapping_scope_root)
+        single_mapping_scope_codes = {
+            item["code"] for item in single_mapping_scope_report["errors"]
+        }
+        single_mapping_scope_detected = (
+            "unknown_evidence_scale_mapping_family" in single_mapping_scope_codes
+            and "unmapped_eligible_selection_family" in single_mapping_scope_codes
+            and not single_mapping_scope_report["valid"]
+        )
+
+        duplicate_statistic_root = temp_root / "duplicate-screening-statistic-run"
+        duplicate_statistic_root.mkdir()
+        _build_self_test_fixture(duplicate_statistic_root)
+        duplicate_statistic_path = (
+            duplicate_statistic_root / "decision_contract.json"
+        )
+        duplicate_statistic_contract = json.loads(
+            duplicate_statistic_path.read_text(encoding="utf-8")
+        )
+        duplicate_first_mapping = duplicate_statistic_contract[
+            "evidence_scale_mapping"
+        ][0]
+        duplicate_second_mapping = dict(duplicate_first_mapping)
+        duplicate_second_mapping["mapping_id"] = "ESM002"
+        duplicate_second_mapping["screening_statistic"] = (
+            "  REGISTERED   SYNTHETIC SCREEN SCORE  "
+        )
+        duplicate_statistic_contract["evidence_scale_mapping"].append(
+            duplicate_second_mapping
+        )
+        _write_json(duplicate_statistic_path, duplicate_statistic_contract)
+        duplicate_statistic_report = validate_run(duplicate_statistic_root)
+        duplicate_statistic_codes = {
+            item["code"] for item in duplicate_statistic_report["errors"]
+        }
+        duplicate_statistic_detected = (
+            "ambiguous_evidence_scale_mapping_scope" in duplicate_statistic_codes
+            and not duplicate_statistic_report["valid"]
+        )
+
+        not_applicable_collision_root = (
+            temp_root / "not-applicable-mapping-collision-run"
+        )
+        not_applicable_collision_root.mkdir()
+        _build_self_test_fixture(not_applicable_collision_root)
+        not_applicable_collision_path = (
+            not_applicable_collision_root / "decision_contract.json"
+        )
+        not_applicable_collision_contract = json.loads(
+            not_applicable_collision_path.read_text(encoding="utf-8")
+        )
+        not_applicable_collision_contract["evidence_scale_mapping"].append(
+            {
+                "mapping_id": "ESM002",
+                "selection_family_ids": ["SF001"],
+                "scale_relation": "not_applicable",
+                "reason": "no additional scale transfer applies",
+            }
+        )
+        _write_json(
+            not_applicable_collision_path, not_applicable_collision_contract
+        )
+        not_applicable_collision_report = validate_run(
+            not_applicable_collision_root
+        )
+        not_applicable_collision_codes = {
+            item["code"] for item in not_applicable_collision_report["errors"]
+        }
+        not_applicable_collision_detected = (
+            "ambiguous_evidence_scale_mapping_scope"
+            in not_applicable_collision_codes
+            and not not_applicable_collision_report["valid"]
+        )
+
+        malformed_schema_root = temp_root / "malformed-artifact-schema-run"
+        malformed_schema_root.mkdir()
+        _build_self_test_fixture(malformed_schema_root)
+        malformed_schema_path = malformed_schema_root / "run_manifest.json"
+        malformed_schema_manifest = json.loads(
+            malformed_schema_path.read_text(encoding="utf-8")
+        )
+        malformed_schema_manifest["artifact_schema_version"] = "release-candidate"
+        _write_json(malformed_schema_path, malformed_schema_manifest)
+        malformed_schema_report = validate_run(malformed_schema_root)
+        malformed_schema_codes = {
+            item["code"] for item in malformed_schema_report["errors"]
+        }
+        malformed_schema_warning_codes = {
+            item["code"] for item in malformed_schema_report["warnings"]
+        }
+        malformed_schema_detected = (
+            "invalid_artifact_schema_version" in malformed_schema_codes
+            and "legacy_artifact_schema" not in malformed_schema_warning_codes
+            and not malformed_schema_report["valid"]
+        )
+
         if not all(
             (
                 family_detected,
+                not_applicable_scale_valid,
+                distinct_screening_valid,
+                zero_eligible_completion_valid,
+                eligible_without_coverage_detected,
+                active_nonsupported_detected,
+                draft_zero_cell_detected,
+                invalid_data_support_detected,
+                human_judgment_detected,
+                unassessed_needs_data_detected,
+                rejected_with_history_valid,
+                rejected_without_evidence_detected,
+                legacy_valid,
+                init_structure_valid,
+                init_overwrite_refused,
                 transition_detected,
+                strict_transition_detected,
+                family_transition_mismatch_detected,
                 history_detected,
+                strict_family_history_detected,
                 candidate_contract_detected,
                 comparison_detected,
                 exposure_detected,
@@ -3581,6 +5688,19 @@ def run_self_test() -> dict[str, Any]:
                 unknown_exposure_valid,
                 comparability_detected,
                 tie_detected,
+                support_limited_candidate_detected,
+                alignment_detected,
+                measurement_detected,
+                population_detected,
+                family_transport_detected,
+                missing_scale_detected,
+                incomplete_scale_detected,
+                incomplete_endpoints_detected,
+                mapping_scope_detected,
+                single_mapping_scope_detected,
+                duplicate_statistic_detected,
+                not_applicable_collision_detected,
+                malformed_schema_detected,
             )
         ):
             return {
@@ -3588,8 +5708,25 @@ def run_self_test() -> dict[str, Any]:
                 "reason": "one or more injected faults were not detected",
                 "faults_detected": {
                     "broken_family_reference": family_detected,
+                    "not_applicable_scale_positive": not_applicable_scale_valid,
+                    "distinct_screening_statistics_positive": distinct_screening_valid,
+                    "zero_eligible_completion_positive": zero_eligible_completion_valid,
+                    "eligible_mechanism_without_coverage": eligible_without_coverage_detected,
+                    "active_nonsupported_without_coverage": active_nonsupported_detected,
+                    "draft_zero_cell_not_complete": draft_zero_cell_detected,
+                    "canonical_data_support_status": invalid_data_support_detected,
+                    "human_judgment_blocks_completion": human_judgment_detected,
+                    "unassessed_needs_data_conflict": unassessed_needs_data_detected,
+                    "rejected_with_evidence_positive": rejected_with_history_valid,
+                    "rejected_without_evidence": rejected_without_evidence_detected,
+                    "legacy_schema_positive": legacy_valid,
+                    "init_canonical_structure": init_structure_valid,
+                    "init_overwrite_refused": init_overwrite_refused,
                     "illegal_status_transition": transition_detected,
+                    "strict_status_transition_fields": strict_transition_detected,
+                    "family_transition_final_state_mismatch": family_transition_mismatch_detected,
                     "corrupt_historical_snapshot": history_detected,
+                    "strict_selection_family_history": strict_family_history_detected,
                     "candidate_contract_family_mismatch": candidate_contract_detected,
                     "candidate_comparison_key_mismatch": comparison_detected,
                     "mixed_exposure_schema": exposure_detected,
@@ -3600,10 +5737,42 @@ def run_self_test() -> dict[str, Any]:
                     "justified_unknown_exposure_positive": unknown_exposure_valid,
                     "legacy_comparability_status": comparability_detected,
                     "tie_without_common_group": tie_detected,
+                    "ineligible_data_support_candidate": support_limited_candidate_detected,
+                    "misaligned_candidate_promoted": alignment_detected,
+                    "measurement_error_sensitivity_planned": measurement_detected,
+                    "same_population_mismatch": population_detected,
+                    "unvalidated_family_transport": family_transport_detected,
+                    "missing_evidence_scale_mapping": missing_scale_detected,
+                    "incomplete_evidence_scale_mapping": incomplete_scale_detected,
+                    "incomplete_evidence_scale_endpoints": incomplete_endpoints_detected,
+                    "invalid_evidence_scale_scope": mapping_scope_detected,
+                    "invalid_single_evidence_scale_scope": single_mapping_scope_detected,
+                    "duplicate_screening_statistic_scope": duplicate_statistic_detected,
+                    "not_applicable_mapping_scope_collision": not_applicable_collision_detected,
+                    "malformed_artifact_schema_version": malformed_schema_detected,
                 },
                 "family_fixture_report": family_report,
+                "not_applicable_scale_fixture_report": not_applicable_scale_report,
+                "distinct_screening_fixture_report": distinct_screening_report,
+                "zero_eligible_fixture_reports": zero_eligible_reports,
+                "eligible_without_coverage_fixture_report": eligible_without_coverage_report,
+                "active_nonsupported_fixture_reports": active_nonsupported_reports,
+                "draft_zero_cell_fixture_report": draft_zero_cell_report,
+                "invalid_data_support_fixture_reports": invalid_data_support_reports,
+                "human_judgment_fixture_report": human_judgment_report,
+                "unassessed_needs_data_fixture_report": unassessed_needs_data_report,
+                "rejected_with_history_fixture_report": rejected_with_history_report,
+                "rejected_without_evidence_fixture_reports": rejected_without_evidence_reports,
+                "legacy_fixture_report": legacy_report,
+                "init_report": init_report,
+                "init_validation_report": init_validation_report,
+                "init_refusal_report": init_refusal_report,
+                "init_file_refusal_report": init_file_refusal_report,
                 "transition_fixture_report": transition_report,
+                "strict_transition_fixture_report": strict_transition_report,
+                "family_transition_mismatch_fixture_report": family_transition_mismatch_report,
                 "history_fixture_report": history_report,
+                "strict_family_history_fixture_report": strict_family_history_report,
                 "candidate_contract_fixture_report": candidate_contract_report,
                 "comparison_fixture_report": comparison_report,
                 "exposure_fixture_report": exposure_report,
@@ -3614,17 +5783,55 @@ def run_self_test() -> dict[str, Any]:
                 "unknown_exposure_fixture_report": unknown_exposure_report,
                 "comparability_fixture_report": comparability_report,
                 "tie_fixture_report": tie_report,
+                "ineligible_support_candidate_fixture_reports": ineligible_support_candidate_reports,
+                "alignment_fixture_report": alignment_report,
+                "measurement_fixture_report": measurement_report,
+                "population_fixture_report": population_report,
+                "family_transport_fixture_report": family_transport_report,
+                "missing_scale_fixture_report": missing_scale_report,
+                "incomplete_scale_fixture_report": incomplete_scale_report,
+                "incomplete_endpoints_fixture_report": incomplete_endpoints_report,
+                "mapping_scope_fixture_report": mapping_scope_report,
+                "single_mapping_scope_fixture_report": single_mapping_scope_report,
+                "duplicate_statistic_fixture_report": duplicate_statistic_report,
+                "not_applicable_collision_fixture_report": not_applicable_collision_report,
+                "malformed_schema_fixture_report": malformed_schema_report,
             }
         return {
             "self_test": "passed",
             "validator_version": VALIDATOR_VERSION,
             "valid_fixture_error_count": valid_report["error_count"],
+            "valid_not_applicable_scale_error_count": not_applicable_scale_report[
+                "error_count"
+            ],
+            "valid_distinct_screening_error_count": distinct_screening_report[
+                "error_count"
+            ],
+            "valid_legacy_fixture_warning_count": legacy_report["warning_count"],
+            "initialized_file_count": len(initialized_files),
             "valid_family_version_history": True,
             "valid_unknown_exposure_error_count": unknown_exposure_report["error_count"],
             "faults_detected": {
                 "broken_family_reference": True,
+                "not_applicable_scale_positive": True,
+                "distinct_screening_statistics_positive": True,
+                "zero_eligible_completion_positive": True,
+                "eligible_mechanism_without_coverage": True,
+                "active_nonsupported_without_coverage": True,
+                "draft_zero_cell_not_complete": True,
+                "canonical_data_support_status": True,
+                "human_judgment_blocks_completion": True,
+                "unassessed_needs_data_conflict": True,
+                "rejected_with_evidence_positive": True,
+                "rejected_without_evidence": True,
+                "legacy_schema_positive": True,
+                "init_canonical_structure": True,
+                "init_overwrite_refused": True,
                 "illegal_status_transition": True,
+                "strict_status_transition_fields": True,
+                "family_transition_final_state_mismatch": True,
                 "corrupt_historical_snapshot": True,
+                "strict_selection_family_history": True,
                 "candidate_contract_family_mismatch": True,
                 "candidate_comparison_key_mismatch": True,
                 "mixed_exposure_schema": True,
@@ -3634,11 +5841,50 @@ def run_self_test() -> dict[str, Any]:
                 "incomplete_prior_exposure_completion": True,
                 "legacy_comparability_status": True,
                 "tie_without_common_group": True,
+                "ineligible_data_support_candidate": True,
+                "misaligned_candidate_promoted": True,
+                "measurement_error_sensitivity_planned": True,
+                "same_population_mismatch": True,
+                "unvalidated_family_transport": True,
+                "missing_evidence_scale_mapping": True,
+                "incomplete_evidence_scale_mapping": True,
+                "incomplete_evidence_scale_endpoints": True,
+                "invalid_evidence_scale_scope": True,
+                "invalid_single_evidence_scale_scope": True,
+                "duplicate_screening_statistic_scope": True,
+                "not_applicable_mapping_scope_collision": True,
+                "malformed_artifact_schema_version": True,
             },
             "fault_error_codes": {
                 "broken_family_reference": sorted(family_codes),
                 "illegal_status_transition": sorted(transition_codes),
+                "strict_status_transition_fields": sorted(strict_transition_codes),
+                "family_transition_final_state_mismatch": sorted(
+                    family_transition_mismatch_codes
+                ),
                 "corrupt_historical_snapshot": sorted(history_codes),
+                "strict_selection_family_history": sorted(
+                    strict_family_history_codes
+                ),
+                "eligible_mechanism_without_coverage": sorted(
+                    eligible_without_coverage_codes
+                ),
+                "active_nonsupported_without_coverage": sorted(
+                    active_nonsupported_codes
+                ),
+                "draft_zero_cell_not_complete": sorted(draft_zero_cell_codes),
+                "canonical_data_support_status": sorted(
+                    invalid_data_support_codes
+                ),
+                "human_judgment_blocks_completion": sorted(
+                    human_judgment_codes
+                ),
+                "unassessed_needs_data_conflict": sorted(
+                    unassessed_needs_data_codes
+                ),
+                "rejected_without_evidence": sorted(
+                    rejected_without_evidence_codes
+                ),
                 "candidate_contract_family_mismatch": sorted(candidate_contract_codes),
                 "candidate_comparison_key_mismatch": sorted(comparison_codes),
                 "mixed_exposure_schema": sorted(exposure_codes),
@@ -3648,6 +5894,29 @@ def run_self_test() -> dict[str, Any]:
                 "incomplete_prior_exposure_completion": sorted(prior_completion_codes),
                 "legacy_comparability_status": sorted(comparability_codes),
                 "tie_without_common_group": sorted(tie_codes),
+                "ineligible_data_support_candidate": sorted(
+                    support_limited_candidate_codes
+                ),
+                "misaligned_candidate_promoted": sorted(alignment_codes),
+                "measurement_error_sensitivity_planned": sorted(measurement_codes),
+                "same_population_mismatch": sorted(population_codes),
+                "unvalidated_family_transport": sorted(family_transport_codes),
+                "missing_evidence_scale_mapping": sorted(missing_scale_codes),
+                "incomplete_evidence_scale_mapping": sorted(incomplete_scale_codes),
+                "incomplete_evidence_scale_endpoints": sorted(
+                    incomplete_endpoints_codes
+                ),
+                "invalid_evidence_scale_scope": sorted(mapping_scope_codes),
+                "invalid_single_evidence_scale_scope": sorted(
+                    single_mapping_scope_codes
+                ),
+                "duplicate_screening_statistic_scope": sorted(
+                    duplicate_statistic_codes
+                ),
+                "not_applicable_mapping_scope_collision": sorted(
+                    not_applicable_collision_codes
+                ),
+                "malformed_artifact_schema_version": sorted(malformed_schema_codes),
             },
         }
 
@@ -3665,14 +5934,27 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("run_dir", nargs="?", type=Path, help="Run directory to validate.")
     parser.add_argument("--output", type=Path, help="Optional path for the JSON consistency report.")
-    parser.add_argument("--self-test", action="store_true", help="Run built-in positive and negative fixtures.")
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--self-test", action="store_true", help="Run built-in positive and negative fixtures.")
+    modes.add_argument(
+        "--init",
+        metavar="RUN_DIR",
+        type=Path,
+        help="Create a non-overwriting schema-1.4.0 Round-0 draft skeleton.",
+    )
     args = parser.parse_args(argv)
     if args.self_test:
         report = run_self_test()
         _emit(report, args.output)
         return 0 if report.get("self_test") == "passed" else 1
+    if args.init is not None:
+        if args.run_dir is not None or args.output is not None:
+            parser.error("--init cannot be combined with run_dir or --output")
+        report = initialize_run(args.init)
+        _emit(report, None)
+        return 0 if report.get("init") == "created" else 1
     if args.run_dir is None:
-        parser.error("run_dir is required unless --self-test is used")
+        parser.error("run_dir is required unless --self-test or --init is used")
     report = validate_run(args.run_dir)
     _emit(report, args.output)
     return 0 if report["valid"] else 1

@@ -115,6 +115,19 @@ Evidence stage describes analytical role. Use verification status below to recor
 
 `failed` and `abandoned` are execution states, not scientific nulls.
 
+## Data Support Status
+
+Record one canonical `data_support_status` for every mechanism-inventory row:
+
+- `supported`: Current authorized data can support a decision-bearing test of the mechanism within the frozen scope.
+- `support_limited`: Relevant data exist, but support, quality, range, or identifiability prevents direct decision-family promotion.
+- `diagnostic_only`: Current data can audit support, quality, an alternative, or a failure mode but cannot carry the substantive decision.
+- `unsupported`: Required support is absent or invalid in the current data scope.
+- `not_assessed`: Data support has not yet been audited.
+- `not_applicable`: Data support is not a meaningful criterion for the row's declared nondecision role.
+
+Only `supported` can enter direct candidate ranking or promotion. The value is frozen within an inventory version; a changed assessment creates a successor version. At saturated completion, every nonduplicate `active`, `provisionally_supported`, or `weakened` mechanism still requires at least one finite active coverage cell, even when that cell is diagnostic, support limited, or closes as not testable. A `rejected` mechanism requires preserved `tested_valid` evidence or a valid `covered_by` chain to it; `needs_human_judgment` blocks completion. Use `needs_data` or a documented duplicate for a genuinely zero-cell inventory boundary. Because `needs_data` is itself an assessment, do not pair it with `supported` or `not_assessed`.
+
 ## Mechanism Status
 
 - `active`: Plausible and still testable.
@@ -142,6 +155,48 @@ Use only these four canonical values; do not emit legacy aliases.
 - `parallel_conclusion`: The result answers a different target, sample, estimand, evidence stage, or material data-quality regime and is reported separately.
 - `support_limited_candidate`: The result is scientifically interesting but its support or quality prevents direct ranking in the intended family.
 - `not_eligible_for_decision`: The result fails a frozen eligibility condition.
+
+## Substantive Alignment Gate
+
+Record `mechanism_alignment` as the cell's alignment to the frozen claim or mechanism:
+
+- `direct`: The observable or output directly represents the frozen claim or estimand.
+- `calibrated_proxy`: A prespecified calibration supports the claimed interpretation.
+- `diagnostic_only`: The result diagnoses support, quality, or an alternative but cannot lead the substantive decision.
+- `unsupported`: The claimed interpretation lacks adequate alignment.
+- `not_assessed`: Alignment has not been audited.
+- `not_applicable`: Mechanism alignment is not meaningful for the frozen predictive or operational decision; its substantive eligibility rule still applies.
+
+Only `direct`, `calibrated_proxy`, and justified `not_applicable` may pass this gate for eligibility, ranking, or promotion. The gate records claim fit; it does not establish that a mechanism is true.
+
+## Measurement-Error Sensitivity Gate
+
+Record `measurement_error_sensitivity` for every coverage cell:
+
+- `not_applicable`: Measurement error cannot materially affect the cell's support, selection, or decision role.
+- `not_required`: A frozen assessment found no material pathway to eligibility, subgroup membership, thresholding, ranking, or promotion.
+- `planned`: A required sensitivity analysis has not completed.
+- `passed`: A domain-appropriate analysis supports the intended use.
+- `failed`: Sensitivity is inadequate for the intended use.
+- `inconclusive`: Available evidence cannot establish adequacy.
+
+`planned`, `failed`, and `inconclusive` cannot support eligibility, ranking, or promotion when the policy makes the gate applicable.
+
+## Transportability Gate
+
+Record `transportability_requirement` and `transportability_status` in the Decision Contract and each selection family.
+
+Population denotes the scientific target domain, system class, distribution, or ensemble. It is distinct from the concrete sample or data split recorded by `supported_sample_id`.
+
+- Requirement `same_population`: target, analysis, selection, and reporting populations are the same; use status `not_required`.
+- Requirement `validation_required`: one or more populations differ and a frozen transport, standardization, calibration, or common-scale mapping must pass before direct comparison; status is `planned`, `passed`, `failed`, or `inconclusive`.
+- Requirement `parallel_only`: no direct transport claim is made; use status `not_required` and keep the result parallel or support limited.
+
+A family marked `validation_required` is not eligible for a terminal leading or tie decision until its status is `passed`.
+
+## Evidence-Scale Relation
+
+Within each `evidence_scale_mapping`, use `same_scale`, `monotone_only`, `calibrated_mapping`, `separate_roles`, or `not_applicable`. Non-applicable mappings require a reason and are exclusive for their selection family. Every other mapping records both statistics or models, both estimands and scales, the validation or calibration rule, and the discordance rule. Different screening statistics may have separate mappings, but a normalized `(selection_family_id, screening_statistic)` pair is unique. `monotone_only` and `separate_roles` do not transfer raw-scale predictive evidence without an independently valid decision-scale test.
 
 ## Decision Status
 
@@ -190,16 +245,27 @@ The smallest nominal p-value alone cannot assign `leading`.
 ## Required Registry Fields
 
 ```text
+artifact_schema_version
 inventory_version
 decision_contract_version
 prior_exposure_audit_version
+evidence_scale_mapping
 coverage_cell_id
 mechanism_id
+data_support_status
 observable_id
 formulation_id
+mechanism_alignment
+measurement_error_sensitivity
 selection_family_id
 selection_family_version
 comparison_key
+target_population
+supported_sample_id
+estimand
+data_quality_regime
+transportability_requirement
+transportability_status
 comparability_status
 decision_status
 decision_contract_applied
@@ -243,7 +309,8 @@ last_round_id
 - `known_overlap` or `unknown` prior exposure does not become pristine confirmation because files, samples, code, models, repositories, workflows, or skill versions changed.
 - A tuned holdout is `compromised`, not holdout verified.
 - A screen changes scheduling or eligibility only under its frozen rule; it does not mark an unrun deep-test cell covered.
-- Candidates with different comparison keys remain `parallel_conclusion` or `support_limited_candidate` unless a prespecified validated mapping applies.
+- Candidates with different target populations or comparison fields remain `parallel_conclusion` or `support_limited_candidate` unless a prespecified mapping has `transportability_status=passed`.
+- Ranking and promotion require a passing substantive-alignment gate and any applicable measurement-error and transportability gates.
 - A final `tie` or `inconclusive` cannot be rewritten as a winner by selecting the smallest nominal p-value.
 - Missing data, small samples, failed execution, or invalid tests do not reject a mechanism.
 - `complete_within_scope` may be entered only when saturation, coverage completion, ledger audit, `decision_contract_applied=true` with a terminal decision status, prior-exposure audit, and machine consistency checks all pass for the same version.

@@ -1,6 +1,6 @@
 [
   {
-    "query": "Build a versioned inventory of every physical mechanism and observable supported by these data products, search the finite coverage cells, and stop only after coverage and saturation audits pass.",
+    "query": "Build a versioned inventory of the distinct mechanisms and observables supported by these data products, search the finite coverage cells, and stop only after coverage and saturation audits pass.",
     "should_trigger": true
   },
   {
@@ -16,7 +16,7 @@
     "should_trigger": true
   },
   {
-    "query": "Autonomously improve this scientific prediction model while protecting the held-out benchmark, logging all selection-influencing tests, and reporting all failed model families.",
+    "query": "Autonomously improve this prediction model, preregister how a rank-based screen maps to raw-scale predictive evidence, protect the held-out benchmark, and log every selection-influencing test.",
     "should_trigger": true
   },
   {
@@ -32,7 +32,7 @@
     "should_trigger": true
   },
   {
-    "query": "Compare candidates from different target populations and estimands only when scientifically commensurable, retaining the others as parallel or support-limited conclusions.",
+    "query": "Before ranking a flat Cartesian candidate pool, require substantive alignment, keep the full target population distinct from a cleaner selection subgroup, validate any transport, and test material measurement error without assuming one fixed method.",
     "should_trigger": true
   },
   {

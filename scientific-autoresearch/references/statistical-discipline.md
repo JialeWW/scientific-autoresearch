@@ -9,6 +9,7 @@ Before candidate-specific outcomes, freeze a Decision Contract that states:
 - the decision and eligible candidate classes;
 - which candidates share a justified selection family and comparison key;
 - the estimand, ranking evidence, decision rule, minimum meaningful difference, and treatment of robustness, complexity, and data quality;
+- the mapping between any screening statistic and the final decision or prediction scale;
 - tie, practical-equivalence, and inconclusive rules;
 - the inference strategy that will cover the complete selection path.
 
@@ -18,7 +19,13 @@ A Decision Contract first written or revised after relevant outcomes were inspec
 
 Complete a Prior-exposure Audit covering same or overlapping data, earlier analyses, parameter attempts, data looks, holdouts, and candidate decisions. Evidence exposure follows the underlying information. A changed sample, codebase, model, repository, workflow, or skill version does not restore confirmatory status. If exposure is uncertain, record `prior_exposure_status=unknown` and do not claim pristine confirmation.
 
-## 2. Freeze Each Coverage Cell
+## 2. Map Screening Evidence to the Decision Scale
+
+Before screening outcomes, record the screening statistic, final decision model or statistic, both estimands and scales, the assumed relation between them, any calibration or validation test, and the rule for discordant evidence. Use `same_scale`, `monotone_only`, `calibrated_mapping`, `separate_roles`, or `not_applicable` as the declared scale relation.
+
+Rank statistics encode ordering, not raw-scale slope or calibration. Therefore a rank-based screen may prioritize a candidate but cannot establish raw-scale slope, calibration, residual adequacy, or predictive performance unless the registered mapping supports that inference. If screening and decision evidence disagree, retain both and apply the frozen discordance rule; do not choose the more favorable scale after inspection.
+
+## 3. Freeze Each Coverage Cell
 
 Record:
 
@@ -50,7 +57,7 @@ freeze_time
 
 A substantive change to sample, outcome, formula, scale, threshold, model, or estimand creates a new formulation ID. A change motivated by related outcomes is `post_result_adaptive` and exploratory.
 
-## 3. Establish Sensitivity Before Null Interpretation
+## 4. Establish Sensitivity Before Null Interpretation
 
 Before testing, state the smallest scientifically meaningful effect and estimate attainable precision, power, detectable-effect limits, upper-limit sensitivity, or recovery performance.
 
@@ -61,7 +68,7 @@ After testing:
 - use `inconclusive` when uncertainty remains too wide;
 - separate statistical thresholds from practical or physical importance.
 
-## 4. Cover the Complete Selection Path
+## 5. Cover the Complete Selection Path
 
 Every test or choice capable of influencing the same candidate generation, modification, screening, retention, ranking, verification targeting, promotion, or headline decision belongs to that decision's complete selection path.
 
@@ -98,7 +105,7 @@ When an adaptive mechanism or formulation is added:
 
 Technical failures without a statistic remain in the ledger but receive no fabricated inferential value. Predeclare replacement and retry rules when failures could affect selection.
 
-## 5. Separate Evidence Stages
+## 6. Separate Evidence Stages
 
 - `exploratory`: candidate generation, adaptive formulations, model search, screening, and ranking.
 - `internal_validation`: same-source resampling, cross-validation, alternate models, proxy changes, or robustness checks.
@@ -112,7 +119,7 @@ Evaluate a sealed holdout once. If its feedback changes development, mark it `co
 
 Earlier inspection of the same or overlapping verification units compromises independence even if the split, code, or skill version later changes. Link evidence-stage assignments to the Prior-exposure Audit.
 
-## 6. Handle Stochasticity Honestly
+## 7. Handle Stochasticity Honestly
 
 - Use one fixed seed only for debugging or exact reproduction.
 - Predeclare a common seed or realization set when randomness could change ranking, sign, uncertainty, or interpretation.
@@ -122,7 +129,7 @@ Earlier inspection of the same or overlapping verification units compromises ind
 - Do not treat seeds as independent scientific sample units.
 - Separate optimization noise and Monte Carlo error from data, model, and sample uncertainty.
 
-## 7. Stop by Saturation and Coverage
+## 8. Stop by Saturation and Coverage
 
 Do not use a universal round, mechanism, or candidate count as the scientific stopping rule.
 
@@ -137,11 +144,12 @@ Scientific completion requires `inventory_saturated`, `coverage_complete`, `sear
 
 If user limits, compute, cost, storage, time, or authorization end first, pause or stop execution with every open cell listed. Do not call the search saturated or complete. Do not stop merely because a favorable threshold was crossed or continue merely because results are null.
 
-## 8. Promotion Checklist
+## 9. Promotion Checklist
 
 Before promotion, verify:
 
 - the computed estimand matches the stated claim;
+- screening evidence and decision-scale evidence follow the frozen mapping and discordance rule;
 - support and sensitivity justify the interpretation;
 - every selection-influencing branch and data look is recorded;
 - inference covers the complete generation-to-promotion selection path and its adaptive versions;

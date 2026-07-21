@@ -18,6 +18,8 @@ Do not infer coverage from successful matches. Do not turn “no detected object
 
 Treat availability, support, exposure, footprint, quality, and missingness classes as diagnostic strata by default. Do not use unsupported or out-of-footprint cases to subtract, normalize, residualize, or calibrate a scientific response unless an independent physical or instrumental argument makes them a valid background.
 
+If measurement uncertainty can change support, matching, subgroup membership, thresholds, eligibility, or candidate ranking, propagate or perturb it through the relevant selection path before that quantity can control promotion. A recovery study, measurement model, resampling scheme, calibration analysis, or another domain-appropriate sensitivity design may satisfy the gate. Until it passes, keep quality-defined strata diagnostic or support limited. This conditional gate is method- and execution-context agnostic.
+
 ## 2. Match the Observable to the Mechanism
 
 - For nearest-neighbor or triggering mechanisms, test proximity, minimum distance, or presence within a predeclared scale.
@@ -57,7 +59,7 @@ Response residualization does not prove predictor-side excess or deficit. State 
 
 ## 5. Multi-Factor Mechanisms
 
-Combine factors only when the mechanism defines the estimand and units, for example amplitude x path length, density x volume, mass weighted by impact parameter, count/exposure, or a justified interaction.
+Combine factors only when the mechanism defines the estimand and units, for example amplitude x path length, density x volume, signal weighted by distance or exposure, count/exposure, or a justified interaction.
 
 Do not build an arbitrary score from weak variables merely to improve a metric. Register any post-result composite as exploratory.
 

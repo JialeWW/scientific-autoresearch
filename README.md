@@ -6,7 +6,7 @@
 
 `scientific-autoresearch` is an agent-independent [Agent Skill](https://agentskills.io) for mechanism-first scientific investigation over a finite, data-supported search space. It helps an agent define the decision before seeing outcomes, search systematically without arbitrary mechanism or round caps, learn from weak and null results, and preserve an auditable path from candidate generation to final inference.
 
-Current version: **0.2.1**.
+Current version: **0.2.2**.
 
 ## Scope
 
@@ -24,20 +24,13 @@ Use the skill for research that requires several of these capabilities:
 
 Do not use it for literature-only review, manuscript editing, routine execution of a fixed pipeline, or unauthorized live human, animal, clinical, field, wet-lab, hazardous, or external-system actions.
 
-## Version 0.2.1 Highlights
+## Version 0.2.2 Highlights
 
-- Replaced fixed mechanism and round caps with a versioned `mechanism_inventory` and finite coverage cells.
-- Added coverage completion plus inventory saturation as the scientific stopping rule.
-- Added a pre-search Decision Contract; the smallest `p` value is never a default winner.
-- Added a Prior-exposure Audit. Changing a sample, codebase, or skill version does not restore confirmatory status after overlapping data have been examined.
-- Added explicit selection families and comparability gates for target population, supported sample, estimand, evidence stage, and data quality.
-- Expanded inference to cover the complete selection path. Valid strategies include sealed holdouts, end-to-end null procedures, selective or sequential inference, hierarchical multiplicity control, and Bayesian model comparison or averaging.
-- Kept method choice domain-sensitive rather than imposing one universal global-null procedure.
-- Strengthened saturation auditing with mechanism-forward and data-product-reverse reviews, plus a question-dependent third independent source when useful.
-- Separated scientific coverage from compute scheduling: priority controls execution order only, and unrun cells remain open.
-- Added reusable compute authorization envelopes, resource-limited pause reports, and persistent open queues.
-- Added a machine consistency validator for inventories, coverage matrices, ledgers, selection families, candidate decisions, data versions, and status transitions.
-- Preserved weak, null, inconclusive, invalid, and failed results alongside supported findings.
+- Requires frozen substantive eligibility and mechanism alignment before statistical ranking, while retaining justified constrained or factorial designs.
+- Separates target, analysis, selection, and reporting populations; cross-population claims require validated transport or remain parallel or support-limited.
+- Adds a conditional measurement-error sensitivity gate when uncertainty can affect support, selection, ranking, or promotion, without prescribing one method.
+- Requires a frozen mapping and discordance rule when screening statistics and final decision or prediction models use different scales.
+- Upgrades the run validator to 1.4.0, adds non-overwriting schema initialization, and keeps legacy artifacts readable while separating metadata consistency from numerical reproduction.
 
 ## Core Loop
 
@@ -117,7 +110,7 @@ Do not execute an analysis.
 
 ```text
 Use the scientific-autoresearch skill to execute the next eligible coverage cells
-over the approved local data. Preserve immutable outputs and the open queue.
+over the authorized data. Preserve immutable outputs and the open queue.
 ```
 
 ### Coverage-based autonomous run
@@ -161,6 +154,14 @@ Sensitive diagnostics must be minimized or de-identified. Reproduction records m
 
 ## Validation
 
+Initialize the canonical metadata skeleton for a new run:
+
+```bash
+python scientific-autoresearch/scripts/validate_run.py --init runs/<run_id>
+```
+
+Initialization never overwrites an existing run or supplies scientific decisions or approvals; the skeleton remains invalid until its required fields and records are completed.
+
 Run the repository validator:
 
 ```bash
@@ -174,13 +175,13 @@ python scientific-autoresearch/scripts/validate_run.py runs/<run_id> \
   --output runs/<run_id>/consistency_report.json
 ```
 
-The run validator checks referential integrity and state consistency across the inventory, coverage matrix, search ledger, selection families, candidate registry, data versions, decision artifacts, and status transitions. A failed consistency audit blocks a scientific-completion claim.
+The run validator checks referential integrity and state consistency across the inventory, coverage matrix, search ledger, selection families, candidate registry, data versions, decision artifacts, and status transitions. A failed consistency audit blocks a scientific-completion claim. Report that separately from numerical rerun agreement: matched inputs, code, environment, seeds, tolerances, and output hashes can support same-condition agreement for the checked outputs without repairing missing metadata.
 
 ## Evaluation
 
 The behavioral evals cover design-only work, observational support, coverage-based machine learning and simulation, compute authorization and resource pauses, sensitive data, null triage, causal identification, Decision Contracts, prior exposure, candidate comparability, full selection-path inference, saturation audits, and consistency checks.
 
-Trigger evals contain balanced should-trigger and should-not-trigger prompts. Run evals in isolated contexts and compare v0.2.1 with the previous version or a no-skill baseline.
+Trigger evals contain balanced should-trigger and should-not-trigger prompts. Run evals in isolated contexts and compare v0.2.2 with the previous version or a no-skill baseline.
 
 ## Scientific Interpretation Standard
 

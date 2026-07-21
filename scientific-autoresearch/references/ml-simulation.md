@@ -40,6 +40,8 @@ Candidates trained or evaluated on different target populations, supported sampl
 
 A scheduler may apply one or more prespecified low-cost screening stages within declared comparable screening families before deeper evaluation. Record each screen's sensitivity, false-negative risk, threshold, and selection consequences. Screening and priority control execution order only; unrun deep-test cells remain open and in the coverage denominator. When resources end, preserve the complete queue and exact resume point.
 
+If the screen and final predictor or decision model use different statistics, losses, transformations, or scales, freeze their estimand relation, calibration or validation, and discordance rule. A rank-based association screen does not by itself validate raw-scale linear prediction, calibration, or predictive loss.
+
 Choose complete-selection-path inference that matches the workflow: a once-used sealed test set, an end-to-end null that reruns tuning and selection, selective or sequential inference, hierarchical control, Bayesian model comparison or averaging with declared priors and candidate set, or another justified design. Do not force every model or simulation task into one universal global-null method.
 
 Residual or error analysis may motivate new cells. Give them new IDs and versions, mark them post-result adaptive and exploratory, and do not evaluate them as if predeclared.

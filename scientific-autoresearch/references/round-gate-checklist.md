@@ -7,17 +7,18 @@ Complete this checklist after every executed round. Mark non-applicable adapter 
 - **Identity**: Are run, round, parent, inventory, coverage-cell, ledger, and selection-family versions recorded?
 - **Governance**: Is work inside authorized data, action, output, compute, cost, storage, time, and oversight boundaries?
 - **Authorization reuse**: If a compute envelope exists, is it still valid, and does the next job remain wholly inside it?
-- **Decision Contract**: Was the final decision, eligibility, comparison key, ranking evidence, meaningful difference, tie rule, inconclusive rule, and complete-selection-path method frozen before relevant outcomes?
+- **Decision Contract**: Were the final decision, four population roles, substantive eligibility, measurement-error, transport and evidence-scale rules, comparison key, ranking evidence, tie rule, inconclusive rule, and complete-selection-path method frozen before relevant outcomes?
 - **Prior exposure**: Does the audit cover earlier overlapping analyses, parameter attempts, data looks, holdout use, and uncertain history? Do evidence-stage claims respect it?
-- **Claim fit**: Does each statistic estimate the frozen cell's claim and estimand?
+- **Claim fit**: Did each cell pass its frozen substantive-alignment gate before statistical ranking, and are diagnostics or unsupported proxies kept out of substantive promotion?
 - **Support**: Are unavailable, unsupported, missing, censored, low-quality, ineligible, and true-zero cases separated where relevant?
 - **Specification timing**: Which choices were pre-result frozen and which are post-result adaptive?
 - **Evidence stage**: Is each result exploratory, internal validation, independent verification, or diagnostic?
 - **Search ledger**: Are all tests, variants, looks, retries, weak outcomes, and failed branches recorded?
 - **Selection family**: Does every generation, modification, screening, ranking, verification-targeting, and promotion step belong to the correct complete path? Were adaptive additions versioned and inference updated with a domain-appropriate method?
-- **Comparability**: Do directly ranked candidates share the frozen target population, supported sample, estimand, evidence stage, and material data-quality regime or a validated common-scale mapping? Are other results parallel or support limited?
+- **Comparability**: Do directly ranked candidates share the frozen target population, supported sample, estimand, evidence stage, and material data-quality regime? If populations differ, did the declared transport pass? Are other results parallel or support limited?
 - **Evidence scale**: What is the effect in meaningful units relative to the minimum meaningful effect and systematic floor?
-- **Sensitivity**: Could the cell detect or exclude a meaningful effect? Is the result null or inconclusive?
+- **Screen-to-decision mapping**: If screening and decision evidence use different statistics, estimands, or scales, was their mapping and discordance rule frozen and followed?
+- **Sensitivity**: Could the cell detect or exclude a meaningful effect? If measurement uncertainty can change support, selection, subgroup membership, thresholds, or ranking, did a domain-appropriate sensitivity analysis pass before promotion?
 - **Uncertainty**: Are statistical, systematic, calibration, model-choice, stochastic, and sample-variance components handled?
 - **Seeds**: Does the actual seed or realization set follow the frozen policy, including failed runs, without favorable selection?
 - **Falsification**: What result could have weakened the claim, and what happened?
@@ -27,8 +28,9 @@ Complete this checklist after every executed round. Mark non-applicable adapter 
 - **Saturation**: If this round claims an inventory audit, did it execute a prespecified complete audit lens rather than merely fail to notice a new mechanism?
 - **Verification**: Is evidence unverified, internal-only, holdout-verified, externally replicated, compromised, or not applicable?
 - **Privacy and reproducibility**: Are artifacts auditable, minimized, and secret-free?
+- **Reproduction axes**: Are metadata consistency and numerical rerun agreement reported separately, with matched inputs, code, environment, seeds, tolerance, and hashes where applicable?
 - **Consistency**: Did the machine validator reconcile contract, exposure, inventory, coverage, ledger, families, data versions, queue, and status transitions?
-- **Decision**: Was the frozen rule applied without defaulting to the smallest p-value or forcing a winner? Does the next action follow from evidence without treating resource limits as scientific completion?
+- **Decision**: Were substantive-alignment, applicable measurement-error, and transportability gates passed before the frozen ranking rule was applied? Was no winner forced from the smallest p-value or a convenient subgroup?
 
 ## Conditional Adapter Gates
 

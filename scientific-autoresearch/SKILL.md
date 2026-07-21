@@ -1,9 +1,9 @@
 ---
 name: scientific-autoresearch
-description: "Use this skill when an agent must systematically investigate the mechanisms, observables, models, or simulations testable with current data: freeze a decision contract and prior-exposure audit, build a versioned mechanism inventory and finite coverage cells, run falsification and complete-selection-path inference, learn from nulls, and stop scientifically only at audited inventory saturation plus coverage completion. Do not use it for literature-only review, manuscript editing, routine execution of a fixed pipeline, or unauthorized live human, animal, clinical, field, or wet-lab actions."
+description: "Use this skill when an agent must systematically investigate mechanisms, observables, models, or simulations testable with current data: freeze a Decision Contract and prior-exposure audit, gate candidates by substantive alignment, measurement-error sensitivity, and population transport, search versioned finite coverage, cover the complete selection path, learn from nulls, and stop only at audited inventory saturation plus coverage completion. Do not use it for literature-only review, manuscript editing, routine execution of a fixed pipeline, or unauthorized live human, animal, clinical, field, or wet-lab actions."
 license: MIT
 metadata:
-  version: "0.2.1"
+  version: "0.2.2"
 ---
 
 # Scientific Autoresearch
@@ -11,7 +11,7 @@ metadata:
 Treat autoresearch as a coverage-guided evidence loop:
 
 ```text
-question -> decision contract -> exposure audit -> inventory -> coverage -> test -> audit
+question -> decision contract -> exposure audit -> inventory -> eligibility -> test -> audit
 ```
 
 Search broadly within the finite space supported by current data; infer conservatively from the full search history. Bound the work by scientific scope, authorized data, governance, and reproducible execution—not by an arbitrary round or mechanism count.
@@ -27,7 +27,7 @@ Choose the least expansive mode that satisfies the request and record it before 
 For `multi_round`, obey any explicit user limit, but do not impose a universal numeric cap on scientific rounds or mechanism count. Before viewing outcomes, freeze:
 
 - the scientific scope and authorized data products;
-- the final decision, comparable selection families, ranking evidence, and tie or inconclusive rules;
+- the final decision, population roles, comparable families, ranking evidence, screening-to-decision scale mapping, transport requirements, and tie or inconclusive rules;
 - the prior-exposure audit and resulting restrictions on evidence stage;
 - the protocol for constructing, deduplicating, versioning, and auditing the mechanism inventory;
 - the rule that makes each mechanism's observable and formulation set finite;
@@ -62,17 +62,17 @@ Read `references/governance-safety.md` whenever data are sensitive, actions affe
 Read `references/coverage-search.md` and `references/decision-selection.md`, then create Round 0:
 
 1. State the scientific question and classify each claim using `references/claim-types.md`.
-2. Freeze `decision_contract.json`: the final decision, eligible candidate classes, comparable selection families, estimand, ranking evidence, decision rule, minimum meaningful difference, complexity and data-quality treatment, tie or equivalence rule, inconclusive rule, and complete-selection-path inference strategy. Never default to the smallest nominal p-value. A contract first created after outcomes were viewed is `post_result_adaptive`, not retrospectively frozen.
+2. Freeze `decision_contract.json`: the final decision; target, analysis, selection, and reporting populations; eligible candidate classes; substantive eligibility, measurement-error, transport, and evidence-scale rules; comparable families; estimand; ranking evidence; tie and inconclusive rules; and complete-selection-path inference. If screening and decision evidence use different statistics or scales, preregister their mapping, validation, and discordance rule. Never default to the smallest nominal p-value. A contract created after outcomes were viewed is `post_result_adaptive`.
 3. Complete `prior_exposure_audit.json` for analyses, parameter attempts, data looks, selections, and results involving the same or overlapping data. Changing a sample, codebase, model, repository, workflow, or skill version does not restore confirmatory status.
 4. Build a versioned `mechanism_inventory`. For every proposed mechanism, record its distinct pathway, inclusion rationale, generation source, applicable regimes, required data products, support status, and whether it is nonredundant and testable with current data.
-5. For every eligible mechanism, register a finite set of coverage cells. Each cell must identify `mechanism_id`, `observable_id`, `formulation_id`, data product and version, supported sample, parameter or scale regime, comparator, expected signature, minimum meaningful effect, sensitivity requirement, and falsifier.
-6. Do not create a naive Cartesian product or claim pointwise coverage of a continuum. Freeze physically meaningful regimes, finite grids, marginalization plans, recovery maps, convergence rules, or adaptive refinement rules before inspecting their outcomes.
+5. Map every eligible mechanism through `mechanism -> observable role -> formulation` into finite coverage cells. Record the mechanism or claim alignment, supported sample, parameter or scale regime, expected signature, meaningful effect, sensitivity requirement, and falsifier.
+6. Use a constrained or full product only when every axis and cell has a frozen substantive, control, or diagnostic role; rank only decision-eligible cells. Do not flatten unrelated mechanisms into one statistical pool or claim pointwise coverage of a continuum.
 7. Keep plausible mechanisms unsupported by current data in the inventory with `mechanism_status=needs_data`. Do not count them as executed coverage or evidence against the mechanism.
 8. Freeze complementary inventory-generation lenses, including mechanism-forward decomposition and data-product-to-mechanism reverse mapping. Add an independent third lens—such as literature, theory, expert elicitation, or failure-mode analysis—when the question makes it informative. Literature review is conditional, not universal.
 9. Separate exploratory development, internal validation, sealed-holdout verification, and independent external verification before candidate-specific results are inspected.
-10. Define every selection family using a comparability key that covers the target population, supported sample, estimand, evidence stage, and material data-quality regime. Keep noncomparable results as parallel conclusions or `support_limited_candidate` unless a prespecified valid mapping makes comparison possible.
+10. Define every selection family with structured target population, supported sample, estimand, evidence stage, data-quality regime, and transport status. Keep noncomparable results parallel or `support_limited_candidate` unless a prespecified valid mapping makes comparison possible.
 11. Append every test or choice capable of influencing candidate generation, modification, screening, retention, ranking, verification targeting, or promotion to the ledger. Choose a method that covers this complete selection path; do not force unrelated domains into one universal global-null method.
-12. Estimate sensitivity, precision, power, detectable-effect limits, or recovery performance where null, screening, or small-effect interpretation depends on them.
+12. Freeze a domain-appropriate measurement-error policy. If uncertainty can change support, matching, subgroup membership, thresholds, eligibility, or ranking, require perturbation, propagation, recovery, or another justified sensitivity analysis before promotion.
 13. Select only applicable adapters:
    - observational support, censoring, geometry, or background: `references/observational-data.md`;
    - machine learning, benchmark optimization, or simulation: `references/ml-simulation.md`;
@@ -88,14 +88,15 @@ For each round:
 1. Select unresolved coverage cells without changing their frozen scientific meaning. A scheduler may run one or more frozen, sensitivity-audited low-cost screening stages within declared comparable screening families before deeper tests, but priority changes only execution order: unrun cells remain open.
 2. Freeze the exact claim card, inventory and family versions, inputs, code state, parameters, seed set, sample, exclusions, statistic, model, and falsifier before inspecting results.
 3. Verify that available data can test the cell. Separate unavailable, unsupported, missing, censored, nondetected, low-quality, ineligible, and true-zero cases when those distinctions matter.
-4. Match the observable, scale, representation, and statistic to the mechanism. Do not promote a convenient proxy as direct measurement without calibration.
-5. Run the simplest valid test capable of changing belief. Add flexibility only for a stated scientific reason.
-6. Estimate effects in meaningful units and decompose statistical, systematic, calibration, model-choice, Monte Carlo, and sample-variance uncertainty as applicable.
-7. Run at least one falsification check that could genuinely weaken the claim. Read `references/falsification-toolkit.md`.
-8. Save enough data-minimized diagnostics to reconstruct reported statistics and plots.
-9. Record specification timing, evidence stage, comparability, decision, result, coverage, verification, and execution statuses from `references/status-schema.md`. Preserve weak, null, inconclusive, invalid, failed, abandoned, and unfavorable branches.
-10. If evidence motivates a new mechanism or formulation, preserve the original result, assign new IDs, create a new inventory or coverage version, label the addition post-result adaptive and exploratory, extend the complete selection path, and reset any affected saturation audit.
-11. Complete `references/round-gate-checklist.md`, write immutable round artifacts, run the consistency validator, and select the next unresolved cells.
+4. Apply the frozen substantive-alignment and evidence-scale gates before ranking. Match the observable, representation, statistic, and estimand to the claim. A rank-based association screen does not validate raw-scale prediction without the registered mapping; keep uncalibrated proxies and diagnostics in their declared roles.
+5. Complete any required measurement-error sensitivity analysis before using a quality or uncertainty variable for eligibility, subgroup selection, ranking, or promotion. The skill does not prescribe one computational method or access route.
+6. Run the simplest valid test capable of changing belief. Add flexibility only for a stated scientific reason.
+7. Estimate effects in meaningful units and decompose statistical, systematic, calibration, model-choice, stochastic, and sample-variance uncertainty as applicable.
+8. Run at least one falsification check that could genuinely weaken the claim. Read `references/falsification-toolkit.md`.
+9. Save enough data-minimized diagnostics to reconstruct reported statistics and plots.
+10. Record specification timing, evidence stage, comparability, decision, result, coverage, verification, and execution statuses from `references/status-schema.md`. Preserve weak, null, inconclusive, invalid, failed, abandoned, and unfavorable branches.
+11. If evidence motivates a new mechanism, formulation, or target population, preserve the original result, assign a new ID or version, label the addition post-result adaptive and exploratory, extend the complete selection path, and reset affected audits.
+12. Complete `references/round-gate-checklist.md`, write immutable round artifacts, run the consistency validator, and select the next unresolved cells.
 
 Do not inspect a sealed holdout repeatedly. Freeze preprocessing, feature selection, formula, sample, model, hyperparameters, seed policy, and decision rule before one final verification evaluation. If verification evidence influenced development, mark it `compromised`.
 
@@ -121,6 +122,7 @@ Compute, cost, time, authorization, or user-limit exhaustion produces `resource_
 Promote a candidate only after recording:
 
 - the exact claim, estimand, supported sample, effect, uncertainty, and minimum meaningful scale;
+- passed substantive-alignment and any required measurement-error and transportability gates;
 - its comparability key and selection family, or a parallel or `support_limited_candidate` status;
 - the full generation, modification, screening, ranking, and promotion history and the inference that covers that path;
 - specification timing and evidence stage;
@@ -161,7 +163,7 @@ runs/<run_id>/
   final_report.md                     # only after complete_within_scope
 ```
 
-Never overwrite an earlier contract, audit, inventory, coverage matrix, ledger entry, or round. Record lineage, data versions, hashes when permitted, code state, environment, actual seeds, family versions, resource use, artifact paths, and status transitions. Redact secrets and sensitive identifiers. Read `references/report-contract.md` before creating executed-run artifacts.
+Never overwrite an earlier contract, audit, inventory, coverage matrix, ledger entry, or round. Record lineage, data versions, hashes when permitted, code state, environment, actual seeds, family versions, resource use, artifact paths, and status transitions. Redact secrets and sensitive identifiers. Read `references/report-contract.md` before creating executed-run artifacts; use `scripts/validate_run.py --init <run_dir>` to create a non-overwriting schema skeleton instead of hand-copying metadata.
 
 Run `scripts/validate_run.py <run_dir> --output <run_dir>/consistency_report.json` before resuming an existing run and before issuing any pause or final report. Fix consistency errors or report the run as blocked or incomplete; a large collection of artifacts is not evidence that the search history is complete.
 
@@ -170,7 +172,9 @@ Run `scripts/validate_run.py <run_dir> --output <run_dir>/consistency_report.jso
 - Do not remove, redefine, or hide data because they weaken a result.
 - Do not hide attempted tests, data looks, thresholds, models, subgroups, transformations, weak effects, or failed branches.
 - Do not correct only the visible winners; account for every evaluable test that influenced the same selection or promotion decision.
-- Do not rank candidates by nominal p-value alone, compare incompatible targets or support regimes, or force a winner when the Decision Contract says tie or inconclusive.
+- Do not rank candidates before substantive eligibility, by nominal p-value alone, across incompatible targets, or when required measurement-error or transportability checks remain open.
+- Do not use association evidence on one scale as predictive evidence on another without a frozen, validated mapping and discordance rule.
+- Do not silently replace the frozen target population with a convenient subgroup. Create a new decision version and keep the original decision visible.
 - Do not force scientifically unrelated claims into one unjustified universal null. Freeze and justify selection-family boundaries.
 - Do not restore confirmatory status merely by changing a sample, codebase, model, repository, workflow, or skill version after overlapping data were inspected.
 - Do not confuse missingness, lack of support, invalid execution, or inadequate sensitivity with evidence for a null.
@@ -178,9 +182,10 @@ Run `scripts/validate_run.py <run_dir> --output <run_dir>/consistency_report.jso
 - Do not use post-result choices as confirmatory evidence or same-data variants as independent validation.
 - Do not select seeds, checkpoints, or realizations because they improve the result.
 - Do not treat resource exhaustion, a favorable threshold, a completed round, or one promoted candidate as coverage completion.
-- Do not claim all physical possibilities were exhausted. Scope statements to the versioned mechanisms and observables testable with the available data products.
+- Do not claim all possible mechanisms or models were exhausted. Scope statements to the versioned search space testable with the available data products.
 - Do not fabricate data, citations, approvals, provenance, commands, results, or coverage.
 - Do not expose personal data, credentials, confidential paths, or restricted information.
+- Do not equate incomplete metadata with numerical nonreproducibility. Report structural audit status and same-input, same-code, same-seed reproduction evidence separately.
 
 ## Reference Router
 

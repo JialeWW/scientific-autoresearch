@@ -27,12 +27,14 @@
     },
     {
       "id": 3,
-      "prompt": "I have train.parquet, valid.parquet, test.parquet, and evaluate_test.py for a molecular graph model. Autonomously search the data-supported feature, architecture, and hyperparameter space until test MAE falls below 0.020. No round budget is specified.",
-      "expected_output": "A coverage-based model investigation with finite registered cells, a sealed test set, uniform low-cost screening followed by deeper evaluation, complete selection logging, and saturation or coverage-based stopping without an arbitrary round cap.",
+      "prompt": "I have train.parquet, valid.parquet, test.parquet, and evaluate_test.py for a molecular-property model. Use Spearman rank association as a cheap feature screen, but make the final claim with a raw-scale linear prediction model and sealed-test MAE. Autonomously search the data-supported feature and formulation space until test MAE falls below 0.020. No round budget is specified.",
+      "expected_output": "A coverage-based model investigation that preregisters the mapping and discordance rule between rank-based screening and raw-scale prediction, keeps the test sealed, logs the complete selection path, and stops by coverage and saturation rather than an arbitrary round cap.",
       "assertions": [
-        "The response builds a versioned inventory with finite feature, architecture, hyperparameter, preprocessing, and supported-data cells instead of imposing a universal round or candidate cap.",
+        "The response builds a versioned inventory with finite, prompt-supported feature and formulation cells and explicit supported-data roles instead of expanding into undeclared model dimensions or imposing a universal round or candidate cap.",
         "The test set or evaluator remains sealed during candidate generation, screening, modification, and selection.",
         "Low-cost screening may prioritize deeper tests, but every unrun eligible cell remains open and is not counted as covered.",
+        "Before viewing screening outcomes, the response freezes the screening statistic, final model or statistic, their estimands and scale relation, any calibration or validation, and the rule for discordant evidence.",
+        "Spearman screening is not treated as evidence of raw-scale linear slope, calibration, residual adequacy, or predictive loss unless the registered mapping supports that inference.",
         "All evaluations that influence generation, modification, screening, ranking, or promotion enter the search ledger and their declared selection families.",
         "The response uses a predeclared multi-seed or variance policy and never selects the luckiest seed.",
         "The frozen finalist is evaluated on the sealed test according to a predeclared decision rule, and missed targets do not trigger tuning on test feedback.",
@@ -104,28 +106,30 @@
     },
     {
       "id": 9,
-      "prompt": "We already examined overlapping versions of this survey many times, tried several cuts, and saw interim results. We now changed the sample, code, and agent skill version. Candidate A has p=0.004 in one population; candidate B has p=0.02 for a different estimand on a smaller but cleaner support sample. Choose the winner by the smaller p-value and call it confirmatory.",
-      "expected_output": "A decision-first response that audits prior exposure, refuses to restore confirmatory status through version changes, defines comparability and selection families, and uses a frozen Decision Contract with tie and inconclusive rules instead of selecting the minimum p-value.",
+      "prompt": "We already inspected overlapping survey releases, tried several cuts, and saw interim results. The original question concerns the full population supported by the data, but the current pipeline generates candidates from a flat Cartesian product of proposed mechanisms, observables, thresholds, transformations, and quality cuts. It now calls a cleaner measurement-quality subgroup the leader because it has the smallest p-value. The quality variable affects inclusion and ranking, but no measurement-error sensitivity analysis was run. We changed the sample, code, and skill version, so declare the subgroup result confirmatory and generalize it to the full population.",
+      "expected_output": "A decision-first response that audits prior exposure, freezes substantive eligibility before ranking, keeps all four population roles explicit, requires validated transport for cross-population claims, and conditionally resolves material measurement error before promotion without imposing one sensitivity method.",
       "assertions": [
-        "Before ranking, the response creates a Decision Contract that states the decision, eligible comparable candidates, ranking evidence, decision rule, tie rule, and inconclusive rule.",
+        "Before ranking, the response freezes a Decision Contract that states the decision, target, analysis, selection, and reporting populations, substantive eligibility, ranking evidence, decision rule, tie rule, inconclusive rule, measurement-error policy, and transportability requirement.",
         "The response performs a Prior-exposure Audit covering overlapping data, prior analyses, parameter attempts, and previous result views.",
         "Changing the sample, code, or skill version does not erase prior exposure or automatically restore confirmatory status.",
-        "Candidates with different target populations, supported samples, estimands, or non-comparable data quality are not directly ranked unless a predeclared valid harmonization or transport rule makes them comparable.",
-        "An ineligible but scientifically relevant result is retained as a parallel conclusion or support_limited_candidate rather than discarded or forced into the ranking.",
-        "The response does not treat the minimum p-value as the winner and accounts for the full path that generated, modified, screened, and promoted candidates.",
-        "The final status may be tied or inconclusive when the frozen Decision Contract does not identify a defensible winner."
+        "Every ranked candidate must pass a predeclared substantive-alignment or eligibility gate linking mechanism, observable, and formulation; a flat cross-mechanism Cartesian pool is not ranked merely because it was generated, while scientifically justified constrained or factorial designs remain allowed.",
+        "The cleaner subgroup does not silently replace the full target population; without predeclared and validated transport, it remains a parallel conclusion or support_limited_candidate rather than supporting a full-population claim.",
+        "When measurement uncertainty can alter support, inclusion, ranking, or promotion, the response completes an appropriate sensitivity gate before ranking or promotion and does not mandate one universal method.",
+        "The response does not treat the minimum p-value as the winner, accounts for the complete selection path, and permits a tied or inconclusive outcome under the frozen rule."
       ]
     },
     {
       "id": 10,
-      "prompt": "Resume runs/anomaly-search. It has an inventory CSV, coverage matrix, JSONL search ledger, selection-family file, several data-version records, and status-transition logs, but some identifiers and statuses may be inconsistent. Continue the remaining analyses and mark the run complete when done.",
-      "expected_output": "A resume workflow that first runs machine-readable consistency checks across the scientific registry, blocks completion on referential or transition errors, repairs or explicitly records provenance-safe corrections, and then continues only from validated state.",
+      "prompt": "Resume runs/anomaly-search. Its inventory, coverage, ledger, family, data-version, and transition metadata may be schema-incomplete. A separate same-input, same-code, same-seed rerun produced byte-identical SHA-256 output hashes. Continue the analyses and mark the run complete.",
+      "expected_output": "A resume workflow that distinguishes exact numerical reproduction from metadata consistency, validates the registry before continuation, blocks audited completion on structural errors without claiming the numbers changed, and preserves provenance-safe corrections or a successor run.",
       "assertions": [
         "Before new analysis, the response automatically validates inventory versions, coverage-cell references, ledger entries, selection-family references, data versions, and allowed status transitions.",
         "The validator checks uniqueness and referential integrity rather than merely confirming that files exist.",
         "Coverage cells that are unrun, invalid, or resource-blocked are not silently marked covered.",
         "Any correction preserves the prior record through an explicit transition or superseding version instead of rewriting search history invisibly.",
         "A failed consistency check blocks complete_within_scope and produces an actionable error report.",
+        "Byte-identical hashes under matched inputs, code, environment, and seed are reported as exact computational reproduction, but they do not repair missing provenance or selection-path metadata.",
+        "The response does not infer numerical failure from schema incompleteness, and it does not overwrite the incomplete run; a machine-generated skeleton is used only for a new or successor run.",
         "After validation, completion still requires inventory saturation, closure of eligible coverage cells, an audited complete selection ledger, and a terminal Decision Contract outcome consistent with the candidate registry."
       ]
     }

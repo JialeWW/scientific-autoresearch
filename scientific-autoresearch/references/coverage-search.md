@@ -29,6 +29,8 @@ Use `pre_result_frozen` when the entry was fixed before related outcomes were in
 
 Keep scientifically plausible but currently untestable mechanisms with `mechanism_status=needs_data`. They document the boundary of the available data but do not enter the executable coverage denominator.
 
+Use the canonical `data_support_status` values in `status-schema.md`. Direct promotion requires `supported`, but every nonduplicate `active`, `provisionally_supported`, or `weakened` mechanism must still receive finite coverage; a limited, diagnostic, or unsupported role changes the cell's role or closure, not whether the active mechanism is represented in the search map.
+
 ## 2. Enumerate Through Complementary Lenses
 
 Freeze the inventory-audit protocol before outcomes. Use complementary lenses rather than one unconstrained brainstorming pass:
@@ -60,6 +62,8 @@ inventory_version
 mechanism_id
 observable_id
 formulation_id
+mechanism_alignment
+measurement_error_sensitivity
 data_product_id
 data_version_id
 supported_sample_id
@@ -79,7 +83,7 @@ specification_timing
 
 The scientific space may contain any number of mechanisms over time, but each inventory version and each mechanism's executable formulation set must be finite and auditable.
 
-Do not construct a meaningless Cartesian product. For continuous spaces, freeze a physically justified range plus one of:
+Construct cells through `mechanism -> observable role -> formulation`. A constrained or full product is valid only when each axis and resulting cell has a frozen substantive, control, or diagnostic role; only decision-eligible cells enter ranking. Do not flatten unrelated mechanisms, proxies, and parameter combinations into one ranked pool. For continuous spaces, freeze a substantively justified range plus one of:
 
 - a finite grid and resolution;
 - a sampling distribution and draw count;
@@ -95,7 +99,7 @@ Every test capable of influencing the same candidate-generation, modification, s
 
 Freeze family boundaries and an end-to-end null, hierarchical, max-statistic, selective, sequential, false-discovery, Bayesian model-comparison or model-averaging, sealed-holdout, or other justified inference method before outcomes when possible. Preserve the dependence structure when calibrating a family. The skill does not prescribe one universal global-null construction.
 
-Direct comparison also requires a common decision, target population, supported sample, estimand, evidence stage, and materially comparable data-quality regime, or a prespecified validated mapping to a common scale. Do not force unrelated estimands, samples, quality regimes, or null distributions into one universal family. Preserve noncomparable results as parallel conclusions or `support_limited_candidate`. If mechanisms legitimately compete for one headline conclusion, define a cross-mechanism gate or omnibus family, then use prespecified within-mechanism families for localization.
+Direct comparison also requires a common decision, target population, supported sample, estimand, evidence stage, and materially comparable data-quality regime, or a prespecified validated mapping to a common scale. Store these as structured family fields together with `transportability_requirement` and `transportability_status`; an opaque comparison key is not enough. Do not force unrelated estimands, samples, quality regimes, or null distributions into one universal family. Preserve noncomparable results as parallel conclusions or `support_limited_candidate`. If mechanisms legitimately compete for one headline conclusion, define a cross-mechanism gate or omnibus family, then use prespecified within-mechanism families for localization.
 
 When an adaptive inventory or formulation addition affects selection:
 

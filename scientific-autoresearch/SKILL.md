@@ -1,9 +1,9 @@
 ---
 name: scientific-autoresearch
-description: "Use this skill for formal, auditable data-supported investigation, especially when agents generate, modify, screen, compare, rank, or systematically cover candidates. It supports design and requested fixed-test audits without full search machinery. Do not trigger it for a prespecified statistic, measurement, benchmark, convergence check, or fixed pipeline unless audit or provenance is requested; exclude literature-only review, manuscript editing, and unauthorized live human, animal, clinical, field, or wet-lab actions."
+description: "Use this skill when scientific work requires formal audit or provenance, or when agents generate, modify, screen, compare, rank, or systematically cover data-supported candidates. It provides proportionate profiles for research design, audited fixed tests, adaptive search, and coverage search, with conservative inference across the complete selection path."
 license: MIT
 metadata:
-  version: "0.2.3"
+  version: "0.2.4"
 ---
 
 # Scientific Autoresearch

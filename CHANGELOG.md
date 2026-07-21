@@ -2,10 +2,15 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.4 - 2026-07-21
+
+- Reframed the formal skill description around positive activation signals: requested audit or provenance, scientific adaptivity, candidate comparison, and data-supported coverage.
+- Moved scope discrimination into proportionate profile routing while retaining internal trigger controls and all governance, statistical, and integrity guardrails.
+
 ## 0.2.3 - 2026-07-21
 
 - Split executed work into risk-proportionate `fixed_test`, `adaptive_search`, and `coverage_search` profiles while retaining non-executing `design_only`.
-- Excluded ordinary one-off correlations, frozen-model evaluations, parameter estimates, and fixed convergence checks unless formal audited execution is explicitly requested.
+- Reserved `fixed_test` for explicitly requested formal audits of frozen analyses and activated broader profiles only when scientific adaptivity or scoped coverage requires them.
 - Generalized inventories from mechanisms alone to typed scientific candidates, including mechanisms, models, features, simulation formulations, and design alternatives.
 - Made transport, measurement-error sensitivity, and screening-to-decision scale mapping conditional on the corresponding scientific or selection risk.
 - Distinguished a valid stage report or bounded profile outcome from scientific completion, which remains reserved for fully audited coverage search.

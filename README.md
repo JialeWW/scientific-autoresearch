@@ -6,7 +6,7 @@
 
 `scientific-autoresearch` is an agent-independent [Agent Skill](https://agentskills.io) for auditable scientific investigation. It scales from one formally audited fixed test to adaptive candidate search and coverage-based search over a finite, data-supported space. It helps an agent match procedural overhead to selection risk while preserving conservative inference.
 
-Current version: **0.2.3**.
+Current version: **0.2.4**.
 
 ## Scope
 
@@ -23,20 +23,19 @@ Use the skill when the user requests formal audit artifacts or when the work gen
 - claim scoped scientific completion only after the full closure gate passes; otherwise issue a bounded report or pause with an open queue;
 - produce versioned evidence, auditable state transitions, and reproducible decisions.
 
-Do not trigger the skill merely to compute one prespecified Pearson or Spearman correlation, evaluate one frozen model, estimate one fixed parameter, or run one fixed convergence check. If the user explicitly requests a formal audited run for such a task, use `fixed_test`; otherwise handle it as ordinary analysis. Also exclude literature-only review, manuscript editing, routine pipeline execution, and unauthorized live human, animal, clinical, field, wet-lab, hazardous, or external-system actions.
+Select the profile according to the requested audit depth and the adaptivity of the scientific workflow. Use `fixed_test` for an explicitly requested formal audit of one prespecified analysis; use `adaptive_search` when outcomes can influence candidate selection; and use `coverage_search` for systematic coverage of a versioned, data-supported candidate space. Scope and authorization gates govern sensitive, regulated, costly, prospective, physical, or external-system actions.
 
-## Version 0.2.3 Highlights
+## Version 0.2.4 Highlights
 
-- Replaces the one-size-fits-all executed-run workflow with three risk profiles: `fixed_test`, `adaptive_search`, and `coverage_search`; `design_only` remains non-executing.
-- Makes candidate inventories typed and applies inventory, saturation, and complete-selection-path machinery only when the chosen profile needs it.
-- Activates transport, measurement-error, and screen-to-decision scale gates only when the corresponding risk is present.
-- Distinguishes a valid stage report from scientific completion: bounded work may be faithfully finished while an adaptive or coverage queue remains open.
-- Upgrades the run schema and validator to 1.5.0 with profile-aware initialization, non-overwriting upgrade snapshots, and checks that reduce metadata burden without weakening applicable safeguards.
+- Defines the skill positively around formal audit, scientific adaptivity, candidate comparison, and data-supported coverage.
+- Routes each in-scope task through proportionate profile selection.
+- Retains the `design_only`, `fixed_test`, `adaptive_search`, and `coverage_search` workflows and all applicable scientific safeguards from v0.2.3.
+- Preserves profile-aware schema 1.5.0 initialization, non-overwriting upgrade snapshots, and legacy-run validation.
 
 ## Choose the Smallest Valid Profile
 
 - `design_only`: review or construct a question, claim card, inventory, or analysis design without executing it.
-- `fixed_test`: one frozen claim, sample, statistic or model, and decision rule, with no result-dependent candidate generation or selection. Use only when formal audited execution is requested.
+- `fixed_test`: one frozen claim, sample, statistic or model, and decision rule, with no result-dependent candidate generation or selection. This profile serves explicitly requested formal audited execution.
 - `adaptive_search`: candidates may be generated, modified, screened, tuned, filtered, compared, or promoted. Require a Decision Contract, prior-exposure audit, ledger, selection families, and inference covering the actual selection path.
 - `coverage_search`: systematically search a versioned finite data-supported space and assess scoped completion. Add typed inventory coverage, complementary saturation audits, the open queue, and coverage-completion rules.
 
@@ -53,9 +52,9 @@ decision -> prior exposure -> inventory -> coverage cells -> tests -> ledger
 
 The search space is bounded by the available data products and explicit formulations, not by a universal number of candidates or rounds. Rounds are write-once-by-policy execution checkpoints. The validator reconciles their recorded hashes; tamper evidence against coordinated rewriting of both files and manifest requires an append-only or externally anchored store. A run may use inexpensive uniform screening before deeper tests, but scheduling priority never counts as scientific coverage.
 
-The workflow figure at the top depicts `coverage_search`, the most expansive profile. It is not the required process for `fixed_test` or every `adaptive_search` run.
+The workflow figure at the top depicts `coverage_search`, the most expansive profile. A `fixed_test` follows its compact profile, while an `adaptive_search` activates the steps required by its actual selection risk.
 
-A `stage_report` may validly close the work authorized for the current checkpoint: it states what ran, what was learned, which safeguards applied, and what remains open. It is not a claim that the candidate space is saturated or covered. A `fixed_test` can finish when its frozen test and proportionate checks are complete; an `adaptive_search` can report its current decision state without claiming exhaustive coverage. Scientific completion (`complete_within_scope`) is reserved for `coverage_search` and requires inventory saturation, closure of every eligible coverage cell, an audited complete selection ledger, application of the frozen Decision Contract with a terminal decision, an adequate prior-exposure audit for the claim, and a passing consistency check.
+A `stage_report` may validly close the work authorized for the current checkpoint: it states what ran, what was learned, which safeguards applied, and what remains open, while leaving candidate-space saturation and coverage unresolved. A `fixed_test` can finish when its frozen test and proportionate checks are complete; an `adaptive_search` can report its current decision state while leaving exhaustive coverage open. Scientific completion (`complete_within_scope`) is reserved for `coverage_search` and requires inventory saturation, closure of every eligible coverage cell, an audited complete selection ledger, application of the frozen Decision Contract with a terminal decision, an adequate prior-exposure audit for the claim, and a passing consistency check.
 
 Inventory saturation requires both a candidate-forward audit and a data-product-reverse audit to produce no unresolved additions. A third independent audit source—such as literature, theory, expert knowledge, or known failure modes—is added when the scientific question makes it informative. Literature review is therefore conditional, not mandatory for every run.
 
@@ -215,9 +214,9 @@ For schema 1.5.0 runs, the validator reads the recorded profile and checks only 
 
 ## Evaluation
 
-The behavioral evals cover `design_only` and all three execution profiles across observational, machine-learning, simulation, sensitive-data, null-triage, and causal settings. They also test that ordinary one-off statistics, frozen-model evaluations, parameter estimates, and fixed convergence checks do not trigger the skill unless formal audited execution is explicitly requested.
+The behavioral evals cover `design_only` and all three execution profiles across observational, machine-learning, simulation, sensitive-data, null-triage, and causal settings. They also verify proportionate profile selection across formally audited fixed tests, adaptive candidate searches, and systematic coverage searches.
 
-Trigger evals contain balanced should-trigger and should-not-trigger prompts. Run evals in isolated contexts and compare v0.2.3 with the previous version or a no-skill baseline.
+Trigger evals balance in-scope prompts with adjacent-task controls. Run evals in isolated contexts and compare v0.2.4 with the previous version or a no-skill baseline.
 
 ## Scientific Interpretation Standard
 

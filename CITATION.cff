@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use scientific-autoresearch, please cite it using this metadata."
-title: "scientific-autoresearch: A coverage-based mechanism-first skill for scientific research"
+title: "scientific-autoresearch: A risk-proportionate skill for auditable scientific research"
 authors:
   - family-names: "Wang"
     given-names: "Jiale"
@@ -8,10 +8,10 @@ authors:
   - family-names: "Fang"
     given-names: "Taotao"
     orcid: "https://orcid.org/0000-0002-2853-3808"
-version: "0.2.2"
+version: "0.2.3"
 date-released: "2026-07-21"
 license: "MIT"
 type: "software"
 repository-code: "https://github.com/JialeWW/scientific-autoresearch"
-url: "https://github.com/JialeWW/scientific-autoresearch/releases/tag/v0.2.2"
-abstract: "An agent-independent skill for coverage-based mechanism-first investigation, predeclared decisions, prior-exposure auditing, complete selection-path inference, saturation stopping, conservative interpretation, and reproducible scientific reports."
+url: "https://github.com/JialeWW/scientific-autoresearch/releases/tag/v0.2.3"
+abstract: "An agent-independent skill for risk-proportionate audited scientific investigation, from one formally audited frozen test through adaptive candidate search to coverage-based search, with conservative inference and reproducible reports."

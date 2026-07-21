@@ -4,46 +4,60 @@
 
 [Vector PDF](figures/scientific-autoresearch-workflow-v0.2.1.pdf) · [Vector SVG](figures/scientific-autoresearch-workflow-v0.2.1.svg)
 
-`scientific-autoresearch` is an agent-independent [Agent Skill](https://agentskills.io) for mechanism-first scientific investigation over a finite, data-supported search space. It helps an agent define the decision before seeing outcomes, search systematically without arbitrary mechanism or round caps, learn from weak and null results, and preserve an auditable path from candidate generation to final inference.
+`scientific-autoresearch` is an agent-independent [Agent Skill](https://agentskills.io) for auditable scientific investigation. It scales from one formally audited fixed test to adaptive candidate search and coverage-based search over a finite, data-supported space. It helps an agent match procedural overhead to selection risk while preserving conservative inference.
 
-Current version: **0.2.2**.
+Current version: **0.2.3**.
 
 ## Scope
 
-Use the skill for research that requires several of these capabilities:
+Use the skill when the user requests formal audit artifacts or when the work generates, modifies, filters, ranks, or systematically covers scientific candidates. Depending on profile, it can:
 
-- build and version a mechanism inventory from what the available data can test;
-- translate each mechanism into finite observables, formulations, parameters, supported samples, estimands, and falsifiers;
+- execute one frozen claim with a proportionate reproducibility record;
+- build a typed inventory of mechanisms, models, features, simulation formulations, or design alternatives supported by the available data;
+- translate each eligible candidate into finite observables, formulations, parameters, supported samples, estimands, and falsifiers;
 - define comparable selection families and retain incomparable or support-limited candidates as parallel conclusions;
 - freeze a Decision Contract covering the final decision, admissible evidence, ranking rule, tie rule, and inconclusive rule;
 - audit prior exposure to the same or overlapping data, including earlier analyses, parameter trials, and result views;
 - separate exploratory analysis, internal validation, independent verification, and replication;
 - cover the complete candidate-generation, modification, filtering, and promotion path with an appropriate inferential design;
-- stop on coverage completion and inventory saturation, or pause with an open queue when execution resources end;
-- produce immutable evidence, state transitions, and reproducible decisions.
+- claim scoped scientific completion only after the full closure gate passes; otherwise issue a bounded report or pause with an open queue;
+- produce versioned evidence, auditable state transitions, and reproducible decisions.
 
-Do not use it for literature-only review, manuscript editing, routine execution of a fixed pipeline, or unauthorized live human, animal, clinical, field, wet-lab, hazardous, or external-system actions.
+Do not trigger the skill merely to compute one prespecified Pearson or Spearman correlation, evaluate one frozen model, estimate one fixed parameter, or run one fixed convergence check. If the user explicitly requests a formal audited run for such a task, use `fixed_test`; otherwise handle it as ordinary analysis. Also exclude literature-only review, manuscript editing, routine pipeline execution, and unauthorized live human, animal, clinical, field, wet-lab, hazardous, or external-system actions.
 
-## Version 0.2.2 Highlights
+## Version 0.2.3 Highlights
 
-- Requires frozen substantive eligibility and mechanism alignment before statistical ranking, while retaining justified constrained or factorial designs.
-- Separates target, analysis, selection, and reporting populations; cross-population claims require validated transport or remain parallel or support-limited.
-- Adds a conditional measurement-error sensitivity gate when uncertainty can affect support, selection, ranking, or promotion, without prescribing one method.
-- Requires a frozen mapping and discordance rule when screening statistics and final decision or prediction models use different scales.
-- Upgrades the run validator to 1.4.0, adds non-overwriting schema initialization, and keeps legacy artifacts readable while separating metadata consistency from numerical reproduction.
+- Replaces the one-size-fits-all executed-run workflow with three risk profiles: `fixed_test`, `adaptive_search`, and `coverage_search`; `design_only` remains non-executing.
+- Makes candidate inventories typed and applies inventory, saturation, and complete-selection-path machinery only when the chosen profile needs it.
+- Activates transport, measurement-error, and screen-to-decision scale gates only when the corresponding risk is present.
+- Distinguishes a valid stage report from scientific completion: bounded work may be faithfully finished while an adaptive or coverage queue remains open.
+- Upgrades the run schema and validator to 1.5.0 with profile-aware initialization, non-overwriting upgrade snapshots, and checks that reduce metadata burden without weakening applicable safeguards.
 
-## Core Loop
+## Choose the Smallest Valid Profile
+
+- `design_only`: review or construct a question, claim card, inventory, or analysis design without executing it.
+- `fixed_test`: one frozen claim, sample, statistic or model, and decision rule, with no result-dependent candidate generation or selection. Use only when formal audited execution is requested.
+- `adaptive_search`: candidates may be generated, modified, screened, tuned, filtered, compared, or promoted. Require a Decision Contract, prior-exposure audit, ledger, selection families, and inference covering the actual selection path.
+- `coverage_search`: systematically search a versioned finite data-supported space and assess scoped completion. Add typed inventory coverage, complementary saturation audits, the open queue, and coverage-completion rules.
+
+Escalate the profile when behavior changes; never downgrade after seeing results. A fixed analysis that spawns a new threshold, model, subgroup, or formulation becomes `adaptive_search`. A search becomes `coverage_search` only when it attempts systematic scoped coverage or makes a scientific-completion claim.
+
+Conditional gates remain strict when applicable. Require transport analysis only when evidence is carried across materially different target or reporting populations; measurement-error sensitivity only when uncertainty can affect support, eligibility, selection, ranking, or the conclusion; and a screening-to-decision mapping only when a selection-influencing screen and the final evidence use different statistics, estimands, or scales.
+
+## Coverage-Search Loop
 
 ```text
 decision -> prior exposure -> inventory -> coverage cells -> tests -> ledger
          -> selection-path inference -> saturation audit -> decision or open queue
 ```
 
-The search space is bounded by the available data products and explicit formulations, not by a universal number of mechanisms or rounds. Rounds are immutable execution checkpoints. A run may use inexpensive uniform screening before deeper tests, but scheduling priority never counts as scientific coverage.
+The search space is bounded by the available data products and explicit formulations, not by a universal number of candidates or rounds. Rounds are write-once-by-policy execution checkpoints. The validator reconciles their recorded hashes; tamper evidence against coordinated rewriting of both files and manifest requires an append-only or externally anchored store. A run may use inexpensive uniform screening before deeper tests, but scheduling priority never counts as scientific coverage.
 
-Scientific completion requires inventory saturation, closure of every eligible coverage cell, an audited complete selection ledger, and application of the frozen Decision Contract. The machine consistency check must also pass before `complete_within_scope` is reported.
+The workflow figure at the top depicts `coverage_search`, the most expansive profile. It is not the required process for `fixed_test` or every `adaptive_search` run.
 
-Inventory saturation requires both a mechanism-forward audit and a data-product-reverse audit to produce no unresolved additions. A third independent audit source—such as literature, theory, expert knowledge, or known failure modes—is added when the scientific question makes it informative. Literature review is therefore conditional, not mandatory for every run.
+A `stage_report` may validly close the work authorized for the current checkpoint: it states what ran, what was learned, which safeguards applied, and what remains open. It is not a claim that the candidate space is saturated or covered. A `fixed_test` can finish when its frozen test and proportionate checks are complete; an `adaptive_search` can report its current decision state without claiming exhaustive coverage. Scientific completion (`complete_within_scope`) is reserved for `coverage_search` and requires inventory saturation, closure of every eligible coverage cell, an audited complete selection ledger, application of the frozen Decision Contract with a terminal decision, an adequate prior-exposure audit for the claim, and a passing consistency check.
+
+Inventory saturation requires both a candidate-forward audit and a data-product-reverse audit to produce no unresolved additions. A third independent audit source—such as literature, theory, expert knowledge, or known failure modes—is added when the scientific question makes it informative. Literature review is therefore conditional, not mandatory for every run.
 
 ## Repository Layout
 
@@ -102,29 +116,41 @@ Discovery and configuration vary by client. The skill contains no client-specifi
 
 ```text
 Use the scientific-autoresearch skill to define the Decision Contract,
-Prior-exposure Audit, mechanism inventory, coverage matrix, and falsifiers.
-Do not execute an analysis.
+typed candidate inventory, or falsification plan needed for this question.
+Do not execute an analysis or create a run directory.
 ```
 
-### One execution checkpoint
+### One formally audited fixed test
 
 ```text
-Use the scientific-autoresearch skill to execute the next eligible coverage cells
-over the authorized data. Preserve immutable outputs and the open queue.
+Use the scientific-autoresearch skill with the fixed_test profile to execute this
+frozen parameter estimate once and produce proportionate audit artifacts.
+Do not generate or rank alternatives.
+```
+
+### Adaptive candidate search
+
+```text
+Use the scientific-autoresearch skill with the adaptive_search profile to compare
+these candidate models. Record every selection-influencing test and apply the
+predeclared Decision Contract; do not claim coverage saturation.
 ```
 
 ### Coverage-based autonomous run
 
 ```text
-Use the scientific-autoresearch skill to search the mechanisms and observables
-supported by the approved data products. Stop scientifically only when coverage
-is complete and the inventory is saturated. If the authorized compute envelope
-ends first, pause and save every unrun coverage cell in the open queue.
+Use the scientific-autoresearch skill with the coverage_search profile to search
+the candidate types, observables, and tests supported by the approved data
+products. Stop scientifically only when coverage is complete and the inventory
+is saturated, the complete selection ledger is audited, the frozen Decision
+Contract yields a terminal decision, prior exposure is adequate for that claim,
+and the consistency check passes. If the authorized compute envelope ends first,
+pause and save every unrun coverage cell in the open queue.
 ```
 
 ## Executed-Run Outputs
 
-A run records the decision and the complete selection history, for example:
+Artifacts are profile-proportionate. `fixed_test` records the frozen claim, versions, result, uncertainty, falsifier where applicable, reproduction information, and consistency status. `adaptive_search` adds the prior-exposure audit, selection families, candidate registry, and complete selection ledger. `coverage_search` uses the full structure below:
 
 ```text
 runs/<run_id>/
@@ -132,7 +158,7 @@ runs/<run_id>/
   decision_contract.json
   prior_exposure_audit.json
   data_versions.json
-  inventories/mechanism_inventory_vNNN.csv
+  inventories/candidate_inventory_vNNN.csv
   inventories/coverage_matrix_vNNN.csv
   inventories/saturation_audit_vNNN.json
   execution_queue.csv
@@ -157,10 +183,20 @@ Sensitive diagnostics must be minimized or de-identified. Reproduction records m
 Initialize the canonical metadata skeleton for a new run:
 
 ```bash
-python scientific-autoresearch/scripts/validate_run.py --init runs/<run_id>
+python scientific-autoresearch/scripts/validate_run.py --init runs/<run_id> \
+  --profile <fixed_test|adaptive_search|coverage_search>
 ```
 
 Initialization never overwrites an existing run or supplies scientific decisions or approvals; the skeleton remains invalid until its required fields and records are completed.
+
+Before upgrading a formal run, validate the source profile and create a non-overwriting, hash-bound history snapshot:
+
+```bash
+python scientific-autoresearch/scripts/validate_run.py \
+  --snapshot-upgrade runs/<run_id> --to-profile <adaptive_search|coverage_search>
+```
+
+Review the copied evidence and append the exact `profile_history` entry returned by the helper while adding the new profile's artifacts. The helper does not edit the manifest or perform the scientific migration for you.
 
 Run the repository validator:
 
@@ -175,23 +211,23 @@ python scientific-autoresearch/scripts/validate_run.py runs/<run_id> \
   --output runs/<run_id>/consistency_report.json
 ```
 
-The run validator checks referential integrity and state consistency across the inventory, coverage matrix, search ledger, selection families, candidate registry, data versions, decision artifacts, and status transitions. A failed consistency audit blocks a scientific-completion claim. Report that separately from numerical rerun agreement: matched inputs, code, environment, seeds, tolerances, and output hashes can support same-condition agreement for the checked outputs without repairing missing metadata.
+For schema 1.5.0 runs, the validator reads the recorded profile and checks only the structures required by that risk level. It checks fixed claims and provenance for `fixed_test`, adds selection-path integrity for `adaptive_search`, and adds inventory, coverage, saturation, and queue consistency for `coverage_search`. Schema 1.4 and earlier runs retain their legacy full-schema validation and inventory filename. A failed applicable check blocks the corresponding completion claim. Report that separately from numerical rerun agreement: matched inputs, code, environment, seeds, tolerances, and output hashes can support same-condition agreement for the checked outputs without repairing missing metadata. Hash reconciliation provides internal consistency, not proof against coordinated rewriting of every local record; externally anchor the digest when adversarial tamper evidence is required.
 
 ## Evaluation
 
-The behavioral evals cover design-only work, observational support, coverage-based machine learning and simulation, compute authorization and resource pauses, sensitive data, null triage, causal identification, Decision Contracts, prior exposure, candidate comparability, full selection-path inference, saturation audits, and consistency checks.
+The behavioral evals cover `design_only` and all three execution profiles across observational, machine-learning, simulation, sensitive-data, null-triage, and causal settings. They also test that ordinary one-off statistics, frozen-model evaluations, parameter estimates, and fixed convergence checks do not trigger the skill unless formal audited execution is explicitly requested.
 
-Trigger evals contain balanced should-trigger and should-not-trigger prompts. Run evals in isolated contexts and compare v0.2.2 with the previous version or a no-skill baseline.
+Trigger evals contain balanced should-trigger and should-not-trigger prompts. Run evals in isolated contexts and compare v0.2.3 with the previous version or a no-skill baseline.
 
 ## Scientific Interpretation Standard
 
-A final ranking or selection must follow the frozen Decision Contract and apply only within a valid selection family. Candidates with different target populations, support samples, estimands, evidence stages, or materially different data quality are not directly ranked unless a defensible comparison was declared in advance.
+For `adaptive_search` and `coverage_search`, a final ranking or selection must follow the frozen Decision Contract and apply only within a valid selection family. Candidates with different target populations, support samples, estimands, evidence stages, or materially different data quality are not directly ranked unless a defensible comparison was declared in advance.
 
 Inference must account for every step that influenced candidate generation, modification, filtering, and promotion. The skill selects an appropriate method for the scientific design; it does not force all fields into one global-null technique. Weak and failed results remain in the ledger, and random seeds may not be chosen by outcome.
 
-Recommended manuscript language is:
+Recommended manuscript language for a completed `coverage_search` should name the actual candidate type:
 
-> We systematically searched a versioned inventory of mechanisms and observables testable with the available data products.
+> We systematically searched a versioned inventory of [candidate type] and associated tests supported by the available data products.
 
 Add the boundary statement:
 

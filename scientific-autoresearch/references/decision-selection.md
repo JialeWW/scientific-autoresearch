@@ -1,6 +1,6 @@
 # Decision, Exposure, and Selection Protocol
 
-Use this protocol whenever a search will generate, modify, compare, rank, retain, or promote scientific candidates. It prevents a broad search from becoming an implicit contest for the smallest p-value.
+Use this protocol for `adaptive_search` and `coverage_search`: whenever a run generates, modifies, screens, compares, ranks, retains, or promotes candidates. A genuinely prespecified `fixed_test` does not need this protocol; if its result motivates another choice, preserve that result and upgrade the run before continuing. This protocol prevents a broad search from becoming an implicit contest for the smallest p-value.
 
 ## 1. Freeze a Decision Contract
 
@@ -10,11 +10,11 @@ Before candidate-specific outcomes are inspected, write `decision_contract.json`
 - the target, analysis, selection, and reporting populations;
 - the candidate classes eligible for that decision;
 - the substantive eligibility rule applied before statistical ranking;
-- the measurement-error policy, including what makes a sensitivity analysis required;
-- the transportability requirement and the evidence needed to pass it;
+- the measurement-error policy, including the pathway that makes a sensitivity analysis required, or a reason it is not applicable;
+- the transportability requirement when populations differ, the evidence needed to pass it, or a reason no transport claim is made;
 - the selection families within which candidates may be compared;
 - the evidence used for eligibility, ranking, falsification, and promotion;
-- the mapping from any screening statistic to the decision or prediction scale, including what happens when they disagree;
+- the mapping from a screening statistic to the decision or prediction scale when those evidence roles differ, including what happens when they disagree;
 - the decision rule that maps that evidence to an action or status;
 - the estimand and minimum scientifically meaningful difference;
 - how uncertainty, robustness, predictive adequacy, mechanistic specificity, complexity, and data quality enter the decision;
@@ -28,9 +28,9 @@ The contract may choose a frequentist, Bayesian, predictive, decision-theoretic,
 
 Here, population means the scientific target domain, system class, distribution, or ensemble—not a particular dataset split. Record concrete support with `supported_sample_id`; train/test or discovery/verification partitions may share one population when they sample the same target definition.
 
-Substantive eligibility is a gate, not a post-result plausibility score. Freeze `mechanism_alignment` as `direct`, `calibrated_proxy`, `diagnostic_only`, `unsupported`, `not_assessed`, or `not_applicable`. Diagnostics and unsupported proxies remain in the record but cannot become a mechanistic or substantive leader through statistical strength alone.
+Substantive eligibility is a gate, not a post-result plausibility score. Declare each candidate type, such as mechanism, model, feature, simulation, or design. For mechanistic candidates, freeze `mechanism_alignment` as `direct`, `calibrated_proxy`, `diagnostic_only`, `unsupported`, or `not_assessed`. For a nonmechanistic scientific or operational decision, use `not_applicable` with a reason and apply the declared `substantive_eligibility` rule instead. Diagnostics and unsupported proxies remain in the record but cannot become a substantive leader through statistical strength alone.
 
-When screening and decision evidence differ, freeze one `evidence_scale_mapping` record per distinct family and screening-statistic relation: both statistics or models, their estimands and scales, the scale relation, the validation or calibration rule, and the discordance rule. A family may have multiple records for genuinely different screening statistics, but each `(selection_family_id, screening_statistic)` pair must have exactly one mapping. A `not_applicable` record is exclusive for its family and cannot coexist with an active mapping. A rank statistic can support monotone association while remaining silent about raw-scale slope, calibration, residual structure, or predictive loss. Unless a prespecified mapping is validated, a screen may prioritize execution but cannot substitute for the decision-scale test. Preserve disagreements and apply the frozen tie, inconclusive, parallel, or rejection rule rather than selecting whichever scale looks favorable.
+When screening and decision evidence differ, freeze one `evidence_scale_mapping` record per distinct family and screening-statistic relation: both statistics or models, their estimands and scales, the scale relation, the validation or calibration rule, and the discordance rule. A family may have multiple records for genuinely different screening statistics, but each `(selection_family_id, screening_statistic)` pair must have exactly one mapping. When there is no selection-influencing screen, use one compact `not_applicable` record with a reason instead of manufacturing full mapping work. A rank statistic can support monotone association while remaining silent about raw-scale slope, calibration, residual structure, or predictive loss. Unless a prespecified mapping is validated, a screen may prioritize execution but cannot substitute for the decision-scale test. Preserve disagreements and apply the frozen tie, inconclusive, parallel, or rejection rule rather than selecting whichever scale looks favorable.
 
 If the contract changes after outcome inspection, preserve the earlier version, record the trigger, mark the change `post_result_adaptive`, and treat decisions affected by the change as exploratory unless a valid adaptive procedure already covered it. If no contract existed before outcomes were viewed, the first retrospective contract is also `post_result_adaptive`; it cannot create a pre-result freeze retroactively.
 
@@ -102,9 +102,9 @@ A scheduler may use cost, expected information gain, dependency order, or feasib
 - all screened candidates and outcomes enter the ledger;
 - the screen's false-negative risk and sensitivity are assessed;
 - passing the screen does not itself count as verification;
-- cells not yet run remain `planned` or `resource_blocked`, never `covered`.
+- candidates or tests not yet run remain open; in `coverage_search`, their coverage cells stay `planned` or `resource_blocked`, never `covered`.
 
-Priority is an execution property, not scientific evidence. When resources end, save the open queue, dependencies, priority basis, and next admissible action without shrinking the inventory.
+Priority is an execution property, not scientific evidence. When resources end, save the open candidate or test queue, dependencies, priority basis, and next admissible action. In `coverage_search`, do not shrink the inventory or coverage denominator. In `adaptive_search`, report a bounded stage rather than implying saturation.
 
 ## 6. Decide Conservatively
 

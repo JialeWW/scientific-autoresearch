@@ -1,42 +1,42 @@
 [
   {
-    "query": "Build a versioned inventory of the distinct mechanisms and observables supported by these data products, search the finite coverage cells, and stop only after coverage and saturation audits pass.",
+    "query": "Build a versioned typed inventory of the distinct mechanisms, models, and observables supported by these data products, search the finite coverage cells, and stop only after coverage and saturation audits pass.",
     "should_trigger": true
   },
   {
-    "query": "Before comparing these candidate explanations, define a Decision Contract with comparable selection families, ranking evidence, and explicit tie and inconclusive rules.",
+    "query": "Compare and rank these candidate explanations, using a Decision Contract with comparable selection families, ranking evidence, and explicit tie and inconclusive rules.",
     "should_trigger": true
   },
   {
-    "query": "Audit all prior looks at overlapping data and determine whether changing the sample, analysis code, and skill version can make the new test confirmatory.",
+    "query": "Create a formal audited run for this single frozen Pearson correlation, using the fixed sample, statistic, uncertainty method, and decision threshold with no alternative analyses.",
     "should_trigger": true
   },
   {
-    "query": "Figure out whether fragmentation in these simulations is physical or a numerical artifact, and decide the next convergence experiment.",
+    "query": "Figure out whether fragmentation in these simulations is physical or a numerical artifact by comparing the plausible convergence experiments and choosing what to run next.",
     "should_trigger": true
   },
   {
-    "query": "Autonomously improve this prediction model, preregister how a rank-based screen maps to raw-scale predictive evidence, protect the held-out benchmark, and log every selection-influencing test.",
+    "query": "Autonomously compare these prediction candidates, preregister how a rank-based screen maps to raw-scale predictive evidence, protect the held-out benchmark, and log every selection-influencing test.",
     "should_trigger": true
   },
   {
-    "query": "Our primary result is null. Diagnose whether the proxy, support definition, scale, background formulation, or an omitted mechanism failed before rejecting the theory.",
+    "query": "Our primary result is null. Systematically search the supported proxy, scale, background, subgroup, and mechanism candidates and audit when the scoped space is saturated.",
     "should_trigger": true
   },
   {
-    "query": "Use the approved seven-day cluster-compute envelope to screen the registered candidates cheaply, deepen promising tests, and save the open queue if resources run out.",
+    "query": "Use the approved seven-day compute envelope to cover the registered simulation search space, screen candidates cheaply, deepen eligible tests, and save the open queue if resources run out.",
     "should_trigger": true
   },
   {
-    "query": "Test whether this environmental association is causal, state the identification assumptions, and run falsification checks against the main alternatives.",
+    "query": "Compare the defensible causal models for this environmental association, state their identification assumptions, and run falsification checks against the main alternatives.",
     "should_trigger": true
   },
   {
-    "query": "Before ranking a flat Cartesian candidate pool, require substantive alignment, keep the full target population distinct from a cleaner selection subgroup, validate any transport, and test material measurement error without assuming one fixed method.",
+    "query": "Audit the prior data looks before ranking this flat candidate pool, preserve the full target population, validate any subgroup transport, and test selection-relevant measurement error.",
     "should_trigger": true
   },
   {
-    "query": "Resume this autoresearch run only after machine-checking the inventory, coverage matrix, ledger, selection families, data versions, and status transitions for consistency.",
+    "query": "Resume this autoresearch run under its recorded profile only after machine-checking every inventory, ledger, family, data-version, and transition artifact required by that profile.",
     "should_trigger": true
   },
   {
@@ -48,15 +48,19 @@
     "should_trigger": false
   },
   {
-    "query": "Run the existing analysis.sh exactly once and tell me whether it exits successfully.",
+    "query": "Compute the one prespecified Pearson or Spearman correlation on this fixed table and report its confidence interval; do not create a formal audit run.",
     "should_trigger": false
   },
   {
-    "query": "Explain in simple terms what a p-value means.",
+    "query": "Evaluate this already frozen model once on the fixed test set and report the specified loss; do not tune or compare anything.",
     "should_trigger": false
   },
   {
-    "query": "Make a scatter plot of column temperature against column pressure using the specified axes and labels.",
+    "query": "Estimate this one predeclared parameter from the fixed sample with the specified likelihood and uncertainty calculation.",
+    "should_trigger": false
+  },
+  {
+    "query": "Run this one fixed convergence check at the two specified resolutions and tell me whether the stated tolerance passes.",
     "should_trigger": false
   },
   {
@@ -69,10 +73,6 @@
   },
   {
     "query": "Format these references as BibTeX and remove duplicates.",
-    "should_trigger": false
-  },
-  {
-    "query": "Write a grant abstract based on the results I already provided.",
     "should_trigger": false
   },
   {

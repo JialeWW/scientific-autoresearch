@@ -18,7 +18,7 @@ Require a measurement model, calibration, unit definition, error propagation, su
 
 Question: Do two supported quantities vary together?
 
-Require a mechanistic sign or shape expectation, supported sample, confounder and selection checks, an appropriate dependence measure, effect scale, and per-case or aggregate diagnostics.
+Require a supported sample, confounder and selection checks, an appropriate dependence measure, effect scale, and per-case or aggregate diagnostics. Freeze a sign or shape expectation when the scientific theory supplies one; do not invent mechanistic directionality for a descriptive association.
 
 Do not use causal language.
 
@@ -44,6 +44,8 @@ Question: Which model predicts better, explains a specified structure better, or
 
 State whether the goal is predictive or explanatory. Require comparable data and budgets, a frozen metric, flexibility control, residual or posterior-predictive checks, and sealed or nested evaluation when selection is adaptive.
 
+For a purely predictive or operational decision, apply a frozen substantive eligibility rule tied to the target metric and deployment or scientific use. `mechanism_alignment` may be not applicable with a reason; predictive accuracy does not by itself establish a mechanism.
+
 ## Population Inference
 
 Question: What distribution, rate, fraction, scaling relation, or latent structure describes a population?
@@ -66,4 +68,4 @@ Treat discovered anomalies as exploratory until verified independently.
 
 ## Claim Card Check
 
-Before execution, confirm that the claim card records the claim type, target population or system, unit of inference, observable or outcome, comparator, expected direction, minimum meaningful effect, supported sample, assumptions, and frozen or exploratory status.
+Before execution, confirm that the claim card records the claim type, target population or system, unit of inference, observable or outcome, comparator, expected direction when applicable, minimum meaningful effect, supported sample, assumptions, and frozen or exploratory status. A `fixed_test` uses this compact card without creating a search inventory or selection family; outcome-driven follow-up upgrades the run before continuing.

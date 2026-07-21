@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.3 - 2026-07-21
+
+- Split executed work into risk-proportionate `fixed_test`, `adaptive_search`, and `coverage_search` profiles while retaining non-executing `design_only`.
+- Excluded ordinary one-off correlations, frozen-model evaluations, parameter estimates, and fixed convergence checks unless formal audited execution is explicitly requested.
+- Generalized inventories from mechanisms alone to typed scientific candidates, including mechanisms, models, features, simulation formulations, and design alternatives.
+- Made transport, measurement-error sensitivity, and screening-to-decision scale mapping conditional on the corresponding scientific or selection risk.
+- Distinguished a valid stage report or bounded profile outcome from scientific completion, which remains reserved for fully audited coverage search.
+- Upgraded the run schema and validator to 1.5.0 with profile-aware initialization and validation, non-overwriting hash-bound upgrade snapshots, and evaluation boundaries that reduce metadata burden without weakening applicable safeguards.
+
 ## 0.2.2 - 2026-07-21
 
 - Added a pre-ranking substantive-eligibility and mechanism-alignment gate, while retaining scientifically justified constrained and factorial designs.
@@ -32,7 +41,7 @@ All notable changes to this project are documented here.
 - Added statistical discipline for adaptive search, multiplicity, sensitivity, sealed verification, and stochastic variation.
 - Added observational-data, machine-learning and simulation, causal and experimental, and literature-evidence adapters.
 - Replaced overloaded result labels with canonical governance, mechanism, formulation, evidence-role, verification, and next-action fields.
-- Added immutable artifact contracts, behavioral eval cases, balanced trigger queries, a repository validator, and continuous validation.
+- Added versioned artifact contracts, behavioral eval cases, balanced trigger queries, a repository validator, and continuous validation.
 
 ## 0.1.1 - 2026-06-15
 

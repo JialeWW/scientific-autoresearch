@@ -1,394 +1,134 @@
 # Report and Artifact Contract
 
-Apply the full contract to executed rounds. In `design_only` mode, return advice or one design report unless the user requests artifacts.
+This is an audit and validator-diagnosis reference. Ordinary work should select a profile in `SKILL.md`, let the initializer create its schema, and fill only applicable records. The validator, not prose copied from this page, is authoritative for schema `1.5.0` fields.
 
-Before filling metadata, run `scripts/validate_run.py --init <run_dir>` to create the canonical schema skeleton. Initialization refuses to overwrite an existing file or nonempty target; it supplies structure, not scientific content or approval, and intentionally remains invalid until required records are completed.
-
-## 1. Canonical Immutable Layout
-
-Use an equivalent project convention if one exists; otherwise use:
+`design_only` creates no run directory or artifacts by default. When execution is authorized, initialize an empty path with:
 
 ```text
-runs/<run_id>/
-  run_manifest.json
-  decision_contract.json
-  prior_exposure_audit.json
-  data_versions.json
-  inventories/
-    mechanism_inventory_v001.csv
-    coverage_matrix_v001.csv
-    saturation_audit_v001.json
-  search_ledger.jsonl
-  selection_families.json
-  execution_queue.csv
-  status_transitions.jsonl
-  candidate_registry.csv
-  rounds/
-    round_000/
-      report.md
-      inventory.json
-      summary.csv
-      diagnostics.<csv|parquet|jsonl>   # conditional
-      figures/                          # conditional
-      reproduce_commands.txt
-      round_gate.md
-  pause_report.md                       # conditional
-  consistency_report.json
-  final_report.md                       # only for complete_within_scope
+python scientific-autoresearch/scripts/validate_run.py --init RUN_DIR --profile PROFILE
 ```
 
-Never overwrite or silently amend a contract, exposure audit, inventory, ledger entry, coverage matrix, data-version record, or closed round. Create a successor version or amendment with explicit parent lineage.
+where `PROFILE` is `fixed_test`, `adaptive_search`, or `coverage_search`. Initialization refuses to overwrite a file or nonempty directory. It provides structure, not scientific content, authorization, or a passing run; required placeholders must be resolved and the validator rerun.
 
-## 2. Run Manifest
+## Profile Artifact Sets
 
-Record:
+All paths below are relative to the run directory. Conditional files are created only when needed.
+
+| Artifact | `fixed_test` | `adaptive_search` | `coverage_search` |
+|---|:---:|:---:|:---:|
+| `run_manifest.json` | required | required | required |
+| `claim_card.json` | required | — | — |
+| `decision_contract.json` | — | required | required |
+| `prior_exposure_audit.json` | — | required | required |
+| `data_versions.json` | required | required | required |
+| versioned `candidate_inventory_vNNN.csv` | — | — | required |
+| versioned `coverage_matrix_vNNN.csv` | — | — | required |
+| versioned `saturation_audit_vNNN.json` | — | — | required |
+| `search_ledger.jsonl` | — | required | required |
+| `selection_families.json` | — | required | required |
+| `candidate_registry.csv` | — | required | required |
+| `status_transitions.jsonl` | — | required | required |
+| `execution_queue.csv` | — | — | required |
+| `rounds/round_NNN/report.md` | required | required | required |
+| `rounds/round_NNN/reproduce_commands.txt` | required | required | required |
+| `rounds/round_NNN/inventory.json` | — | — | required |
+| `rounds/round_NNN/summary.csv` | — | — | required |
+| `rounds/round_NNN/round_gate.md` | — | — | required |
+| round diagnostics or figures | conditional | conditional | conditional |
+| `pause_report.md` | — | optional bounded stop | conditional with open coverage |
+| `final_report.md` | — | — | only `complete_within_scope` |
+| `consistency_report.json` | required | required | required |
+
+The schema-1.5 coverage initializer uses `inventories/candidate_inventory_vNNN.csv`. `mechanism_inventory_vNNN.csv` remains a legacy-compatible input, but do not maintain both as competing active inventories.
+
+Schema `<=1.4` remains readable with its legacy full-run behavior. Do not change only `artifact_schema_version`; migrate profile metadata and artifacts or leave the run legacy.
+
+## Shared Manifest and Versioned Rounds
+
+Every schema-1.5 run manifest records at least run identity, question, scientific scope, `artifact_schema_version`, `research_profile`, `stage_status`, ordered `profile_history`, execution mode, governance status, data-version-set ID, and `round_artifacts`. Adaptive and coverage profiles add their contract and audit versions; coverage adds its inventory and search fields.
+
+Profiles may only upgrade:
 
 ```text
-run_id
-artifact_schema_version
-question
-scientific_scope
-execution_mode
-created_at
-output_root
-governance_status
-authorized_inputs
-authorized_actions
-prohibited_actions
-data_product_scope
-data_versions_file
-data_version_set_id
-decision_contract_version
-prior_exposure_audit_version
-inventory_version
-inventory_status
-search_status
-inventory_saturated
-coverage_complete
-search_ledger_audited
-decision_contract_applied
-decision_status
-inventory_audit_protocol
-inventory_generation_lenses
-coverage_unit_definition
-coverage_closure_rules
-saturation_rule
-saturation_required_sources
-selection_family_policy
-complete_selection_path_policy
-evidence_partition_policy
-data_look_policy
-compute_authorization_id
-execution_resource_envelope
-resource_pause_policy
-user_specified_limits
-safety_boundary
-verification_policy
-consistency_validator_version
-last_consistency_check
+fixed_test -> adaptive_search -> coverage_search
 ```
 
-Execution resources schedule work; they do not define scientific coverage.
+Append the transition and preserve prior exposure, weak results, failures, selections, and earlier artifacts. Never reinitialize or downgrade to erase history.
 
-New runs use `artifact_schema_version=1.4.0`. The validator keeps earlier schema versions readable under one compatibility warning; a legacy manifest must not be relabeled without migrating its artifacts.
-
-## 3. Decision and Exposure Artifacts
-
-`decision_contract.json` records:
+For a formal run, first validate the current profile, then create the upgrade evidence without overwriting it:
 
 ```text
-decision_contract_version
-decision_id
-decision_question
-target_population
-analysis_population
-selection_population
-reporting_population
-eligible_candidate_classes
-substantive_eligibility_rule
-measurement_error_policy
-transportability_requirement
-transportability_status
-eligible_selection_family_ids
-declared_selection_family_ids       # parallel, support-limited, or excluded families when present
-selection_family_comparison_keys    # family ID -> frozen comparison key when not carried by a group
-comparison_groups
-ranked_selection_family_ids
-comparison_key_definition
-comparability_rule
-estimand
-ranking_evidence
-evidence_scale_mapping
-decision_rule
-minimum_meaningful_difference
-complexity_and_data_quality_rule
-tie_rule
-inconclusive_rule
-complete_selection_path_method
-specification_timing
-freeze_time
-amendment_policy
+python scientific-autoresearch/scripts/validate_run.py \
+  --snapshot-upgrade RUN_DIR --to-profile TARGET_PROFILE
 ```
 
-`evidence_scale_mapping` is one record or a nonempty list of records. Use one record per distinct screening-to-decision relation:
+The helper copies the prior manifest, required profile artifacts, and every indexed round report and reproduction record into a new internal snapshot, verifies their hashes, and returns the exact next `profile_history` entry. It refuses an invalid source, downgrade, unsafe or symbolic-link path, or existing snapshot target. Review the copy, add the target profile's new artifacts, and append the returned entry; the helper deliberately does not rewrite the manifest or perform the scientific migration. Each upgrade entry requires strictly increasing offset-aware time plus `preservation_snapshot_path` and `preservation_snapshot_sha256`. The snapshot lists each prior artifact's logical path, copied path, and digest. Preservation booleans alone do not establish history.
+
+Each `round_artifacts` entry requires `round_id`, `status`, `report_path`, and `reproduce_path`. A `completed` entry additionally requires `sealed_at`, `report_sha256`, and `reproduce_sha256`. Compute hashes after closing the round. A later validation must reconcile the files with the recorded hashes. Do not overwrite or silently amend an indexed artifact; add an amendment or successor round and preserve lineage. This is an internal consistency check, not proof against coordinated rewriting of both files and manifest; use an append-only or externally anchored store when tamper evidence is required.
+
+Top-level registries are append-only or versioned. If a frozen contract, family, inventory, coverage cell, data record, or scientific meaning changes, create a successor version and record the transition.
+
+## `fixed_test`: Compact Claim and Result
+
+`claim_card.json` is the sole scientific contract for a true fixed test. The initialized schema includes the required fields; scientifically, it freezes:
+
+- claim, target and analysis populations, supported sample, estimand, minimum meaningful effect, one analysis or test, and one decision rule;
+- data-version IDs, exclusions and transformations, parameters, seed policy when stochastic, falsifier, specification timing, and prior exposure to overlapping evidence;
+- result status, effect and uncertainty summaries, main caveat, and whether the test completed as scoped.
+
+The round report states the actual inputs, method, assumptions, effect in meaningful units, uncertainty, falsification outcome, result status, limitation, and reproduction recipe. Preserve null, weak, invalid, failed, or unfavorable outcomes. `stage_status=completed_as_scoped` closes the bounded test, not a search.
+
+If an inspected outcome motivates another candidate, formulation, threshold, sample, statistic, model, or ranking, upgrade before continuing. Preserve the fixed-test record as prior exposure; do not rewrite it as adaptive discovery or independent confirmation.
+
+## `adaptive_search`: Complete Adaptive Path
+
+Before adaptive outcome access, freeze the Decision Contract, prior-exposure audit, selection families, and data versions. Append to the ledger every generation, modification, screen, data look, retry, failure, retention, ranking, verification-targeting, or promotion step that can influence the decision.
+
+The typed `candidate_registry.csv` declares `candidate_type`, substantive eligibility, selection-family identity and version, comparison key, comparability, specification timing, prior-exposure and evidence stages, verification, effects, uncertainty, supporting ledger entries, decision status, and reason. `mechanism_alignment` is decision-bearing only for `candidate_type=mechanism`; nonmechanistic candidates use justified `not_applicable` and still pass the general substantive-eligibility rule.
+
+`selection_families.json` separates incompatible targets, supported samples, estimands, evidence stages, or material data-quality regimes. Version families and retain history. Each family records the complete influential ledger path and its domain-appropriate inference method. Do not rank parallel or support-limited candidates against a direct decision family.
+
+Record conditional policies only when a pathway exists:
+
+- `measurement_error_relevant=true` and a passing sensitivity result when uncertainty can affect support or selection;
+- transportability when populations materially differ;
+- screen-to-decision mapping when screening and final evidence differ;
+- selection-path or multiplicity inference whenever adaptive or repeated selection occurs.
+
+The final round may serve as the bounded stage report, or a separate `pause_report.md` may be used. It must state what ran, what remains open, the Decision Contract outcome so far, prior exposure, applicable gate results, ledger/family versions, failures and weak results, limitations, and exact continuation point. It must not claim saturation or coverage completion.
+
+## `coverage_search`: Inventory, Coverage, and Saturation
+
+In addition to every adaptive artifact, keep one active versioned typed inventory and matching coverage matrix. Candidate types are `mechanism`, `model`, `feature`, `simulation`, `design`, or justified `other`. Each inventory entry records its substantive role, distinctness, supported regimes and data, expected signature, testability, support, timing, status, and duplicate/parent lineage. A mechanistic inventory additionally records its pathway and mechanism interpretation.
+
+Each coverage cell freezes the candidate, observable or test role, formulation, data and supported sample, parameter or scale domain, comparator, expected signature, meaningful effect, sensitivity requirement, falsifier, selection family, timing, evidence stage, execution tier, coverage/execution/result/verification status, and ledger links. Every candidate uses `substantive_eligibility`; only mechanistic candidates use `mechanism_alignment`. Apply measurement-error sensitivity only when relevant.
+
+The saturation audit records the candidate-forward and data-product-reverse audits after the latest eligible addition, plus any independently declared third source that is applicable. An eligible addition creates a successor inventory version and resets the affected saturation audit.
+
+`execution_queue.csv` contains every open eligible cell exactly once when work pauses: execution tier, dependencies, priority, resource estimate, authorization fit, blocker, and next admissible action. Priority changes order only; no unrun cell is marked covered.
+
+Issue `pause_report.md` when user, resource, governance, or other limits end execution with open cells. Include the active version, saturation state, closed/open/invalid/blocked counts, full queue, ledger/family versions, resource use, blocker, and resume requirements. This can be the final deliverable for the authorization window but is not scientific completion.
+
+Issue `final_report.md` only when the validator accepts `search_status=complete_within_scope`. It must report the frozen decision outcome, including ties, inconclusive or no eligible candidate; every weak, null, invalid, failed, support-limited, parallel, needs-data, or blocked branch; selection-path inference; prior exposure and evidence stage; dominant uncertainties; scope boundaries; and what new data or assumptions could extend the search.
+
+## Round Reports and Reproduction
+
+Use a profile-proportional report:
+
+1. identity, profile, stage, round lineage, governance, and data/code versions;
+2. frozen question, claim or decision, supported sample, estimand, meaningful effect, and falsifier;
+3. exact method, parameters, transformations, seeds or realizations, uncertainty, and applicable conditional gates;
+4. effect, uncertainty, diagnostics, execution and result statuses, weak/failed branches, and caveats;
+5. for adaptive work, selection changes, family and ledger links, comparability, prior exposure, evidence stage, and current decision;
+6. for coverage work, inventory/coverage changes, saturation evidence, open queue, and closure or pause state;
+7. reproduction steps and consistency-validator outcome.
+
+The reproduction record gives exact secret-free commands or equivalent steps, code state, environment or dependency lock, hardware/precision when material, actual seeds, expected outputs, and tolerances. Report metadata consistency separately from numerical reproduction. Matching SHA-256 values demonstrate byte identity only for the checked files under matched conditions; they do not repair an incomplete ledger or invalid scientific design.
+
+Before resume and before a bounded, pause, or completion report, run:
 
 ```text
-mapping_id                         # required and unique when multiple records exist
-selection_family_ids              # required when multiple records exist
-screening_statistic
-screening_estimand_and_scale
-decision_model_or_statistic
-decision_estimand_and_scale
-scale_relation                    # same_scale | monotone_only | calibrated_mapping | separate_roles | not_applicable
-validation_or_calibration_rule
-discordance_rule
+python scientific-autoresearch/scripts/validate_run.py RUN_DIR --output RUN_DIR/consistency_report.json
 ```
 
-For multiple records, scope every eligible selection family and use unique mapping IDs. A family may have multiple records for distinct screening statistics, but each normalized `(selection_family_id, screening_statistic)` pair must be unique. For `scale_relation=not_applicable`, use the compact form `{ "scale_relation": "not_applicable", "reason": "..." }` when no selection-influencing screening-to-decision transfer occurs; that record is exclusive for its family and cannot coexist with an active mapping. A screening statistic may schedule work without serving as decision evidence; state that as `separate_roles`, define both evidence roles and scales, and test the decision-scale model independently rather than inventing a calibration.
-
-`prior_exposure_audit.json` records:
-
-```text
-prior_exposure_audit_version
-audit_status
-prior_exposure_status
-confirmatory_status
-future_verification_status
-sources_checked
-overlap_unit
-overlapping_data
-prior_analyses
-prior_parameter_attempts
-prior_data_looks
-prior_holdout_exposure
-unknown_gaps
-resulting_evidence_stage_limits
-audited_at
-```
-
-Changing code, samples, models, repositories, workflows, or skill versions does not remove a recorded exposure. Preserve all audit versions and amendments.
-
-`data_versions.json` identifies every input product, snapshot, split, transformation, label or simulation source by stable ID, version or hash when permitted, provenance, access date, overlap group, and role. Reference these IDs from coverage cells and ledger entries.
-
-## 4. Inventory Artifacts
-
-`mechanism_inventory_vNNN.csv` must include:
-
-```text
-inventory_version
-mechanism_id
-parent_mechanism_id
-mechanism
-distinct_pathway
-inclusion_rationale
-generation_lens
-applicable_regime
-predicted_signature
-required_data_products
-data_support_status
-mechanism_status
-specification_timing
-duplicate_of
-```
-
-Fill `data_support_status` and `mechanism_status` with the canonical values and completion semantics in `status-schema.md`. In schema 1.4.0, an active nonduplicate mechanism cannot disappear from coverage merely by being labeled support limited, diagnostic, or unsupported.
-
-`coverage_matrix_vNNN.csv` must include:
-
-```text
-coverage_cell_id
-inventory_version
-mechanism_id
-observable_id
-formulation_id
-mechanism_alignment
-measurement_error_sensitivity
-data_product_id
-data_version_id
-supported_sample_id
-parameter_or_scale_domain
-comparator
-expected_signature
-minimum_meaningful_effect
-sensitivity_requirement
-falsifier
-selection_family_id
-selection_family_version
-comparison_key
-comparability_status
-specification_timing
-evidence_stage
-execution_tier
-coverage_status
-execution_status
-result_status
-verification_status
-round_id
-ledger_entry_ids
-blocker
-```
-
-`saturation_audit_vNNN.json` records audit lens, source or procedure, scope coverage, proposed additions, duplicate and exclusion decisions, needs-data entries, eligible additions, unresolved gaps, and whether the saturation sequence passed or reset. Include the mechanism-forward and data-product-reverse audits plus every independent third source declared applicable at Round 0.
-
-## 5. Search Ledger, Selection Families, and Queue
-
-Append one immutable ledger entry for every test, data look, adaptive choice, retry, failure, abandonment, or resource decision that can affect coverage or candidate selection.
-
-Record at least:
-
-```text
-ledger_entry_id
-inventory_version
-coverage_cell_id
-selection_family_id
-selection_family_version
-decision_influence
-selection_path_stage
-data_look_id
-seed_policy_id
-data_version_ids
-input_and_code_state
-execution_status
-result_status
-artifact_paths
-```
-
-`selection_families.json` records the decision, structured comparison fields, included cells, inferential target, complete-selection-path method, dependence assumptions, error or decision criterion, method assumptions, family versions, and handling of adaptive additions. Use `families` for exactly one current record per `selection_family_id` and `history` for immutable superseded records. The pair `(selection_family_id, selection_family_version)` must be unique across both arrays. A legacy file containing only `families` remains valid and treats those records as current.
-
-Coverage cells, ledger entries, and candidates must pin both family ID and version. Active coverage and active candidates reference the current record; preserved historical coverage and ledger entries reference their historical composite key. A current family's complete `selection_path_ledger_entry_ids` may accumulate ledger entries from its historical versions, but every such ledger entry retains its actual family version. Never remove failed or unfavorable branches from family history. Do not make incompatible targets, supported samples, estimands, evidence stages, or material data-quality regimes directly compete without a prespecified validated mapping.
-
-For every family, record `selection_family_id`, `selection_family_version`, `decision_id`, `comparability_status`, `comparison_key`, `target_population`, `supported_sample_id`, `estimand`, `data_quality_regime`, `evidence_stage`, `transportability_requirement`, `transportability_status`, `included_cell_ids`, `selection_path_ledger_entry_ids`, `selection_path_complete`, and `inference_method` or an explicit equivalent.
-
-`execution_queue.csv` records every open cell, execution tier, dependency, priority, priority basis, estimated resources, authorization-envelope fit, blocker, and next admissible action. For `resource_limited_pause`, `user_limited_stop`, `governance_blocked`, or `human_decision_required` with open cells, every open cell must appear exactly once and `pause_report.md` must record the blocker and resume point. Priority controls order only. Unrun cells remain open and in the coverage denominator.
-
-Append every state change to `status_transitions.jsonl` with `transition_id`, `entity_type`, `entity_id`, `status_field`, `from_status`, `to_status`, `inventory_version`, `round_id`, `changed_at`, `reason`, and `evidence_paths`. Do not rewrite earlier transitions.
-
-`candidate_registry.csv` records every candidate that entered eligibility, comparison, parallel reporting, or promotion review:
-
-```text
-candidate_id
-inventory_version
-mechanism_id
-coverage_cell_ids
-selection_family_id
-selection_family_version
-comparison_key
-comparability_status
-decision_status
-specification_timing
-prior_exposure_status
-confirmatory_status
-future_verification_status
-evidence_stage
-verification_status
-effect_summary
-uncertainty_summary
-support_summary
-ledger_entry_ids
-decision_reason
-```
-
-The file may contain only its header when no candidate was generated. Every candidate family must be explicitly declared by the Decision Contract; decision-eligible candidates must use an eligible family. Candidate coverage cells and ledger entries must belong to that same family, and the candidate comparison key must match both `selection_families.json` and the contract's family or comparison-group key. At a terminal decision, set `decision_contract_applied=true` and a terminal `decision_status` in the run manifest. A `leading` or `tie` decision must agree with candidate-registry rows, and all tied candidates must share one declared comparison group; `inconclusive` or `no_eligible_candidate` must preserve parallel, support-limited, excluded, null, and failed branches rather than inventing a winner.
-
-In `candidate_registry.csv`, `coverage_cell_ids` lists the decision-bearing cells used for eligibility, ranking, or promotion. Keep diagnostic and control cells linked through their family, ledger, and round report; do not mislabel them as promotion evidence merely to pass an alignment gate.
-
-## 6. Round Report
-
-Include:
-
-1. **Identity**: run, round, parent, inventory, coverage-cell, and family versions.
-2. **Question and claim**: mechanism, estimand, expected signature, meaningful scale, substantive alignment, supported sample, and population scope.
-3. **Inputs and lineage**: data, code, environment, units, transformations, hashes when allowed, and actual seeds.
-4. **Governance and resources**: permissions, reusable authorization envelope, cumulative use, remaining use, and oversight.
-5. **Method**: exact sample, formulation, screening statistic, decision model or statistic, evidence-scale mapping, uncertainty, seed, sensitivity, and falsifier.
-6. **Result**: screening and decision-scale evidence, their agreement or discordance, effect, uncertainty, sample size, diagnostics, execution status, and result status.
-7. **Coverage update**: cells opened, closed, invalidated, deferred, or added; denominator and coverage fraction.
-8. **Inventory audit**: additions, merges, exclusions, saturation progress, and reset events.
-9. **Selection audit**: all generation, modification, screening, ranking, verification-targeting, and promotion steps; substantive, measurement-error, and transport gates; family changes; and complete-selection-path inference.
-10. **Evidence interpretation**: prior exposure, specification timing, evidence stage, comparability, verification status, alternatives, and limitations.
-11. **Decision**: application of the frozen ranking, tie, and inconclusive rules; parallel or support-limited candidates; canonical statuses; next cells; and resume condition if pausing.
-12. **Consistency**: validator result, unresolved errors or warnings, and artifact version checked.
-
-## 7. Round Inventory
-
-Record actual values:
-
-```json
-{
-  "run_id": "",
-  "round_id": "",
-  "parent_round_id": null,
-  "inventory_version": "",
-  "decision_contract_version": "",
-  "prior_exposure_audit_version": "",
-  "coverage_cell_ids": [],
-  "selection_family_versions": [],
-  "inputs": [],
-  "data_version_ids": [],
-  "code_state": {},
-  "environment": {},
-  "parameters": {},
-  "seed_set": [],
-  "sample_counts": {},
-  "ledger_entry_ids": [],
-  "uncertainty_components": [],
-  "resource_use": {},
-  "status_transitions": [],
-  "outputs": {}
-}
-```
-
-## 8. Summary and Diagnostics
-
-`summary.csv` must include every tested, weak, null, inconclusive, artifact, invalid, failed, abandoned, and resource-deferred branch. Include inventory, cell, mechanism, observable, formulation, family, comparison key, comparability, prior exposure, support, effect, uncertainty, sensitivity, all canonical statuses, and main caveat.
-
-Create diagnostics only when they add reconstruction or audit value. For large or sensitive data, use aggregate, sampled, or de-identified outputs rather than raw records.
-
-Never include direct identifiers, unnecessary quasi-identifiers, credentials, signed links, private endpoints, restricted paths, or secrets.
-
-## 9. Reproduction Record
-
-Record exact commands or equivalent steps, code commit and dirty state, environment or dependency lock, hardware or precision, actual seeds, expected outputs, and resource envelope.
-
-Report metadata consistency and numerical reproduction separately. For a numerical rerun, record input, code, environment and seed equivalence; comparison method and tolerances; output hashes such as SHA-256 when byte identity is meaningful; and whether results are exact, within tolerance, different, or not checked. Matching hashes support same-condition byte-level agreement for those checked outputs, but do not repair an incomplete selection ledger, missing provenance, or an invalid scientific design. Conversely, a schema error alone is not evidence that a reported number changed.
-
-Redact secrets and protected values. Use placeholders and explain how an authorized user supplies them securely.
-
-## 10. Consistency, Pause, and Final Reports
-
-Run:
-
-```text
-python scientific-autoresearch/scripts/validate_run.py runs/<run_id> --output runs/<run_id>/consistency_report.json
-```
-
-before resuming an existing run and before a pause or final report. The report must identify the validator version, checked artifact versions, errors, warnings, and timestamp. A failed check prevents `complete_within_scope`.
-
-Classify failures by what they establish. Missing or inconsistent metadata blocks an audited completion claim; numerical mismatch challenges computational reproduction. Preserve both findings without collapsing one into the other.
-
-A pause report must state:
-
-- current inventory version and saturation status;
-- closed, open, invalid, blocked, and resource-deferred cells;
-- coverage numerator, denominator, and fraction;
-- ledger and selection-family versions;
-- frozen Decision Contract, Prior-exposure Audit, and last consistency result;
-- complete open execution queue, priorities, dependencies, and next admissible action;
-- cumulative resource use and exact resume requirements;
-- why the state is not scientific completion.
-
-A final report is issued only for `search_status=complete_within_scope` and must state:
-
-- whether `inventory_saturated`, `coverage_complete`, `search_ledger_audited`, and `decision_contract_applied` hold for the same version;
-- strongest supported candidates and every weak or failed branch;
-- null, inconclusive, artifact, invalid, weakened, rejected, needs-data, and blocked results;
-- complete family-level selection handling;
-- the Decision Contract outcome, including ties, inconclusive decisions, parallel conclusions, and support-limited candidates;
-- prior-exposure limitations and complete-selection-path inference;
-- evidence and verification stages;
-- dominant uncertainties, systematics, untested boundaries, and scope limitations;
-- the exact data, authorization, assumption, or evidence needed to extend the search.
-
-An explicit user, resource, or governance stop with open cells receives `pause_report.md`, even when it is the final deliverable for the current authorization window. Do not create `final_report.md` for an incomplete search.
-
-Complete the Trial Completion Gate in `references/round-gate-checklist.md`. Do not issue a scoped-completion claim while the consistency validator reports errors.
+Classify validator errors by what they establish. Schema inconsistency blocks an audited claim; numerical mismatch challenges computational reproduction. Neither finding should be silently converted into the other.

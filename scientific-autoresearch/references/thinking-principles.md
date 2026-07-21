@@ -1,13 +1,13 @@
 # Thinking Principles
 
-Use these principles when mechanism framing is ambiguous, evidence conflicts, or the next decision is unclear.
+Use these principles when substantive framing is ambiguous, evidence conflicts, or the next decision is unclear.
 
-## Mechanism Before Metric
+## Substance Before Metric
 
-Start with why an effect could occur and what it predicts. A metric matters only after the mechanism, estimand, support, and failure condition are clear.
+Start with why a candidate bears on the scientific or operational decision and what evidence it predicts. For a mechanistic candidate, state why the effect could occur; for a predictive, computational, or design candidate, state its target role and performance claim. A metric matters only after the rationale, estimand, support, and failure condition are clear.
 
 ```text
-If mechanism M contributes to outcome Y, then observable X should change in direction D, by a meaningful scale E, in supported sample S.
+If candidate C bears on decision Q, then evidence X should meet criterion D by a meaningful scale E in supported sample S.
 ```
 
 ## Result Is Not Claim
@@ -24,9 +24,9 @@ Exploration is valuable when its search scope and failures remain visible. A dat
 
 Exposure follows the underlying information. Changing a sample, codebase, model, repository, workflow, or skill version does not make overlapping evidence untouched again.
 
-## Formulation Is Not Mechanism
+## Formulation Is Not Candidate
 
-A formulation combines a mechanism, observable, support definition, statistic, and analysis choices. A failed formulation may weaken a mechanism only when it was valid, adequately sensitive, and mechanism-matched.
+A formulation combines a candidate, observable or test role, support definition, statistic or model, and analysis choices. A failed formulation may weaken its frozen candidate-level claim only when it was valid and adequately sensitive; weakening a mechanistic candidate additionally requires mechanism-matched evidence.
 
 ## Support Is Part of the Science
 
@@ -52,7 +52,9 @@ Preserve null, inconclusive, invalid, and failed branches. They constrain future
 
 ## Autonomy Must Be Auditable
 
-Do not cap scientific possibilities with an arbitrary mechanism or round count. Instead, version a finite data-supported inventory, make every executable formulation set finite, preserve the full ledger, and stop scientifically only after audited inventory saturation and coverage completion.
+In `coverage_search`, do not cap scientific possibilities with an arbitrary candidate or round count. Version a finite data-supported inventory, make every executable formulation set finite, preserve the full ledger, and stop scientifically only after the complete closure gate passes.
+
+In `adaptive_search`, preserve the full candidate and selection history but end with a bounded stage report rather than inventing saturation. A `fixed_test` needs neither an inventory nor a search ledger.
 
 The ledger must cover the complete selection path from candidate generation and modification through screening, ranking, verification targeting, and promotion. Use an inferential strategy suited to that path; no single global-null method fits every domain.
 
@@ -60,7 +62,7 @@ Data looks, governance, compute, cost, time, storage, and external actions still
 
 ## Coverage Is Not Universal Exhaustiveness
 
-Coverage describes a versioned search space constructed from the current question and data products. It does not prove that no other physical, causal, computational, measurement, or selection mechanism exists.
+For `coverage_search`, coverage describes a versioned search space constructed from the current question and data products. It does not prove that no other physical, causal, computational, measurement, selection, model, simulation, feature, or design candidate exists.
 
 ## Governance Is Not an Afterthought
 

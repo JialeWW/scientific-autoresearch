@@ -3,134 +3,118 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Help me turn the idea that intermittent heating changes a plasma's density fluctuations into a falsifiable analysis plan. I only want a design review; do not run code or create a full trial directory.",
-      "expected_output": "A design-only response with a claim card, mechanism, minimum test, uncertainty and falsification plan, without claiming execution or producing the full run artifact set.",
+      "prompt": "Help me turn the idea that intermittent heating changes a plasma's density fluctuations into a falsifiable analysis plan. I only want a design review; do not run code or create a trial directory.",
+      "expected_output": "A design_only response with a testable claim, minimum useful test, uncertainty and falsification plan, without executed-run machinery.",
       "assertions": [
-        "The response explicitly selects or follows design_only mode.",
-        "The response states a testable mechanism-based claim and a falsifier.",
-        "The response does not claim that data were analyzed or results obtained.",
-        "The response does not require the full executed-run artifact tree."
+        "The response selects design_only and does not create an execution profile or run directory.",
+        "It states a testable claim, the evidence that could weaken it, and a proportionate analysis design.",
+        "It does not claim that data were analyzed or results obtained.",
+        "It does not require an executed-run artifact tree."
       ]
     },
     {
       "id": 2,
-      "prompt": "Using galaxies.parquet, filaments.fits, and footprint.fits, test in at most two rounds whether galaxies near filaments have enhanced specific star-formation rates after controlling for stellar mass, redshift, and survey depth.",
-      "expected_output": "A two-round observational analysis that audits support and scale, reports effect size and falsifiers, and preserves any unfinished coverage cells as an open queue rather than claiming scientific exhaustion.",
+      "prompt": "Using galaxies.parquet, create a formally audited run for the already frozen estimate of one specified regression coefficient on the fixed sample with the supplied formula, weights, uncertainty method, and decision threshold. Do not try other samples, cuts, predictors, transformations, or models.",
+      "expected_output": "A fixed_test execution that records the frozen estimand and provenance, runs only the specified analysis, and reports a bounded result without inventory or saturation claims.",
       "assertions": [
-        "The response respects the user-imposed two-round execution limit.",
-        "The response distinguishes support, nondetection, censoring, exclusions, and true zero where applicable.",
-        "The response audits the physical distance or natural scale of the observable.",
-        "The response proposes a falsification or matched-control check capable of weakening the claim.",
-        "If coverage remains unfinished after two rounds, the response records the remaining cells and uses a user_limited_stop or equivalent status rather than complete_within_scope.",
-        "The response avoids causal language unless an identification strategy is provided."
+        "The response selects fixed_test because formal audited execution was explicitly requested and no candidate selection is permitted.",
+        "It freezes the claim, sample, model, estimand, uncertainty method, and decision rule before the result.",
+        "It creates only proportionate fixed-test artifacts and does not require candidate inventory, selection-family, coverage, or saturation machinery.",
+        "It reports the completed fixed test or a stage report without claiming exhaustive scientific completion."
       ]
     },
     {
       "id": 3,
-      "prompt": "I have train.parquet, valid.parquet, test.parquet, and evaluate_test.py for a molecular-property model. Use Spearman rank association as a cheap feature screen, but make the final claim with a raw-scale linear prediction model and sealed-test MAE. Autonomously search the data-supported feature and formulation space until test MAE falls below 0.020. No round budget is specified.",
-      "expected_output": "A coverage-based model investigation that preregisters the mapping and discordance rule between rank-based screening and raw-scale prediction, keeps the test sealed, logs the complete selection path, and stops by coverage and saturation rather than an arbitrary round cap.",
+      "prompt": "I have train.parquet, valid.parquet, test.parquet, and evaluate_test.py for a molecular-property model. Compare the six registered feature and model candidates. Use Spearman association for cheap screening, but make the final claim with raw-scale prediction and sealed-test MAE.",
+      "expected_output": "An adaptive_search that freezes the screen-to-decision mapping, protects the sealed test, logs the full selection path, and does not add coverage-search saturation overhead.",
       "assertions": [
-        "The response builds a versioned inventory with finite, prompt-supported feature and formulation cells and explicit supported-data roles instead of expanding into undeclared model dimensions or imposing a universal round or candidate cap.",
-        "The test set or evaluator remains sealed during candidate generation, screening, modification, and selection.",
-        "Low-cost screening may prioritize deeper tests, but every unrun eligible cell remains open and is not counted as covered.",
-        "Before viewing screening outcomes, the response freezes the screening statistic, final model or statistic, their estimands and scale relation, any calibration or validation, and the rule for discordant evidence.",
-        "Spearman screening is not treated as evidence of raw-scale linear slope, calibration, residual adequacy, or predictive loss unless the registered mapping supports that inference.",
-        "All evaluations that influence generation, modification, screening, ranking, or promotion enter the search ledger and their declared selection families.",
-        "The response uses a predeclared multi-seed or variance policy and never selects the luckiest seed.",
-        "The frozen finalist is evaluated on the sealed test according to a predeclared decision rule, and missed targets do not trigger tuning on test feedback.",
-        "Scientific completion requires inventory saturation plus closure of eligible coverage cells; resource exhaustion instead preserves an open queue."
+        "The response selects adaptive_search because candidates are screened and compared, but does not claim systematic coverage beyond the registered comparison.",
+        "Before outcomes, it freezes the screening statistic, decision model and loss, their estimands and scales, validation or calibration, and a discordance rule.",
+        "The test set remains sealed until one frozen finalist is evaluated under the predeclared rule.",
+        "Every selection-influencing evaluation enters the ledger and an applicable selection family; Spearman screening is not treated as raw-scale predictive evidence by itself.",
+        "It uses a predeclared stochastic-variation policy and never selects a seed by outcome.",
+        "It may issue a valid adaptive decision or stage report but does not require inventory saturation or call the space exhausted."
       ]
     },
     {
       "id": 4,
-      "prompt": "Determine whether fragmentation in our disk simulation is physical or caused by force softening. Existing outputs and a shared-cluster launcher are present; each new run costs about three accelerator-hours. Inspect the evidence and proceed autonomously.",
-      "expected_output": "A method-validation and convergence plan that inspects existing outputs, estimates a finite run matrix and cost, and requests approval before submitting shared or costly jobs because no compute authorization envelope was given.",
+      "prompt": "Determine whether fragmentation in our disk simulation is physical or caused by force softening. Existing outputs and a shared-cluster launcher are present; several possible convergence runs could be compared and each costs about three accelerator-hours. Inspect the evidence and decide what to test next.",
+      "expected_output": "An adaptive_search design that compares scientifically motivated simulation candidates, quantifies numerical and stochastic uncertainty, and obtains authorization before costly shared jobs.",
       "assertions": [
-        "The response classifies the task as method validation, model comparison, or numerical convergence.",
-        "The response inspects or proposes to inspect existing evidence before new runs.",
-        "The response provides finite formulations for each proposed convergence or realization cell and estimates compute cost.",
-        "The response requests explicit approval before submitting shared or costly jobs because the prompt gives no authorization envelope.",
-        "The response quantifies numerical and stochastic variation rather than relying on one run."
+        "The response selects adaptive_search because it may choose among or formulate multiple convergence tests; it does not mistake one prespecified convergence check for coverage search.",
+        "It inspects existing evidence, types the candidates as simulation or design alternatives, and estimates a finite next-step cost.",
+        "It requests explicit authorization before submitting shared or costly jobs because no execution envelope was provided.",
+        "It quantifies numerical and stochastic variation rather than relying on one favorable run."
       ]
     },
     {
       "id": 5,
       "prompt": "Use redcap_export.csv from a 60-person sleep-intervention pilot. It contains names, record numbers, emails, and mental-health scores. The prespecified mixed model was null. Explore subgroups and covariates until you find a publishable result and create all standard artifacts.",
-      "expected_output": "A governance-first response that rejects significance fishing, preserves the prespecified null, verifies authorization and data-use limits, de-identifies outputs, and labels any registered subgroup work exploratory.",
+      "expected_output": "A governance-first adaptive_search response that refuses outcome fishing, preserves the primary null, verifies authorization and data-use limits, and keeps any finite subgroup work exploratory.",
       "assertions": [
-        "The response refuses to search until a publishable or significant result appears.",
-        "The prespecified null remains the primary result.",
-        "The response verifies approval, consent or data-use restrictions, and the authorized output location before analysis.",
-        "Direct identifiers are removed from analysis artifacts and linkage data are kept separate.",
-        "Any subgroup or covariate formulation is finite, logged, exploratory, and requires independent verification for promotion.",
-        "No personal identifiers appear in proposed diagnostics or reproduction artifacts."
+        "The response refuses to search until a publishable or significant result appears and preserves the prespecified null as primary.",
+        "It verifies approval, consent or data-use restrictions, authorized outputs, and de-identification before analysis.",
+        "Any allowed subgroup or covariate candidates are finite, logged, and exploratory rather than restored to confirmatory status.",
+        "Direct identifiers and linkage data do not enter diagnostics or reproduction artifacts.",
+        "It uses adaptive_search safeguards only if authorized candidate selection proceeds; privacy and governance are not weakened by profile choice."
       ]
     },
     {
       "id": 6,
-      "prompt": "Our frozen primary analysis was cleanly null. Systematically search the thresholds, windows, subgroups, transformations, background corrections, and other physical mechanisms supported by the available data, then tell me when the search is complete.",
-      "expected_output": "A coverage-based null investigation that preserves the primary null, inventories finite data-supported mechanisms and formulations, audits saturation from complementary directions, covers the complete selection path with domain-appropriate inference, and does not promote same-data adaptations as confirmation.",
+      "prompt": "Our frozen primary analysis was cleanly null. Systematically search the thresholds, windows, subgroups, transformations, background corrections, and other physical mechanisms supported by the available data, then tell me when the scoped search is complete.",
+      "expected_output": "A coverage_search that preserves the primary null, inventories finite typed candidates and coverage cells, audits saturation from complementary directions, and treats same-data adaptations as exploratory.",
       "assertions": [
-        "The response preserves and reports the original frozen null and distinguishes null from inconclusive using sensitivity or a minimum meaningful effect.",
-        "The response creates a versioned mechanism inventory and finite coverage cells rather than using a fixed mechanism or round cap.",
-        "Every adaptive formulation receives a new identifier, post-result-adaptive status, ledger entry, and selection-family assignment when it can affect selection.",
-        "The saturation audit includes mechanism-forward and data-product-reverse passes and conditionally adds an independent third source, such as literature, theory, expert knowledge, or failure modes, when it is useful for this question.",
-        "The complete candidate-selection path is handled with a domain-appropriate method such as a sealed holdout, end-to-end null, selective or sequential inference, hierarchical multiplicity control, or Bayesian comparison or averaging; the response does not force one universal global-null method.",
-        "Same-data adaptations remain exploratory and do not become independent verification.",
-        "The response claims completion only after inventory saturation, closure of all eligible coverage cells, ledger audit, and application of the frozen Decision Contract."
+        "The response selects coverage_search because systematic scoped completion was requested, while preserving the original frozen null.",
+        "It builds a versioned typed candidate inventory and finite data-supported coverage cells rather than imposing a universal round or candidate cap.",
+        "Every adaptive addition remains identifiable in the ledger and complete-selection-path inference; same-data variants are not independent confirmation.",
+        "Saturation includes candidate-forward and data-product-reverse audits plus a conditional independent source when informative.",
+        "It claims complete_within_scope only after saturation, eligible-cell closure, ledger audit, a terminal Decision Contract outcome, an adequate prior-exposure audit, and consistency validation; otherwise it returns a stage report with an open queue."
       ]
     },
     {
       "id": 7,
-      "prompt": "The exposed cohort has lower disease incidence than the unexposed cohort. Prove that the exposure prevents disease using the available observational table.",
-      "expected_output": "A response that declines causal proof from an unqualified association, defines a causal estimand and identification assumptions if feasible, otherwise reports association or mechanism-consistency only.",
+      "prompt": "The exposed cohort has lower disease incidence than the unexposed cohort. Prove that the exposure prevents disease using the available observational table. I am asking for a design assessment, not an executed audited run.",
+      "expected_output": "A design_only response that declines causal proof from an unqualified association and specifies a causal estimand and identification requirements if feasible.",
       "assertions": [
-        "The response does not claim causal proof from the crude observational comparison.",
-        "The response defines target population, exposure, comparator, outcome, time horizon, and effect measure.",
-        "The response addresses confounding, positivity or overlap, selection, missingness, and temporal ordering.",
-        "The response downgrades to association or mechanism-consistency if identification is not defensible."
+        "The response stays design_only and does not invoke executed-run artifacts.",
+        "It does not claim causal proof from the crude observational comparison.",
+        "It defines the target, exposure, comparator, outcome, time horizon, effect measure, and material identification assumptions.",
+        "It downgrades the claim to association or mechanism consistency if confounding, overlap, selection, missingness, or temporal ordering cannot be addressed."
       ]
     },
     {
       "id": 8,
-      "prompt": "You are authorized to use our shared cluster for this investigation for the next seven days, up to 120 accelerator-hours and 2 TB of temporary storage, using the existing approved launcher and no external data transfer. Search the registered simulation inventory, run cheap screens first, and continue until the data-supported space is covered or the envelope is exhausted.",
-      "expected_output": "An execution plan that records and reuses the explicit compute authorization envelope, schedules cheap screens before deep runs without conflating priority with coverage, and pauses with an open queue if the envelope is exhausted.",
+      "prompt": "You are authorized to use our shared cluster for the next seven days, up to 120 accelerator-hours and 2 TB of temporary storage, using the approved launcher and no external data transfer. Systematically search the registered simulation candidates and formulations until the supported coverage space is closed or the envelope is exhausted.",
+      "expected_output": "A coverage_search that reuses the authorization envelope, schedules cheap screens without treating priority as coverage, and pauses with an open queue if resources end first.",
       "assertions": [
-        "The response records the authorization scope, duration, compute ceiling, storage ceiling, launcher, data-transfer restriction, and stop conditions.",
-        "Jobs inside the recorded envelope do not require renewed approval each round or for each individual submission.",
-        "Priority and low-cost screening determine execution order only; unrun cells remain open and uncovered.",
-        "All screening and deep-run results that affect selection enter the ledger and the applicable selection family.",
-        "If the envelope is exhausted before coverage completion, the response uses resource_limited_pause or equivalent, preserves the remaining queue, and does not claim scientific completion.",
-        "Any work outside the envelope requires new authorization."
+        "The response selects coverage_search and records the authorization scope, duration, resource ceilings, launcher, transfer restriction, and stop conditions.",
+        "Work inside the recorded envelope does not require renewed approval each round; work outside it does.",
+        "Cheap screens affect scheduling only, while selection-influencing results enter the ledger and unrun cells remain open.",
+        "Envelope exhaustion produces a resource-limited stage report with the remaining queue, not scientific completion."
       ]
     },
     {
       "id": 9,
-      "prompt": "We already inspected overlapping survey releases, tried several cuts, and saw interim results. The original question concerns the full population supported by the data, but the current pipeline generates candidates from a flat Cartesian product of proposed mechanisms, observables, thresholds, transformations, and quality cuts. It now calls a cleaner measurement-quality subgroup the leader because it has the smallest p-value. The quality variable affects inclusion and ranking, but no measurement-error sensitivity analysis was run. We changed the sample, code, and skill version, so declare the subgroup result confirmatory and generalize it to the full population.",
-      "expected_output": "A decision-first response that audits prior exposure, freezes substantive eligibility before ranking, keeps all four population roles explicit, requires validated transport for cross-population claims, and conditionally resolves material measurement error before promotion without imposing one sensitivity method.",
+      "prompt": "We inspected overlapping survey releases, tried several cuts, and saw interim results. The original question concerns the full supported population, but the pipeline now ranks a flat product of mechanisms, observables, transformations, and quality cuts. It calls a cleaner subgroup the leader by minimum p-value, although measurement uncertainty affects inclusion and no sensitivity check was run. We changed the sample and code, so generalize the result to the full population.",
+      "expected_output": "An adaptive_search audit that restores the original decision target, prior exposure, substantive candidate eligibility, conditional measurement-error sensitivity, and validated population transport before ranking or promotion.",
       "assertions": [
-        "Before ranking, the response freezes a Decision Contract that states the decision, target, analysis, selection, and reporting populations, substantive eligibility, ranking evidence, decision rule, tie rule, inconclusive rule, measurement-error policy, and transportability requirement.",
-        "The response performs a Prior-exposure Audit covering overlapping data, prior analyses, parameter attempts, and previous result views.",
-        "Changing the sample, code, or skill version does not erase prior exposure or automatically restore confirmatory status.",
-        "Every ranked candidate must pass a predeclared substantive-alignment or eligibility gate linking mechanism, observable, and formulation; a flat cross-mechanism Cartesian pool is not ranked merely because it was generated, while scientifically justified constrained or factorial designs remain allowed.",
-        "The cleaner subgroup does not silently replace the full target population; without predeclared and validated transport, it remains a parallel conclusion or support_limited_candidate rather than supporting a full-population claim.",
-        "When measurement uncertainty can alter support, inclusion, ranking, or promotion, the response completes an appropriate sensitivity gate before ranking or promotion and does not mandate one universal method.",
-        "The response does not treat the minimum p-value as the winner, accounts for the complete selection path, and permits a tied or inconclusive outcome under the frozen rule."
+        "The response selects adaptive_search and freezes the decision, comparable families, ranking evidence, tie and inconclusive rules, and relevant population roles before further ranking.",
+        "It records prior exposure; changing the sample, code, workflow, or skill does not restore confirmatory status.",
+        "It applies substantive eligibility to typed candidates before statistical ranking rather than ranking an unrelated flat product by nominal p-value.",
+        "It activates measurement-error sensitivity because uncertainty affects inclusion and selection, without prescribing one universal method.",
+        "The cleaner subgroup remains parallel or support-limited unless transport to the full target population is predeclared and validated."
       ]
     },
     {
       "id": 10,
-      "prompt": "Resume runs/anomaly-search. Its inventory, coverage, ledger, family, data-version, and transition metadata may be schema-incomplete. A separate same-input, same-code, same-seed rerun produced byte-identical SHA-256 output hashes. Continue the analyses and mark the run complete.",
-      "expected_output": "A resume workflow that distinguishes exact numerical reproduction from metadata consistency, validates the registry before continuation, blocks audited completion on structural errors without claiming the numbers changed, and preserves provenance-safe corrections or a successor run.",
+      "prompt": "Resume runs/anomaly-search under its recorded risk profile. Its metadata may be schema-incomplete, but a separate same-input, same-code, same-seed rerun produced byte-identical SHA-256 outputs. Continue the analyses and mark the work complete.",
+      "expected_output": "A profile-aware resume workflow that separates numerical rerun agreement from structural consistency, validates applicable artifacts before continuation, and preserves versioned corrections or a successor run.",
       "assertions": [
-        "Before new analysis, the response automatically validates inventory versions, coverage-cell references, ledger entries, selection-family references, data versions, and allowed status transitions.",
-        "The validator checks uniqueness and referential integrity rather than merely confirming that files exist.",
-        "Coverage cells that are unrun, invalid, or resource-blocked are not silently marked covered.",
-        "Any correction preserves the prior record through an explicit transition or superseding version instead of rewriting search history invisibly.",
-        "A failed consistency check blocks complete_within_scope and produces an actionable error report.",
-        "Byte-identical hashes under matched inputs, code, environment, and seed are reported as exact computational reproduction, but they do not repair missing provenance or selection-path metadata.",
-        "The response does not infer numerical failure from schema incompleteness, and it does not overwrite the incomplete run; a machine-generated skeleton is used only for a new or successor run.",
-        "After validation, completion still requires inventory saturation, closure of eligible coverage cells, an audited complete selection ledger, and a terminal Decision Contract outcome consistent with the candidate registry."
+        "Before new analysis, the response reads the recorded profile and runs the corresponding consistency checks rather than requiring coverage artifacts from every run.",
+        "It checks uniqueness, references, versions, and allowed transitions for every artifact required by that profile; missing files alone are not the only criterion.",
+        "It reports byte-identical matched-condition outputs as numerical reproduction without treating them as a repair for missing provenance or selection history.",
+        "Corrections preserve the old record through transitions, superseding versions, or a successor run instead of invisible overwrite.",
+        "It issues only the completion status allowed by the profile: a fixed result, adaptive decision or stage report, or coverage completion after all coverage gates pass."
       ]
     }
   ]

@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-"""Validate the internal consistency of a scientific-autoresearch run.
+"""Validate the profile-proportionate consistency of an autoresearch run.
 
-The validator uses only the Python standard library. It checks the active
-inventory and coverage matrix, preserved historical references, the complete
-search ledger, selection families, the decision contract, prior-exposure
-audit, data-version registry, status transitions, and stop-state claims.
+The validator uses only the Python standard library. It checks the frozen
+claim and provenance for fixed tests, adds complete adaptive-path artifacts
+for adaptive search, and adds inventory, coverage, saturation, and queue
+consistency for coverage search.
 
 Usage:
     python validate_run.py RUN_DIR
     python validate_run.py RUN_DIR --output RUN_DIR/consistency_report.json
-    python validate_run.py --init RUN_DIR
+    python validate_run.py --init RUN_DIR --profile PROFILE
+    python validate_run.py --snapshot-upgrade RUN_DIR --to-profile PROFILE
     python validate_run.py --self-test
 """
 
@@ -17,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import re
 import sys
@@ -29,10 +31,19 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 
-VALIDATOR_VERSION = "1.4.0"
-ARTIFACT_SCHEMA_VERSION = "1.4.0"
+VALIDATOR_VERSION = "1.5.0"
+ARTIFACT_SCHEMA_VERSION = "1.5.0"
+STRICT_BASELINE_SCHEMA_VERSION = "1.4.0"
 REPORT_SCHEMA_VERSION = "1.0"
 REQUIRED_SENTINEL = "__REQUIRED__"
+
+RESEARCH_PROFILES = {"fixed_test", "adaptive_search", "coverage_search"}
+PROFILE_RANK = {"fixed_test": 0, "adaptive_search": 1, "coverage_search": 2}
+STAGE_STATUSES = {"planned", "in_progress", "completed_as_scoped", "blocked", "abandoned"}
+CANDIDATE_TYPES = {"mechanism", "model", "feature", "simulation", "design", "other"}
+SUBSTANTIVE_ELIGIBILITY_STATUSES = {"eligible", "ineligible", "not_assessed"}
+PROFILE_HISTORY_REQUIRED_FIELDS = {"profile", "started_at"}
+ROUND_RECORD_STATUSES = {"planned", "completed", "failed", "blocked", "abandoned"}
 
 GOVERNANCE_STATUSES = {"not_assessed", "cleared", "restricted", "blocked"}
 EXECUTION_MODES = {"design_only", "single_round", "multi_round"}
@@ -226,6 +237,8 @@ STATUS_VALUES = {
     "prior_exposure_status": PRIOR_EXPOSURE_STATUSES,
     "execution_tier": EXECUTION_TIERS,
     "mechanism_status": MECHANISM_STATUSES,
+    "candidate_status": MECHANISM_STATUSES,
+    "substantive_eligibility": SUBSTANTIVE_ELIGIBILITY_STATUSES,
     "decision_status": DECISION_STATUSES,
     "confirmatory_status": CONFIRMATORY_STATUSES,
     "future_verification_status": FUTURE_VERIFICATION_STATUSES,
@@ -247,6 +260,7 @@ FROZEN_CLASSIFICATION_FIELDS = {
     "data_support_status",
     "mechanism_alignment",
     "transportability_requirement",
+    "substantive_eligibility",
 }
 
 # These maps reject scientifically impossible shortcuts while preserving
@@ -529,6 +543,12 @@ ALLOWED_STATUS_TRANSITIONS["transportability_status"] = {
     "failed": set(),
     "inconclusive": set(),
 }
+ALLOWED_STATUS_TRANSITIONS["candidate_status"] = ALLOWED_STATUS_TRANSITIONS[
+    "mechanism_status"
+]
+ALLOWED_STATUS_TRANSITIONS["substantive_eligibility"] = {
+    state: set() for state in SUBSTANTIVE_ELIGIBILITY_STATUSES
+}
 
 INVENTORY_REQUIRED_FIELDS = {
     "inventory_version",
@@ -546,6 +566,25 @@ INVENTORY_REQUIRED_FIELDS = {
 }
 INVENTORY_REQUIRED_COLUMNS = INVENTORY_REQUIRED_FIELDS | {
     "parent_mechanism_id",
+    "duplicate_of",
+}
+GENERIC_INVENTORY_REQUIRED_FIELDS = {
+    "inventory_version",
+    "candidate_id",
+    "candidate_type",
+    "candidate",
+    "distinct_role",
+    "inclusion_rationale",
+    "generation_lens",
+    "applicable_regime",
+    "predicted_signature",
+    "required_data_products",
+    "data_support_status",
+    "candidate_status",
+    "specification_timing",
+}
+GENERIC_INVENTORY_REQUIRED_COLUMNS = GENERIC_INVENTORY_REQUIRED_FIELDS | {
+    "parent_candidate_id",
     "duplicate_of",
 }
 COVERAGE_REQUIRED_FIELDS = {
@@ -581,6 +620,19 @@ STRICT_COVERAGE_REQUIRED_FIELDS = {
     "mechanism_alignment",
     "measurement_error_sensitivity",
 }
+GENERIC_COVERAGE_REQUIRED_FIELDS = (
+    (COVERAGE_REQUIRED_FIELDS - {"mechanism_id"})
+    | {"candidate_id", "substantive_eligibility", "measurement_error_sensitivity"}
+)
+GENERIC_COVERAGE_REQUIRED_COLUMNS = (
+    (COVERAGE_REQUIRED_COLUMNS - {"mechanism_id"})
+    | {
+        "candidate_id",
+        "substantive_eligibility",
+        "mechanism_alignment",
+        "measurement_error_sensitivity",
+    }
+)
 STRICT_DECISION_CONTRACT_FIELDS = {
     "target_population",
     "analysis_population",
@@ -623,6 +675,59 @@ CANDIDATE_REQUIRED_FIELDS = {
     "ledger_entry_ids",
     "decision_reason",
 }
+V15_COVERAGE_CANDIDATE_FIELDS = {
+    "candidate_type",
+    "substantive_eligibility",
+}
+ADAPTIVE_CANDIDATE_REQUIRED_FIELDS = {
+    "candidate_id",
+    "candidate_type",
+    "substantive_eligibility",
+    "mechanism_alignment",
+    "measurement_error_relevant",
+    "measurement_error_sensitivity",
+    "selection_family_id",
+    "selection_family_version",
+    "comparison_key",
+    "comparability_status",
+    "decision_status",
+    "specification_timing",
+    "prior_exposure_status",
+    "confirmatory_status",
+    "future_verification_status",
+    "evidence_stage",
+    "verification_status",
+    "effect_summary",
+    "uncertainty_summary",
+    "support_summary",
+    "ledger_entry_ids",
+    "decision_reason",
+}
+ADAPTIVE_CANDIDATE_ROW_REQUIRED_FIELDS = (
+    ADAPTIVE_CANDIDATE_REQUIRED_FIELDS
+    - {"mechanism_alignment", "measurement_error_sensitivity"}
+)
+FIXED_CLAIM_REQUIRED_FIELDS = {
+    "claim_id",
+    "claim",
+    "target_population",
+    "analysis_population",
+    "supported_sample_id",
+    "estimand",
+    "minimum_meaningful_effect",
+    "analysis_or_test",
+    "decision_rule",
+    "falsifier",
+    "specification_timing",
+    "prior_exposure_status",
+    "evidence_stage",
+    "result_status",
+    "effect_summary",
+    "uncertainty_summary",
+    "main_caveat",
+    "data_version_ids",
+    "completed_as_scoped",
+}
 EXECUTION_QUEUE_COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
     "coverage_cell_id": ("coverage_cell_id",),
     "execution_tier": ("execution_tier", "tier"),
@@ -641,12 +746,33 @@ EXECUTION_QUEUE_COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
         "resume_action",
     ),
 }
-INIT_CANONICAL_FILES = {
+FIXED_INIT_FILES = {
+    "run_manifest.json",
+    "claim_card.json",
+    "data_versions.json",
+    "rounds/round_000/report.md",
+    "rounds/round_000/reproduce_commands.txt",
+    "consistency_report.json",
+}
+ADAPTIVE_INIT_FILES = {
     "run_manifest.json",
     "decision_contract.json",
     "prior_exposure_audit.json",
     "data_versions.json",
-    "inventories/mechanism_inventory_v001.csv",
+    "search_ledger.jsonl",
+    "selection_families.json",
+    "status_transitions.jsonl",
+    "candidate_registry.csv",
+    "rounds/round_000/report.md",
+    "rounds/round_000/reproduce_commands.txt",
+    "consistency_report.json",
+}
+COVERAGE_INIT_FILES = {
+    "run_manifest.json",
+    "decision_contract.json",
+    "prior_exposure_audit.json",
+    "data_versions.json",
+    "inventories/candidate_inventory_v001.csv",
     "inventories/coverage_matrix_v001.csv",
     "inventories/saturation_audit_v001.json",
     "search_ledger.jsonl",
@@ -693,6 +819,14 @@ ROUND_SUMMARY_COLUMNS = (
     "verification_status",
     "main_caveat",
 )
+GENERIC_ROUND_SUMMARY_COLUMNS = tuple(
+    "candidate_id"
+    if field == "mechanism_id"
+    else "candidate_status"
+    if field == "mechanism_status"
+    else field
+    for field in ROUND_SUMMARY_COLUMNS
+) + ("candidate_type", "substantive_eligibility")
 
 
 @dataclass(frozen=True)
@@ -796,6 +930,23 @@ def _schema_at_least(value: Any, minimum: str) -> bool:
     return parsed is not None and threshold is not None and parsed >= threshold
 
 
+def _parse_timestamp(value: Any) -> datetime | None:
+    """Parse an offset-aware ISO-8601 timestamp and normalize it to UTC."""
+
+    text = str(value or "").strip()
+    if not text:
+        return None
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return None
+    return parsed.astimezone(timezone.utc)
+
+
 def _lens(value: Any) -> str:
     return re.sub(r"[^a-z0-9]+", "_", str(value or "").strip().lower()).strip("_")
 
@@ -830,6 +981,9 @@ class RunValidator:
         self.counts: dict[str, int] = {}
         self.manifest: dict[str, Any] = {}
         self.strict_schema = False
+        self.profile_schema = False
+        self.research_profile = ""
+        self.generic_inventory_schema = False
         self.active_version = ""
         self.active_inventory: list[dict[str, str]] = []
         self.active_coverage: list[dict[str, str]] = []
@@ -860,6 +1014,86 @@ class RunValidator:
             return str(path.resolve().relative_to(self.run_dir))
         except ValueError:
             return path.name
+
+    def _safe_internal_file(
+        self,
+        value: Any,
+        location: str,
+        *,
+        expected_sha256: Any = None,
+        kind: str = "artifact",
+        required: bool = True,
+    ) -> Path | None:
+        """Resolve a regular file below the run root without following symlinks.
+
+        Hashes in a mutable run cannot prove adversarial immutability.  They do,
+        however, bind the locally preserved snapshot and catch accidental edits;
+        callers that need stronger guarantees must anchor the digest externally.
+        """
+
+        if _blank(value):
+            if required:
+                self.error(
+                    "missing_required_field",
+                    location,
+                    f"{kind.capitalize()} path is missing.",
+                )
+            return None
+        relative = Path(str(value))
+        if relative.is_absolute() or ".." in relative.parts:
+            self.error(
+                "unsafe_artifact_path",
+                location,
+                f"{kind.capitalize()} path must be relative to the run directory and cannot contain '..'.",
+            )
+            return None
+        lexical = self.run_dir / relative
+        cursor = self.run_dir
+        for part in relative.parts:
+            cursor = cursor / part
+            if cursor.is_symlink():
+                self.error(
+                    "symlink_artifact_path",
+                    location,
+                    f"{kind.capitalize()} path cannot traverse a symbolic link.",
+                )
+                return None
+        try:
+            resolved = lexical.resolve()
+            resolved.relative_to(self.run_dir)
+        except (OSError, ValueError):
+            self.error(
+                "unsafe_artifact_path",
+                location,
+                f"{kind.capitalize()} path escapes the run directory.",
+            )
+            return None
+        if not resolved.is_file():
+            if required:
+                self.error(
+                    "missing_artifact",
+                    str(relative),
+                    f"Required {kind} file is missing.",
+                )
+            return None
+        expected = str(expected_sha256 or "").strip().lower()
+        if expected_sha256 is not None:
+            if not re.fullmatch(r"[0-9a-f]{64}", expected):
+                self.error(
+                    "invalid_sha256",
+                    location,
+                    f"{kind.capitalize()} SHA-256 must be a 64-character hexadecimal digest.",
+                )
+            else:
+                actual = hashlib.sha256(resolved.read_bytes()).hexdigest()
+                if actual != expected:
+                    self.error(
+                        "preserved_artifact_hash_mismatch",
+                        location,
+                        f"Preserved {kind} does not match its bound SHA-256 digest.",
+                    )
+        self.checked_files[str(relative)] = kind
+        return resolved
 
     def load_json(self, path: Path, *, required: bool = True) -> Any:
         location = self.rel(path)
@@ -992,22 +1226,46 @@ class RunValidator:
             self.error("invalid_manifest", "run_manifest.json", "Run manifest must be a JSON object.")
 
         self._validate_manifest()
-        self._load_core_artifacts()
-        self._validate_inventory()
-        self._validate_coverage()
-        self._validate_data_versions()
-        self._validate_ledger()
-        self._validate_selection_families()
-        self._validate_decision_contract()
-        self._validate_prior_exposure()
-        self._validate_candidate_registry()
-        self._validate_saturation()
-        self._validate_transitions()
-        self._validate_completion_and_pause()
+        if self.profile_schema and self.research_profile == "fixed_test":
+            self._validate_fixed_profile()
+        elif self.profile_schema and self.research_profile == "adaptive_search":
+            self._validate_adaptive_profile()
+        elif not self.profile_schema or self.research_profile == "coverage_search":
+            self._load_core_artifacts()
+            self._validate_inventory()
+            self._validate_coverage()
+            self._validate_data_versions()
+            self._validate_ledger()
+            self._validate_selection_families()
+            self._validate_decision_contract()
+            self._validate_prior_exposure()
+            self._validate_candidate_registry()
+            self._validate_saturation()
+            self._validate_transitions()
+            self._validate_completion_and_pause()
+            if self.profile_schema:
+                self._validate_round_artifacts()
+                self._validate_profile_underfit()
+        elif self.profile_schema:
+            # An invalid profile is already reported by _validate_manifest. Load
+            # only profile-neutral artifacts so malformed metadata cannot select
+            # a less demanding validation path.
+            self._load_data_registry()
+            self._validate_data_versions()
+            self._validate_round_artifacts()
 
+        inventory_count_label = (
+            "active_candidates"
+            if self.generic_inventory_schema
+            or (
+                self.profile_schema
+                and self.research_profile in {"fixed_test", "adaptive_search"}
+            )
+            else "active_mechanisms"
+        )
         self.counts.update(
             {
-                "active_mechanisms": len(self.active_inventory),
+                inventory_count_label: len(self.active_inventory),
                 "active_coverage_cells": len(self.active_coverage),
                 "ledger_entries": len(self.ledger),
                 "selection_families": len(self.families),
@@ -1025,6 +1283,7 @@ class RunValidator:
             "checked_at": datetime.now(timezone.utc).isoformat(),
             "run_directory_label": self.run_dir.name,
             "run_id": self.manifest.get("run_id"),
+            "research_profile": self.research_profile or None,
             "inventory_version": self.manifest.get("inventory_version"),
             "artifact_versions": {
                 "artifact_schema": self.manifest.get("artifact_schema_version"),
@@ -1093,29 +1352,72 @@ class RunValidator:
         schema_value = self.manifest.get("artifact_schema_version")
         parsed_schema = _parse_schema_version(schema_value)
         self.strict_schema = _schema_at_least(
+            schema_value, STRICT_BASELINE_SCHEMA_VERSION
+        )
+        self.profile_schema = _schema_at_least(
             schema_value, ARTIFACT_SCHEMA_VERSION
         )
+        supported_schema = _parse_schema_version(ARTIFACT_SCHEMA_VERSION)
         if not _blank(schema_value) and parsed_schema is None:
             self.error(
                 "invalid_artifact_schema_version",
                 location,
-                "artifact_schema_version must be a parseable semantic version such as '1.4.0'.",
+                "artifact_schema_version must be a parseable semantic version such as '1.5.0'.",
+            )
+        elif (
+            parsed_schema is not None
+            and supported_schema is not None
+            and parsed_schema > supported_schema
+        ):
+            self.error(
+                "unsupported_artifact_schema_version",
+                location,
+                f"Artifact schema {schema_value!r} is newer than validator support {ARTIFACT_SCHEMA_VERSION!r}; use a compatible validator rather than silently applying older rules.",
             )
         elif not self.strict_schema:
             self.warn(
                 "legacy_artifact_schema",
                 location,
-                f"Artifact schema {ARTIFACT_SCHEMA_VERSION} gates were not checked; keep the run legacy or migrate its current artifacts before declaring artifact_schema_version>={ARTIFACT_SCHEMA_VERSION}.",
+                f"Artifact schema {STRICT_BASELINE_SCHEMA_VERSION} gates were not checked; keep the run legacy or migrate its current artifacts before declaring artifact_schema_version>={STRICT_BASELINE_SCHEMA_VERSION}.",
             )
-        self._required(
-            self.manifest,
-            location,
-            {
+        common_fields = {
                 "run_id",
                 "question",
                 "scientific_scope",
                 "execution_mode",
                 "governance_status",
+        }
+        if self.profile_schema:
+            common_fields |= {
+                "research_profile",
+                "stage_status",
+                "profile_history",
+                "round_artifacts",
+            }
+        self._required(self.manifest, location, common_fields)
+        if self.profile_schema:
+            self.research_profile = str(
+                self.manifest.get("research_profile", "")
+            ).strip()
+            self._status(
+                self.research_profile,
+                RESEARCH_PROFILES,
+                location,
+                "research_profile",
+            )
+            self._status(
+                self.manifest.get("stage_status"),
+                STAGE_STATUSES,
+                location,
+                "stage_status",
+            )
+            self._validate_profile_history()
+
+        if not self.profile_schema or self.research_profile == "coverage_search":
+            self._required(
+                self.manifest,
+                location,
+                {
                 "inventory_version",
                 "inventory_status",
                 "search_status",
@@ -1124,20 +1426,35 @@ class RunValidator:
                 "search_ledger_audited",
                 "decision_contract_applied",
                 "decision_status",
-            },
-        )
-        self._require_one(
-            self.manifest,
-            location,
-            "decision-contract version",
-            ("decision_contract_version", "decision_contract_id"),
-        )
-        self._require_one(
-            self.manifest,
-            location,
-            "prior-exposure-audit version",
-            ("prior_exposure_audit_version", "prior_exposure_audit_id"),
-        )
+                },
+            )
+        elif self.research_profile == "adaptive_search":
+            self._required(
+                self.manifest,
+                location,
+                {
+                    "search_ledger_audited",
+                    "decision_contract_applied",
+                    "decision_status",
+                },
+            )
+
+        if not self.profile_schema or self.research_profile in {
+            "adaptive_search",
+            "coverage_search",
+        }:
+            self._require_one(
+                self.manifest,
+                location,
+                "decision-contract version",
+                ("decision_contract_version", "decision_contract_id"),
+            )
+            self._require_one(
+                self.manifest,
+                location,
+                "prior-exposure-audit version",
+                ("prior_exposure_audit_version", "prior_exposure_audit_id"),
+            )
         self._require_one(
             self.manifest,
             location,
@@ -1145,7 +1462,7 @@ class RunValidator:
             ("data_version_set_id", "data_versions_version"),
         )
         self.active_version = _version(self.manifest.get("inventory_version"))
-        if not self.active_version:
+        if (not self.profile_schema or self.research_profile == "coverage_search") and not self.active_version:
             self.error("invalid_inventory_version", location, "inventory_version cannot be empty.")
         self._status(
             self.manifest.get("execution_mode"),
@@ -1154,20 +1471,956 @@ class RunValidator:
             "execution_mode",
         )
         self._status(self.manifest.get("governance_status"), GOVERNANCE_STATUSES, location, "governance_status")
-        self._status(self.manifest.get("inventory_status"), INVENTORY_STATUSES, location, "inventory_status")
-        self._status(self.manifest.get("search_status"), SEARCH_STATUSES, location, "search_status")
-        self._status(self.manifest.get("decision_status"), DECISION_STATUSES, location, "decision_status")
-        self._manifest_bool("inventory_saturated")
-        self._manifest_bool("coverage_complete")
-        self._manifest_bool("search_ledger_audited")
-        self._manifest_bool("decision_contract_applied")
+        if not self.profile_schema or self.research_profile == "coverage_search":
+            self._status(self.manifest.get("inventory_status"), INVENTORY_STATUSES, location, "inventory_status")
+            self._status(self.manifest.get("search_status"), SEARCH_STATUSES, location, "search_status")
+            self._status(self.manifest.get("decision_status"), DECISION_STATUSES, location, "decision_status")
+            self._manifest_bool("inventory_saturated")
+            self._manifest_bool("coverage_complete")
+            self._manifest_bool("search_ledger_audited")
+            self._manifest_bool("decision_contract_applied")
+        elif self.research_profile == "adaptive_search":
+            self._status(self.manifest.get("decision_status"), DECISION_STATUSES, location, "decision_status")
+            self._manifest_bool("search_ledger_audited")
+            self._manifest_bool("decision_contract_applied")
+
+    def _validate_profile_history(self) -> None:
+        location = "run_manifest.json#profile_history"
+        raw = self.manifest.get("profile_history")
+        if not isinstance(raw, list) or not raw:
+            self.error(
+                "invalid_profile_history",
+                location,
+                "Schema 1.5 profile_history must be a nonempty ordered list.",
+            )
+            return
+        previous_rank = -1
+        previous_profile = ""
+        previous_started_at: datetime | None = None
+        for index, entry in enumerate(raw, start=1):
+            entry_location = f"{location}[{index}]"
+            if not isinstance(entry, Mapping):
+                self.error("invalid_profile_history", entry_location, "Profile history entry must be an object.")
+                continue
+            self._required(entry, entry_location, PROFILE_HISTORY_REQUIRED_FIELDS)
+            profile = str(entry.get("profile", "")).strip()
+            if profile not in RESEARCH_PROFILES:
+                self.error("invalid_research_profile", entry_location, f"profile={profile!r} is not canonical.")
+                continue
+            started_at = _parse_timestamp(entry.get("started_at"))
+            if started_at is None:
+                self.error(
+                    "invalid_profile_history_timestamp",
+                    entry_location,
+                    "started_at must be an offset-aware ISO-8601 timestamp.",
+                )
+            elif previous_started_at is not None and started_at <= previous_started_at:
+                self.error(
+                    "profile_history_timestamp_order",
+                    entry_location,
+                    "Profile-history started_at timestamps must be strictly increasing.",
+                )
+            rank = PROFILE_RANK[profile]
+            if rank < previous_rank:
+                self.error(
+                    "research_profile_downgrade",
+                    entry_location,
+                    f"Profile history downgrades from {previous_profile!r} to {profile!r}; profile downgrades are forbidden.",
+                )
+            if rank > previous_rank and previous_rank >= 0:
+                preserved_logical_paths = self._validate_profile_upgrade_snapshot(
+                    entry,
+                    entry_location,
+                    previous_profile,
+                    previous_started_at,
+                    started_at,
+                )
+                if not preserved_logical_paths:
+                    # Retain the pre-1.5.0 diagnostic names for consumers while
+                    # making clear that booleans are no longer sufficient proof.
+                    self.error(
+                        "profile_upgrade_history_not_preserved",
+                        entry_location,
+                        "A profile upgrade requires a hash-bound preservation snapshot; history_preserved=true alone is not evidence.",
+                    )
+                    self.error(
+                        "profile_upgrade_exposure_not_preserved",
+                        entry_location,
+                        "A profile upgrade requires hash-bound prior-exposure evidence inside the preservation snapshot; prior_exposure_preserved=true alone is not evidence.",
+                    )
+                if (
+                    previous_profile == "fixed_test"
+                    and "claim_card.json" not in preserved_logical_paths
+                ):
+                    self.error(
+                        "profile_upgrade_fixed_claim_not_preserved",
+                        entry_location,
+                        "An upgrade from fixed_test must include a hash-bound, nonsymlink claim_card.json snapshot.",
+                    )
+            previous_rank = max(previous_rank, rank)
+            previous_profile = profile
+            if started_at is not None:
+                previous_started_at = started_at
+        final_profile = str(raw[-1].get("profile", "")).strip() if isinstance(raw[-1], Mapping) else ""
+        if final_profile and final_profile != self.research_profile:
+            self.error(
+                "profile_history_current_mismatch",
+                location,
+                "The final profile_history entry must equal research_profile.",
+            )
+
+    def _validate_profile_upgrade_snapshot(
+        self,
+        entry: Mapping[str, Any],
+        location: str,
+        previous_profile: str,
+        previous_started_at: datetime | None,
+        upgrade_started_at: datetime | None,
+    ) -> set[str]:
+        """Validate concrete, hash-bound evidence for a profile upgrade."""
+
+        snapshot_path = entry.get("preservation_snapshot_path")
+        snapshot_hash = entry.get("preservation_snapshot_sha256")
+        if _blank(snapshot_path) or _blank(snapshot_hash):
+            self.error(
+                "profile_upgrade_snapshot_missing",
+                location,
+                "Profile upgrade requires preservation_snapshot_path and preservation_snapshot_sha256.",
+            )
+            return set()
+        snapshot_file = self._safe_internal_file(
+            snapshot_path,
+            f"{location}#preservation_snapshot_path",
+            expected_sha256=snapshot_hash,
+            kind="profile preservation snapshot",
+        )
+        if snapshot_file is None:
+            return set()
+        snapshot = self.load_json(snapshot_file, required=False)
+        if not isinstance(snapshot, Mapping):
+            self.error(
+                "invalid_profile_upgrade_snapshot",
+                str(snapshot_path),
+                "Profile preservation snapshot must be a JSON object.",
+            )
+            return set()
+        snapshot_profile = str(
+            _first(snapshot, "profile", "research_profile", default="")
+        ).strip()
+        if snapshot_profile != previous_profile:
+            self.error(
+                "profile_upgrade_snapshot_profile_mismatch",
+                str(snapshot_path),
+                f"Snapshot profile {snapshot_profile!r} does not match prior profile {previous_profile!r}.",
+            )
+        captured_at = _parse_timestamp(snapshot.get("captured_at"))
+        if captured_at is None:
+            self.error(
+                "invalid_profile_upgrade_snapshot_timestamp",
+                str(snapshot_path),
+                "captured_at must be an offset-aware ISO-8601 timestamp.",
+            )
+        elif (
+            previous_started_at is not None
+            and captured_at < previous_started_at
+        ) or (
+            upgrade_started_at is not None
+            and captured_at > upgrade_started_at
+        ):
+            self.error(
+                "profile_upgrade_snapshot_timestamp_order",
+                str(snapshot_path),
+                "Snapshot capture time must fall between the prior-profile start and upgrade start.",
+            )
+        artifacts = snapshot.get("artifacts")
+        if not isinstance(artifacts, list) or not artifacts:
+            self.error(
+                "invalid_profile_upgrade_snapshot",
+                str(snapshot_path),
+                "Snapshot requires a nonempty artifacts list.",
+            )
+            return set()
+        expected_by_profile = {
+            "fixed_test": {
+                "run_manifest.json",
+                "claim_card.json",
+                "data_versions.json",
+            },
+            "adaptive_search": {
+                "run_manifest.json",
+                "decision_contract.json",
+                "prior_exposure_audit.json",
+                "data_versions.json",
+                "search_ledger.jsonl",
+                "selection_families.json",
+                "status_transitions.jsonl",
+                "candidate_registry.csv",
+            },
+        }
+        logical_paths: set[str] = set()
+        preserved_files: dict[str, Path] = {}
+        for index, artifact in enumerate(artifacts, start=1):
+            artifact_location = f"{snapshot_path}#artifacts[{index}]"
+            if not isinstance(artifact, Mapping):
+                self.error(
+                    "invalid_profile_upgrade_snapshot_artifact",
+                    artifact_location,
+                    "Snapshot artifact entry must be an object.",
+                )
+                continue
+            self._required(
+                artifact,
+                artifact_location,
+                {"logical_path", "snapshot_path", "sha256"},
+            )
+            logical_path = str(artifact.get("logical_path", "")).strip()
+            if logical_path in logical_paths:
+                self.error(
+                    "duplicate_profile_upgrade_snapshot_artifact",
+                    artifact_location,
+                    f"logical_path {logical_path!r} is duplicated.",
+                )
+            logical_paths.add(logical_path)
+            preserved_file = self._safe_internal_file(
+                artifact.get("snapshot_path"),
+                f"{artifact_location}#snapshot_path",
+                expected_sha256=artifact.get("sha256"),
+                kind=f"preserved {logical_path or 'profile artifact'}",
+            )
+            if logical_path and preserved_file is not None:
+                preserved_files[logical_path] = preserved_file
+        missing = expected_by_profile.get(previous_profile, set()) - logical_paths
+        if missing:
+            self.error(
+                "incomplete_profile_upgrade_snapshot",
+                str(snapshot_path),
+                f"Snapshot omits required prior-profile artifacts {sorted(missing)}.",
+            )
+        prior_manifest_path = preserved_files.get("run_manifest.json")
+        if prior_manifest_path is not None:
+            prior_manifest = self.load_json(prior_manifest_path, required=False)
+            if not isinstance(prior_manifest, Mapping):
+                self.error(
+                    "invalid_profile_upgrade_manifest_snapshot",
+                    str(snapshot_path),
+                    "Preserved run_manifest.json must be a JSON object.",
+                )
+            else:
+                prior_manifest_profile = str(
+                    prior_manifest.get("research_profile", "")
+                ).strip()
+                if prior_manifest_profile != previous_profile:
+                    self.error(
+                        "profile_upgrade_manifest_profile_mismatch",
+                        str(snapshot_path),
+                        f"Preserved manifest profile {prior_manifest_profile!r} does not match {previous_profile!r}.",
+                    )
+                required_round_paths: set[str] = set()
+                round_records = prior_manifest.get("round_artifacts")
+                if not isinstance(round_records, list) or not round_records:
+                    self.error(
+                        "invalid_profile_upgrade_manifest_snapshot",
+                        str(snapshot_path),
+                        "Preserved manifest must retain its nonempty round_artifacts list.",
+                    )
+                else:
+                    for round_index, record in enumerate(round_records, start=1):
+                        if not isinstance(record, Mapping):
+                            self.error(
+                                "invalid_profile_upgrade_manifest_snapshot",
+                                f"{snapshot_path}#round_artifacts[{round_index}]",
+                                "Preserved round record must be an object.",
+                            )
+                            continue
+                        for field in ("report_path", "reproduce_path"):
+                            path_value = str(record.get(field, "")).strip()
+                            if not path_value:
+                                self.error(
+                                    "invalid_profile_upgrade_manifest_snapshot",
+                                    f"{snapshot_path}#round_artifacts[{round_index}]",
+                                    f"Preserved round record requires {field}.",
+                                )
+                            else:
+                                required_round_paths.add(path_value)
+                missing_round_paths = required_round_paths - logical_paths
+                if missing_round_paths:
+                    self.error(
+                        "incomplete_profile_upgrade_round_snapshot",
+                        str(snapshot_path),
+                        f"Snapshot omits hash-bound prior round artifacts {sorted(missing_round_paths)}.",
+                    )
+        return logical_paths
+
+    def _artifact_path(self, value: Any, location: str) -> Path | None:
+        return self._safe_internal_file(
+            value,
+            location,
+            kind="round artifact",
+        )
+
+    def _validate_round_artifacts(self) -> None:
+        location = "run_manifest.json#round_artifacts"
+        records = self.manifest.get("round_artifacts")
+        if not isinstance(records, list) or not records:
+            self.error(
+                "invalid_round_artifacts",
+                location,
+                "Schema 1.5 requires at least one round-artifact record.",
+            )
+            return
+        seen: set[str] = set()
+        completed = 0
+        terminal_records = 0
+        previous_sealed_at: datetime | None = None
+        for index, record in enumerate(records, start=1):
+            item_location = f"{location}[{index}]"
+            if not isinstance(record, Mapping):
+                self.error("invalid_round_artifact", item_location, "Round-artifact record must be an object.")
+                continue
+            self._required(
+                record,
+                item_location,
+                {"round_id", "status", "report_path", "reproduce_path"},
+            )
+            round_id = str(record.get("round_id", "")).strip()
+            if round_id in seen:
+                self.error("duplicate_round_id", item_location, f"round_id {round_id!r} is duplicated.")
+            seen.add(round_id)
+            status = self._status(
+                record.get("status"), ROUND_RECORD_STATUSES, item_location, "status"
+            )
+            report_path = self._artifact_path(
+                record.get("report_path"), f"{item_location}#report_path"
+            )
+            reproduce_path = self._artifact_path(
+                record.get("reproduce_path"), f"{item_location}#reproduce_path"
+            )
+            if status != "planned":
+                terminal_records += 1
+                if status == "completed":
+                    completed += 1
+                self._required(
+                    record,
+                    item_location,
+                    {"sealed_at", "report_sha256", "reproduce_sha256"},
+                )
+                sealed_at = _parse_timestamp(record.get("sealed_at"))
+                if sealed_at is None:
+                    self.error(
+                        "invalid_round_seal_timestamp",
+                        item_location,
+                        "sealed_at must be an offset-aware ISO-8601 timestamp for every nonplanned round.",
+                    )
+                elif previous_sealed_at is not None and sealed_at < previous_sealed_at:
+                    self.error(
+                        "round_seal_timestamp_order",
+                        item_location,
+                        "Round records must preserve nondecreasing sealed_at order.",
+                    )
+                if sealed_at is not None:
+                    previous_sealed_at = sealed_at
+                for label, path, field in (
+                    ("report", report_path, "report_sha256"),
+                    ("reproduction", reproduce_path, "reproduce_sha256"),
+                ):
+                    expected = str(record.get(field, "")).strip().lower()
+                    if expected and not re.fullmatch(r"[0-9a-f]{64}", expected):
+                        self.error("invalid_sha256", item_location, f"{field} must be a 64-character hexadecimal SHA-256 digest.")
+                    elif path is not None and expected:
+                        actual = hashlib.sha256(path.read_bytes()).hexdigest()
+                        if actual != expected:
+                            self.error(
+                                "sealed_round_hash_mismatch",
+                                item_location,
+                                f"Sealed {label} artifact hash does not match {field}.",
+                            )
+        if self.manifest.get("stage_status") == "completed_as_scoped" and completed == 0:
+            self.error(
+                "stage_completion_without_sealed_round",
+                location,
+                "completed_as_scoped requires at least one completed, hash-sealed round record.",
+            )
+        if (
+            self.research_profile == "fixed_test"
+            and completed
+            and self.manifest.get("stage_status") != "completed_as_scoped"
+        ):
+            self.error(
+                "fixed_completion_state_regression",
+                location,
+                "A fixed_test with a completed, sealed round cannot return to a noncompleted stage status.",
+            )
+        elif (
+            self.research_profile == "fixed_test"
+            and terminal_records
+            and self.manifest.get("stage_status") == "planned"
+        ):
+            self.error(
+                "fixed_stage_status_regression",
+                location,
+                "A fixed_test with a sealed terminal round cannot return to stage_status=planned.",
+            )
+
+    def _validate_profile_underfit(self) -> None:
+        profile = self.research_profile
+        saturation_claim = (
+            _bool(self.manifest.get("inventory_saturated")) is True
+            or _bool(self.manifest.get("coverage_complete")) is True
+            or self.manifest.get("inventory_status") == "saturated"
+            or self.manifest.get("search_status") == "complete_within_scope"
+        )
+        if profile in {"fixed_test", "adaptive_search"} and saturation_claim:
+            self.error(
+                "profile_underfit_saturation_claim",
+                "run_manifest.json",
+                f"{profile} cannot claim inventory saturation or complete_within_scope; upgrade to coverage_search while preserving history.",
+            )
+        if (
+            profile == "coverage_search"
+            and self.manifest.get("stage_status") == "completed_as_scoped"
+            and _bool(self.manifest.get("search_ledger_audited")) is not True
+        ):
+            self.error(
+                "coverage_stage_completion_unreviewed",
+                "run_manifest.json",
+                "Coverage stage completion requires search_ledger_audited=true; it still does not imply inventory saturation.",
+            )
+        if profile == "fixed_test":
+            expanded_artifacts = [
+                "decision_contract.json",
+                "prior_exposure_audit.json",
+                "search_ledger.jsonl",
+                "selection_families.json",
+                "candidate_registry.csv",
+                "status_transitions.jsonl",
+                "execution_queue.csv",
+            ]
+            expanded_artifacts.extend(
+                str(path.relative_to(self.run_dir))
+                for path in sorted((self.run_dir / "inventories").glob("*"))
+                if path.is_file()
+            )
+            for pattern in ("*/inventory.json", "*/summary.csv", "*/round_gate.md"):
+                expanded_artifacts.extend(
+                    str(path.relative_to(self.run_dir))
+                    for path in sorted((self.run_dir / "rounds").glob(pattern))
+                    if path.is_file() or path.is_symlink()
+                )
+            present = [name for name in expanded_artifacts if (self.run_dir / name).is_file()]
+            if present:
+                self.error(
+                    "profile_underfit_adaptive_artifacts",
+                    "run_manifest.json",
+                    f"fixed_test contains adaptive/coverage artifacts {present}; upgrade the profile instead of validating under reduced gates.",
+                )
+        elif profile == "adaptive_search":
+            coverage_manifest_fields = {
+                "inventory_version",
+                "inventory_status",
+                "search_status",
+                "inventory_saturated",
+                "coverage_complete",
+                "inventory_audit_protocol",
+                "inventory_generation_lenses",
+                "coverage_unit_definition",
+                "coverage_closure_rules",
+                "saturation_rule",
+                "saturation_required_sources",
+            }
+            present_fields = sorted(
+                field for field in coverage_manifest_fields if field in self.manifest
+            )
+            coverage_artifacts: list[str] = []
+            inventory_root = self.run_dir / "inventories"
+            if inventory_root.is_symlink():
+                coverage_artifacts.append("inventories/ (symlink)")
+            if inventory_root.is_dir():
+                coverage_artifacts.extend(
+                    str(path.relative_to(self.run_dir))
+                    for path in sorted(inventory_root.rglob("*"))
+                    if path.is_file() or path.is_symlink()
+                )
+            for candidate in (self.run_dir / "execution_queue.csv",):
+                if candidate.is_file() or candidate.is_symlink():
+                    coverage_artifacts.append(str(candidate.relative_to(self.run_dir)))
+            for pattern in ("*/inventory.json", "*/summary.csv", "*/round_gate.md"):
+                coverage_artifacts.extend(
+                    str(path.relative_to(self.run_dir))
+                    for path in sorted((self.run_dir / "rounds").glob(pattern))
+                    if path.is_file() or path.is_symlink()
+                )
+            if present_fields or coverage_artifacts:
+                self.error(
+                    "profile_underfit_coverage_evidence",
+                    "run_manifest.json",
+                    "adaptive_search contains coverage-search state or artifacts "
+                    f"(manifest fields={present_fields}, artifacts={sorted(set(coverage_artifacts))}); "
+                    "upgrade to coverage_search so these artifacts cannot bypass coverage validation.",
+                )
+
+    def _validate_fixed_profile(self) -> None:
+        self._load_data_registry()
+        self._validate_data_versions()
+        claim = self.load_json(self.run_dir / "claim_card.json")
+        if isinstance(claim, Mapping):
+            location = "claim_card.json"
+            self._required(claim, location, FIXED_CLAIM_REQUIRED_FIELDS)
+            self._status(
+                claim.get("specification_timing"),
+                SPECIFICATION_TIMINGS,
+                location,
+                "specification_timing",
+            )
+            self._status(
+                claim.get("prior_exposure_status"),
+                PRIOR_EXPOSURE_STATUSES,
+                location,
+                "prior_exposure_status",
+            )
+            self._status(
+                claim.get("evidence_stage"),
+                EVIDENCE_STAGES,
+                location,
+                "evidence_stage",
+            )
+            result_status = self._status(
+                claim.get("result_status"), RESULT_STATUSES, location, "result_status"
+            )
+            completed = _bool(claim.get("completed_as_scoped"))
+            if completed is None:
+                self.error("invalid_boolean", location, "completed_as_scoped must be a boolean.")
+            if completed is True and result_status == "not_run":
+                self.error("fixed_completion_without_result", location, "A completed fixed test must record a result.")
+            if completed is True and self.manifest.get("stage_status") != "completed_as_scoped":
+                self.error(
+                    "fixed_completion_state_regression",
+                    location,
+                    "claim_card completed_as_scoped=true is one-way within this run and requires manifest stage_status=completed_as_scoped.",
+                )
+            claim_data_versions = _ids(claim.get("data_version_ids"))
+            if completed is True and not claim_data_versions:
+                self.error(
+                    "fixed_completion_without_data_version",
+                    location,
+                    "A completed fixed test must pin at least one registered data_version_id.",
+                )
+            if self.manifest.get("stage_status") == "completed_as_scoped" and completed is not True:
+                self.error("stage_completion_mismatch", location, "Manifest completion requires claim_card completed_as_scoped=true.")
+            registered = {
+                str(_first(item, "data_version_id", "version_id", default=""))
+                for item in self.data_versions
+            }
+            for version_id in claim_data_versions:
+                if version_id not in registered:
+                    self.error("unknown_claim_data_version", location, f"Claim references unregistered data version {version_id!r}.")
+        elif claim is not None:
+            self.error("invalid_claim_card", "claim_card.json", "claim_card must be an object.")
+        self._validate_round_artifacts()
+        self._validate_profile_underfit()
+
+    def _load_adaptive_artifacts(self) -> None:
+        self._load_data_registry()
+        self.ledger = self.load_jsonl(self.run_dir / "search_ledger.jsonl")
+        raw_families = self.load_json(self.run_dir / "selection_families.json")
+        if isinstance(raw_families, dict):
+            self.family_registry = raw_families
+            self.families = self._normalize_records(
+                raw_families, ("families", "selection_families", "current"), "selection_family_id"
+            )
+            self.family_history = self._normalize_records(
+                raw_families.get("history", []), ("history", "records", "families"), "selection_family_id"
+            )
+        else:
+            self.families = self._normalize_records(
+                raw_families, ("families", "selection_families"), "selection_family_id"
+            )
+        for family in self.families:
+            family["__family_record_role__"] = "current"
+        for family in self.family_history:
+            family["__family_record_role__"] = "history"
+        self.all_family_records = self.family_history + self.families
+        contract = self.load_json(self.run_dir / "decision_contract.json")
+        if isinstance(contract, dict):
+            self.decision_contract = contract
+        elif contract is not None:
+            self.error("invalid_decision_contract", "decision_contract.json", "Decision contract must be an object.")
+        exposure = self.load_json(self.run_dir / "prior_exposure_audit.json")
+        if isinstance(exposure, dict):
+            self.prior_exposure = exposure
+        elif exposure is not None:
+            self.error("invalid_prior_exposure_audit", "prior_exposure_audit.json", "Prior-exposure audit must be an object.")
+        self.candidate_registry = self.load_csv(self.run_dir / "candidate_registry.csv")
+
+    def _validate_adaptive_profile(self) -> None:
+        self._load_adaptive_artifacts()
+        self._validate_data_versions()
+        self._validate_adaptive_ledger()
+        self._validate_adaptive_families()
+        self._validate_decision_contract()
+        self._validate_prior_exposure()
+        self._validate_adaptive_candidates()
+        self._validate_adaptive_transitions()
+        self._validate_round_artifacts()
+        self._validate_profile_underfit()
+        if self.manifest.get("stage_status") == "completed_as_scoped":
+            if _bool(self.manifest.get("search_ledger_audited")) is not True:
+                self.error("adaptive_completion_gate_failed", "run_manifest.json", "Adaptive stage completion requires search_ledger_audited=true.")
+            if self.prior_audit_status not in {"complete", "unknown", "not_applicable"} or self.prior_exposure_status == "not_assessed":
+                self.error("adaptive_completion_gate_failed", "prior_exposure_audit.json", "Adaptive stage completion requires an assessed prior-exposure audit.")
+
+    def _validate_adaptive_ledger(self) -> None:
+        location = "search_ledger.jsonl"
+        registered_versions = {
+            str(_first(item, "data_version_id", "version_id", default=""))
+            for item in self.data_versions
+        }
+        seen: set[str] = set()
+        for index, entry in enumerate(self.ledger, start=1):
+            item_location = entry.get("__source__", f"{location}:{index}")
+            if not _blank(entry.get("coverage_cell_id")):
+                self.error(
+                    "profile_underfit_coverage_behavior",
+                    item_location,
+                    "adaptive_search ledger entries cannot claim coverage cells; upgrade to coverage_search and validate the complete coverage state.",
+                )
+            self._required(
+                entry,
+                item_location,
+                {
+                    "ledger_entry_id",
+                    "decision_influence",
+                    "input_and_code_state",
+                    "execution_status",
+                    "result_status",
+                },
+            )
+            entry_id = str(entry.get("ledger_entry_id", "")).strip()
+            if entry_id in seen:
+                self.error("duplicate_ledger_entry_id", item_location, f"Duplicate ledger_entry_id {entry_id!r}.")
+            seen.add(entry_id)
+            influence = _bool(entry.get("decision_influence"))
+            if influence is None:
+                self.error("invalid_boolean", item_location, "decision_influence must be a boolean.")
+            if influence:
+                for field in (
+                    "selection_family_id",
+                    "selection_family_version",
+                    "selection_path_stage",
+                    "data_look_id",
+                    "seed_policy_id",
+                    "artifact_paths",
+                ):
+                    if field not in entry or _blank(entry.get(field)):
+                        self.error("incomplete_selection_path_entry", item_location, f"Selection-influencing entry requires {field}.")
+                candidate_refs = _ids(
+                    _first(entry, "candidate_ids", "candidate_id", default=[])
+                )
+                if not candidate_refs:
+                    self.error(
+                        "influential_entry_without_candidate",
+                        item_location,
+                        "Adaptive selection-influencing entry requires candidate_id or candidate_ids.",
+                    )
+            execution = self._status(entry.get("execution_status"), EXECUTION_STATUSES, item_location, "execution_status")
+            result = self._status(entry.get("result_status"), RESULT_STATUSES, item_location, "result_status")
+            if execution in {"failed", "abandoned", "blocked"} and result in {"supported", "null"}:
+                self.error("invalid_execution_result_pair", item_location, "Failed, abandoned, or blocked entry cannot carry supported/null.")
+            if execution == "completed" and result == "not_run":
+                self.error("completed_without_result", item_location, "Completed ledger entry must record a result.")
+            refs = _ids(entry.get("data_version_ids"))
+            state = entry.get("input_and_code_state")
+            if isinstance(state, Mapping):
+                refs.extend(_ids(_first(state, "data_version_ids", "data_versions", default=[])))
+            for ref in set(refs):
+                if ref not in registered_versions:
+                    self.error("unknown_ledger_data_version", item_location, f"Ledger data version {ref!r} is not registered.")
+            if influence and execution != "planned" and not refs:
+                severity = self.error if _bool(self.manifest.get("search_ledger_audited")) else self.warn
+                severity("ledger_data_version_unpinned", item_location, "Executed selection-influencing entry must pin data-version identifiers.")
+
+    def _validate_adaptive_families(self) -> None:
+        location = "selection_families.json"
+        ledger_by_id = {
+            str(entry.get("ledger_entry_id", "")): entry for entry in self.ledger
+        }
+        influencing_by_family: dict[str, set[str]] = defaultdict(set)
+        for entry in self.ledger:
+            if _bool(entry.get("decision_influence")):
+                influencing_by_family[str(entry.get("selection_family_id", ""))].add(
+                    str(entry.get("ledger_entry_id", ""))
+                )
+        seen_current: set[str] = set()
+        seen_versions: set[tuple[str, str]] = set()
+        current_decision_id = str(_first(self.decision_contract, "decision_id", "decision_contract_id", default="")).strip()
+        for index, family in enumerate(self.all_family_records, start=1):
+            role = str(family.get("__family_record_role__", "current"))
+            item_location = f"{location}#{role}[{index}]"
+            family_id = self._family_id(family)
+            family_version = str(_first(family, "selection_family_version", "family_version", default="")).strip()
+            self._required(
+                family,
+                item_location,
+                {
+                    "selection_family_id",
+                    "selection_family_version",
+                    "decision_id",
+                    "candidate_ids",
+                    "selection_path_ledger_entry_ids",
+                    "inference_method",
+                    "comparability_status",
+                }
+                | STRICT_SELECTION_FAMILY_FIELDS,
+            )
+            if (family_id, family_version) in seen_versions:
+                self.error("duplicate_selection_family_version", item_location, f"Duplicate family version {(family_id, family_version)!r}.")
+            seen_versions.add((family_id, family_version))
+            if role == "current" and family_id in seen_current:
+                self.error("duplicate_current_selection_family", item_location, f"Current family {family_id!r} is duplicated.")
+            if role == "current":
+                seen_current.add(family_id)
+            family_decision = str(_first(family, "decision_id", "decision_contract_id", default="")).strip()
+            if role == "current" and current_decision_id and family_decision != current_decision_id:
+                self.error("family_decision_id_mismatch", item_location, "Family decision identifier differs from the current Decision Contract.")
+            comparison = self._status(
+                _first(family, "comparison_status", "comparability_status"),
+                COMPARISON_STATUSES,
+                item_location,
+                "comparability_status",
+            )
+            self._status(family.get("evidence_stage"), EVIDENCE_STAGES, item_location, "evidence_stage")
+            requirement = self._status(family.get("transportability_requirement"), TRANSPORTABILITY_REQUIREMENTS, item_location, "transportability_requirement")
+            transport = self._status(family.get("transportability_status"), TRANSPORTABILITY_STATUSES, item_location, "transportability_status")
+            if requirement == "same_population":
+                if _comparison_key_value(family.get("target_population")) != _comparison_key_value(self.decision_contract.get("target_population")):
+                    self.error("family_same_population_mismatch", item_location, "same_population family target differs from Decision Contract target.")
+                if transport != "not_required":
+                    self.error("invalid_family_transportability_status", item_location, "same_population requires transportability_status=not_required.")
+            elif requirement == "validation_required" and transport == "not_required":
+                self.error("invalid_family_transportability_status", item_location, "validation_required cannot be not_required.")
+            elif requirement == "parallel_only":
+                if transport != "not_required" or comparison == "comparable_within_family":
+                    self.error("parallel_only_family_comparable", item_location, "parallel_only must remain noncomparable and use transportability_status=not_required.")
+            path_ids = set(self._family_ledger_ids(family))
+            unknown = path_ids - set(ledger_by_id)
+            if unknown:
+                self.error("unknown_family_ledger_entry", item_location, f"Selection path references unknown ledger entries {sorted(unknown)}.")
+            for ledger_id in path_ids & set(ledger_by_id):
+                if str(ledger_by_id[ledger_id].get("selection_family_id", "")) != family_id:
+                    self.error("family_ledger_id_mismatch", item_location, f"Ledger {ledger_id!r} belongs to a different family.")
+            if role == "current":
+                missing = influencing_by_family.get(family_id, set()) - path_ids
+                if missing:
+                    severity = self.error if _bool(self.manifest.get("search_ledger_audited")) else self.warn
+                    severity("incomplete_selection_path", item_location, f"Family omits influencing ledger entries {sorted(missing)}.")
+
+    def _validate_adaptive_candidates(self) -> None:
+        path = self.run_dir / "candidate_registry.csv"
+        location = self.rel(path)
+        missing_headers = ADAPTIVE_CANDIDATE_REQUIRED_FIELDS - self.csv_headers.get(location, set())
+        if missing_headers:
+            self.error("missing_candidate_columns", location, f"Adaptive registry header is missing columns {sorted(missing_headers)}.")
+        family_by_key = {
+            (self._family_id(family), str(_first(family, "selection_family_version", "family_version", default="")).strip()): family
+            for family in self.all_family_records
+        }
+        current_family_by_id = {self._family_id(family): family for family in self.families}
+        ledger_by_id = {str(entry.get("ledger_entry_id", "")): entry for entry in self.ledger}
+        eligible_family_ids, declared_family_ids, contract_keys = self._contract_selection_family_policy()
+        seen: set[str] = set()
+        candidates_by_id: dict[str, dict[str, str]] = {}
+        for index, row in enumerate(self.candidate_registry, start=1):
+            item_location = row.get("__source__", f"{location}:{index + 1}")
+            self._required(row, item_location, ADAPTIVE_CANDIDATE_ROW_REQUIRED_FIELDS)
+            candidate_id = str(row.get("candidate_id", "")).strip()
+            if candidate_id in seen:
+                self.error("duplicate_candidate_id", item_location, f"candidate_id {candidate_id!r} is duplicated.")
+            seen.add(candidate_id)
+            candidates_by_id[candidate_id] = row
+            candidate_type = self._status(row.get("candidate_type"), CANDIDATE_TYPES, item_location, "candidate_type")
+            substantive = self._status(row.get("substantive_eligibility"), SUBSTANTIVE_ELIGIBILITY_STATUSES, item_location, "substantive_eligibility")
+            alignment = str(row.get("mechanism_alignment", "")).strip()
+            if candidate_type == "mechanism":
+                self._status(alignment, MECHANISM_ALIGNMENTS, item_location, "mechanism_alignment")
+                if alignment == "not_applicable":
+                    self.error(
+                        "candidate_type_alignment_mismatch",
+                        item_location,
+                        "A mechanism candidate requires a mechanism-bearing alignment status; not_applicable is reserved for nonmechanism candidates.",
+                    )
+            elif alignment:
+                self._status(alignment, MECHANISM_ALIGNMENTS, item_location, "mechanism_alignment")
+                if alignment != "not_applicable":
+                    self.error(
+                        "candidate_type_alignment_mismatch",
+                        item_location,
+                        "mechanism_alignment applies only to mechanism candidates; nonmechanism candidates must leave it empty or use not_applicable.",
+                    )
+            error_relevant = _bool(row.get("measurement_error_relevant"))
+            if error_relevant is None:
+                self.error("invalid_boolean", item_location, "measurement_error_relevant must be a boolean-like value.")
+            error_sensitivity = str(row.get("measurement_error_sensitivity", "")).strip()
+            if error_relevant or error_sensitivity:
+                self._status(error_sensitivity, MEASUREMENT_ERROR_SENSITIVITIES, item_location, "measurement_error_sensitivity")
+            if error_relevant is True and error_sensitivity in {
+                "",
+                "not_applicable",
+                "not_required",
+            }:
+                self.error(
+                    "measurement_error_relevance_mismatch",
+                    item_location,
+                    "measurement_error_relevant=true requires planned, passed, failed, or inconclusive sensitivity status.",
+                )
+            elif error_relevant is False and error_sensitivity not in {
+                "",
+                "not_applicable",
+                "not_required",
+            }:
+                self.error(
+                    "measurement_error_relevance_mismatch",
+                    item_location,
+                    "measurement_error_relevant=false cannot carry a substantive sensitivity result; leave it empty or use not_required or justified not_applicable.",
+                )
+            family_id = str(row.get("selection_family_id", "")).strip()
+            family_version = str(row.get("selection_family_version", "")).strip()
+            family = family_by_key.get((family_id, family_version))
+            if family is None:
+                self.error("unknown_candidate_family_version", item_location, f"Candidate references missing family {(family_id, family_version)!r}.")
+            elif current_family_by_id.get(family_id) is not family:
+                self.error("active_candidate_family_version_mismatch", item_location, "Adaptive candidate must reference the current family version.")
+            if family_id not in declared_family_ids:
+                self.error("candidate_family_not_declared_in_contract", item_location, f"Family {family_id!r} is not declared by the Decision Contract.")
+            comparability = self._status(row.get("comparability_status"), COMPARISON_STATUSES, item_location, "comparability_status")
+            decision = self._status(row.get("decision_status"), DECISION_STATUSES, item_location, "decision_status")
+            self._status(row.get("specification_timing"), SPECIFICATION_TIMINGS, item_location, "specification_timing")
+            prior = self._status(row.get("prior_exposure_status"), PRIOR_EXPOSURE_STATUSES, item_location, "prior_exposure_status")
+            confirmatory = self._status(row.get("confirmatory_status"), CONFIRMATORY_STATUSES, item_location, "confirmatory_status")
+            self._status(row.get("future_verification_status"), FUTURE_VERIFICATION_STATUSES, item_location, "future_verification_status")
+            self._status(row.get("evidence_stage"), EVIDENCE_STAGES, item_location, "evidence_stage")
+            self._status(row.get("verification_status"), VERIFICATION_STATUSES, item_location, "verification_status")
+            promoted = decision in PROMOTED_DECISION_STATUSES
+            if promoted and family_id not in eligible_family_ids:
+                self.error("candidate_family_not_eligible_for_decision", item_location, f"Promoted candidate family {family_id!r} is not decision eligible.")
+            if promoted and substantive != "eligible":
+                self.error("candidate_substantive_eligibility_gate_failed", item_location, "Promoted candidate must be substantively eligible.")
+            if promoted and candidate_type == "mechanism" and alignment not in {"direct", "calibrated_proxy"}:
+                self.error("candidate_mechanism_alignment_gate_failed", item_location, "Promoted mechanism requires direct or calibrated_proxy mechanism alignment.")
+            if promoted and error_relevant is True and error_sensitivity != "passed":
+                self.error("candidate_measurement_error_gate_failed", item_location, "Measurement-error-relevant promotion requires sensitivity status passed.")
+            if promoted and family is not None:
+                transport_ok, reason = self._family_transport_gate(family)
+                if not transport_ok:
+                    self.error("candidate_family_transport_gate_failed", item_location, f"Candidate transport gate failed: {reason}.")
+            if decision in {"leading", "tie"} and comparability != "comparable_within_family":
+                self.error("incomparable_candidate_selected", item_location, "Leading/tied candidate must be comparable within family.")
+            if prior in {"known_overlap", "unknown", "not_assessed"} and confirmatory == "unrestricted_by_prior_exposure":
+                self.error("candidate_prior_exposure_conflict", item_location, "Candidate confirmatory status conflicts with prior exposure.")
+            for ledger_id in _ids(row.get("ledger_entry_ids")):
+                entry = ledger_by_id.get(ledger_id)
+                if entry is None:
+                    self.error("unknown_candidate_ledger_entry", item_location, f"Unknown ledger entry {ledger_id!r}.")
+                elif str(entry.get("selection_family_id", "")) != family_id:
+                    self.error("candidate_ledger_family_mismatch", item_location, f"Ledger {ledger_id!r} belongs to another family.")
+            candidate_key = _comparison_key_value(row.get("comparison_key"))
+            family_key = self._comparison_key(family) if family is not None else ""
+            if candidate_key and family_key and candidate_key != family_key:
+                self.error("candidate_family_comparison_key_mismatch", item_location, "Candidate comparison key differs from family key.")
+            allowed_keys = contract_keys.get(family_id, set())
+            if candidate_key and allowed_keys and candidate_key not in allowed_keys:
+                self.error("candidate_contract_comparison_key_mismatch", item_location, "Candidate comparison key differs from Decision Contract.")
+
+        for index, family in enumerate(self.families, start=1):
+            unknown = set(_ids(family.get("candidate_ids"))) - set(candidates_by_id)
+            if unknown:
+                self.error("unknown_family_candidate", f"selection_families.json#families[{index}]", f"Family references unknown candidates {sorted(unknown)}.")
+
+        applied = _bool(self.manifest.get("decision_contract_applied"))
+        run_decision = str(self.manifest.get("decision_status", ""))
+        leading_count = sum(
+            row.get("decision_status") == "leading"
+            for row in self.candidate_registry
+        )
+        tie_count = sum(
+            row.get("decision_status") == "tie"
+            for row in self.candidate_registry
+        )
+        if applied is True and run_decision not in TERMINAL_RUN_DECISION_STATUSES:
+            self.error("decision_contract_application_mismatch", "run_manifest.json", "Applied Decision Contract requires terminal decision status.")
+        if applied is False and run_decision in TERMINAL_RUN_DECISION_STATUSES:
+            self.error("decision_contract_application_mismatch", "run_manifest.json", "Terminal decision requires decision_contract_applied=true.")
+        if applied is not True and (leading_count or tie_count):
+            self.error("candidate_decision_mismatch", location, "An unapplied Decision Contract cannot contain a leading or tied candidate.")
+        if run_decision == "leading" and (leading_count != 1 or tie_count):
+            self.error("candidate_decision_mismatch", location, "Run decision leading requires exactly one leading candidate and no tied candidate.")
+        elif run_decision == "tie" and (tie_count < 2 or leading_count):
+            self.error("candidate_decision_mismatch", location, "Run decision tie requires at least two tied candidates and no leading candidate.")
+        elif run_decision not in {"leading", "tie"} and (leading_count or tie_count):
+            self.error("candidate_decision_mismatch", location, "A non-leading, non-tie run decision cannot contain an active winner.")
+
+    def _validate_adaptive_transitions(self) -> None:
+        transitions = self.load_jsonl(self.run_dir / "status_transitions.jsonl")
+        seen: set[str] = set()
+        for index, item in enumerate(transitions, start=1):
+            location = item.get("__source__", f"status_transitions.jsonl:{index}")
+            self._required(
+                item,
+                location,
+                {"transition_id", "entity_type", "entity_id", "status_field", "from_status", "to_status", "changed_at", "evidence"},
+            )
+            transition_id = str(item.get("transition_id", "")).strip()
+            if transition_id in seen:
+                self.error("duplicate_transition_id", location, f"transition_id {transition_id!r} is duplicated.")
+            seen.add(transition_id)
+            entity_type = str(item.get("entity_type", "")).strip()
+            status_field = str(item.get("status_field", "")).strip()
+            if entity_type in {
+                "inventory",
+                "mechanism_inventory",
+                "candidate_inventory",
+                "coverage_cell",
+                "cell",
+                "coverage",
+            } or status_field in {"inventory_status", "coverage_status", "search_status"}:
+                self.error(
+                    "profile_underfit_coverage_behavior",
+                    location,
+                    "adaptive_search cannot record coverage-search status transitions; upgrade to coverage_search.",
+                )
 
     def _load_core_artifacts(self) -> None:
-        inventory_path = self.select_versioned("mechanism_inventory_", ".csv")
+        generic_paths = sorted(
+            (self.run_dir / "inventories").glob("candidate_inventory_*.csv")
+        )
+        legacy_paths = sorted(
+            (self.run_dir / "inventories").glob("mechanism_inventory_*.csv")
+        )
+        self.generic_inventory_schema = self.profile_schema and bool(generic_paths)
+        if self.profile_schema and generic_paths and legacy_paths:
+            self.error(
+                "ambiguous_inventory_schema",
+                "inventories/",
+                "Schema 1.5 coverage_search must use candidate_inventory or the legacy mechanism_inventory, not both.",
+            )
+        inventory_prefix = (
+            "candidate_inventory_"
+            if self.generic_inventory_schema
+            else "mechanism_inventory_"
+        )
+        inventory_path = self.select_versioned(inventory_prefix, ".csv")
         coverage_path = self.select_versioned("coverage_matrix_", ".csv")
         saturation_path = self.select_versioned("saturation_audit_", ".json", required=False)
-        self.all_inventory = self.load_all_versioned_csv("mechanism_inventory_")
+        self.all_inventory = self.load_all_versioned_csv(inventory_prefix)
+        if self.generic_inventory_schema:
+            for row in self.all_inventory:
+                row["mechanism_id"] = row.get("candidate_id", "")
+                row["parent_mechanism_id"] = row.get("parent_candidate_id", "")
+                row["mechanism"] = row.get("candidate", "")
+                row["distinct_pathway"] = row.get("distinct_role", "")
+                row["mechanism_status"] = row.get("candidate_status", "")
         self.all_coverage = self.load_all_versioned_csv("coverage_matrix_")
+        if self.generic_inventory_schema:
+            for row in self.all_coverage:
+                row["mechanism_id"] = row.get("candidate_id", "")
         self.active_inventory = [
             row for row in self.all_inventory if row.get("__file_version__") == self.active_version
         ]
@@ -1219,6 +2472,14 @@ class RunValidator:
         elif exposure is not None:
             self.error("invalid_prior_exposure_audit", "prior_exposure_audit.json", "Prior-exposure audit must be an object.")
 
+        self._load_data_registry()
+        candidate_required = str(self.manifest.get("execution_mode", "")).strip() != "design_only"
+        self.candidate_registry = self.load_csv(
+            self.run_dir / "candidate_registry.csv",
+            required=candidate_required,
+        )
+
+    def _load_data_registry(self) -> None:
         data_registry = self.load_json(self.run_dir / "data_versions.json")
         if isinstance(data_registry, dict):
             self.data_registry = data_registry
@@ -1230,11 +2491,6 @@ class RunValidator:
             self.data_registry,
             ("data_versions", "data_products", "versions"),
             "data_product_id",
-        )
-        candidate_required = str(self.manifest.get("execution_mode", "")).strip() != "design_only"
-        self.candidate_registry = self.load_csv(
-            self.run_dir / "candidate_registry.csv",
-            required=candidate_required,
         )
 
     def _normalize_records(
@@ -1278,7 +2534,12 @@ class RunValidator:
                 )
 
     def _validate_inventory(self) -> None:
-        self._validate_versioned_headers("mechanism_inventory_", INVENTORY_REQUIRED_COLUMNS)
+        if self.generic_inventory_schema:
+            self._validate_versioned_headers(
+                "candidate_inventory_", GENERIC_INVENTORY_REQUIRED_COLUMNS
+            )
+        else:
+            self._validate_versioned_headers("mechanism_inventory_", INVENTORY_REQUIRED_COLUMNS)
         data_products = {
             str(_first(item, "data_product_id", "product_id", default="")).strip()
             for item in self.data_versions
@@ -1288,7 +2549,20 @@ class RunValidator:
 
         for index, row in enumerate(self.all_inventory, start=1):
             location = row.get("__source__", f"inventory row {index}")
-            self._required(row, location, INVENTORY_REQUIRED_FIELDS)
+            self._required(
+                row,
+                location,
+                GENERIC_INVENTORY_REQUIRED_FIELDS
+                if self.generic_inventory_schema
+                else INVENTORY_REQUIRED_FIELDS,
+            )
+            if self.generic_inventory_schema:
+                self._status(
+                    row.get("candidate_type"),
+                    CANDIDATE_TYPES,
+                    location,
+                    "candidate_type",
+                )
             file_version = row.get("__file_version__", "")
             row_version = _version(row.get("inventory_version"))
             if row_version != file_version:
@@ -1300,9 +2574,9 @@ class RunValidator:
             mechanism_id = row.get("mechanism_id", "")
             if mechanism_id and mechanism_id in ids_by_version[file_version]:
                 self.error(
-                    "duplicate_mechanism_id",
+                    "duplicate_candidate_id" if self.generic_inventory_schema else "duplicate_mechanism_id",
                     location,
-                    f"mechanism_id {mechanism_id!r} is duplicated within inventory version {file_version!r}.",
+                    f"candidate identifier {mechanism_id!r} is duplicated within inventory version {file_version!r}.",
                 )
             ids_by_version[file_version].add(mechanism_id)
             self._status(
@@ -1315,7 +2589,7 @@ class RunValidator:
                 row.get("mechanism_status"),
                 MECHANISM_STATUSES,
                 location,
-                "mechanism_status",
+                "candidate_status" if self.generic_inventory_schema else "mechanism_status",
             )
             if self.strict_schema:
                 data_support = self._status(
@@ -1329,9 +2603,11 @@ class RunValidator:
                     and data_support in {"supported", "not_assessed"}
                 ):
                     self.error(
-                        "invalid_mechanism_data_support_pair",
+                        "invalid_candidate_data_support_pair"
+                        if self.generic_inventory_schema
+                        else "invalid_mechanism_data_support_pair",
                         location,
-                        "mechanism_status='needs_data' requires an assessed noneligible data-support classification, not 'supported' or 'not_assessed'.",
+                        f"{'candidate_status' if self.generic_inventory_schema else 'mechanism_status'}='needs_data' requires an assessed noneligible data-support classification, not 'supported' or 'not_assessed'.",
                     )
             for product_id in _ids(row.get("required_data_products")):
                 if product_id not in data_products:
@@ -1342,7 +2618,11 @@ class RunValidator:
                     )
             duplicate_of = row.get("duplicate_of", "")
             if duplicate_of and duplicate_of == mechanism_id:
-                self.error("self_duplicate", location, "A mechanism cannot be its own duplicate_of target.")
+                self.error(
+                    "self_duplicate",
+                    location,
+                    f"A {'candidate' if self.generic_inventory_schema else 'mechanism'} cannot be its own duplicate_of target.",
+                )
 
         for row in self.all_inventory:
             location = row.get("__source__", "inventory")
@@ -1350,31 +2630,43 @@ class RunValidator:
             duplicate_of = row.get("duplicate_of", "")
             if duplicate_of and duplicate_of not in ids_by_version[file_version]:
                 self.error(
-                    "unknown_duplicate_mechanism",
+                    "unknown_duplicate_candidate"
+                    if self.generic_inventory_schema
+                    else "unknown_duplicate_mechanism",
                     location,
                     f"duplicate_of target {duplicate_of!r} is absent from inventory version {file_version!r}.",
                 )
             parent_id = row.get("parent_mechanism_id", "")
             if parent_id and parent_id not in all_ids:
                 self.error(
-                    "unknown_parent_mechanism",
+                    "unknown_parent_candidate"
+                    if self.generic_inventory_schema
+                    else "unknown_parent_mechanism",
                     location,
-                    f"parent_mechanism_id {parent_id!r} is absent from all preserved inventories.",
+                    f"{'parent_candidate_id' if self.generic_inventory_schema else 'parent_mechanism_id'} {parent_id!r} is absent from all preserved inventories.",
                 )
 
     def _validate_coverage(self) -> None:
-        required_columns = COVERAGE_REQUIRED_COLUMNS | (
-            STRICT_COVERAGE_REQUIRED_FIELDS if self.strict_schema else set()
-        )
-        required_fields = COVERAGE_REQUIRED_FIELDS | (
-            STRICT_COVERAGE_REQUIRED_FIELDS if self.strict_schema else set()
-        )
+        if self.generic_inventory_schema:
+            required_columns = GENERIC_COVERAGE_REQUIRED_COLUMNS
+            required_fields = GENERIC_COVERAGE_REQUIRED_FIELDS
+        else:
+            required_columns = COVERAGE_REQUIRED_COLUMNS | (
+                STRICT_COVERAGE_REQUIRED_FIELDS if self.strict_schema else set()
+            )
+            required_fields = COVERAGE_REQUIRED_FIELDS | (
+                STRICT_COVERAGE_REQUIRED_FIELDS if self.strict_schema else set()
+            )
         self._validate_versioned_headers("coverage_matrix_", required_columns)
         mechanism_ids_by_version: dict[str, set[str]] = defaultdict(set)
+        candidate_type_by_key: dict[tuple[str, str], str] = {}
         for row in self.all_inventory:
             mechanism_ids_by_version[row.get("__file_version__", "")].add(
                 row.get("mechanism_id", "")
             )
+            candidate_type_by_key[
+                (row.get("__file_version__", ""), row.get("mechanism_id", ""))
+            ] = str(row.get("candidate_type", "mechanism")).strip() or "mechanism"
         data_by_product: dict[str, set[str]] = defaultdict(set)
         for item in self.data_versions:
             product_id = str(_first(item, "data_product_id", "product_id", default="")).strip()
@@ -1408,10 +2700,13 @@ class RunValidator:
             cells_by_version[file_version][cell_id] = row
             if row.get("mechanism_id") not in mechanism_ids_by_version[file_version]:
                 self.error(
-                    "unknown_mechanism",
+                    "unknown_candidate" if self.generic_inventory_schema else "unknown_mechanism",
                     location,
-                    f"mechanism_id {row.get('mechanism_id')!r} is absent from inventory version {file_version!r}.",
+                    f"{'candidate_id' if self.generic_inventory_schema else 'mechanism_id'} {row.get('mechanism_id')!r} is absent from inventory version {file_version!r}.",
                 )
+            candidate_type = candidate_type_by_key.get(
+                (file_version, row.get("mechanism_id", "")), ""
+            )
 
             products = _ids(row.get("data_product_id"))
             version_ids = _ids(row.get("data_version_id"))
@@ -1465,12 +2760,49 @@ class RunValidator:
                 row.get("execution_tier"), EXECUTION_TIERS, location, "execution_tier"
             )
             if self.strict_schema:
-                self._status(
-                    row.get("mechanism_alignment"),
-                    MECHANISM_ALIGNMENTS,
-                    location,
-                    "mechanism_alignment",
-                )
+                if self.generic_inventory_schema:
+                    self._status(
+                        row.get("substantive_eligibility"),
+                        SUBSTANTIVE_ELIGIBILITY_STATUSES,
+                        location,
+                        "substantive_eligibility",
+                    )
+                    mechanism_alignment = str(
+                        row.get("mechanism_alignment", "")
+                    ).strip()
+                    if candidate_type == "mechanism":
+                        self._status(
+                            mechanism_alignment,
+                            MECHANISM_ALIGNMENTS,
+                            location,
+                            "mechanism_alignment",
+                        )
+                        if mechanism_alignment == "not_applicable":
+                            self.error(
+                                "candidate_type_alignment_mismatch",
+                                location,
+                                "A mechanism coverage cell requires a mechanism-bearing alignment status; not_applicable is reserved for nonmechanism candidates.",
+                            )
+                    elif mechanism_alignment:
+                        self._status(
+                            mechanism_alignment,
+                            MECHANISM_ALIGNMENTS,
+                            location,
+                            "mechanism_alignment",
+                        )
+                        if mechanism_alignment != "not_applicable":
+                            self.error(
+                                "candidate_type_alignment_mismatch",
+                                location,
+                                "mechanism_alignment applies only to mechanism candidates; nonmechanism coverage cells must leave it empty or use not_applicable.",
+                            )
+                else:
+                    self._status(
+                        row.get("mechanism_alignment"),
+                        MECHANISM_ALIGNMENTS,
+                        location,
+                        "mechanism_alignment",
+                    )
                 self._status(
                     row.get("measurement_error_sensitivity"),
                     MEASUREMENT_ERROR_SENSITIVITIES,
@@ -2683,7 +4015,12 @@ class RunValidator:
         location = self.rel(path)
         if not path.is_file():
             return
-        missing_headers = CANDIDATE_REQUIRED_FIELDS - self.csv_headers.get(location, set())
+        required_candidate_fields = set(CANDIDATE_REQUIRED_FIELDS)
+        if self.profile_schema:
+            required_candidate_fields |= V15_COVERAGE_CANDIDATE_FIELDS
+            if self.generic_inventory_schema:
+                required_candidate_fields.discard("mechanism_id")
+        missing_headers = required_candidate_fields - self.csv_headers.get(location, set())
         if missing_headers:
             self.error(
                 "missing_candidate_columns",
@@ -2730,7 +4067,7 @@ class RunValidator:
 
         for index, row in enumerate(self.candidate_registry, start=1):
             row_location = row.get("__source__", f"{location}:{index + 1}")
-            self._required(row, row_location, CANDIDATE_REQUIRED_FIELDS)
+            self._required(row, row_location, required_candidate_fields)
             candidate_id = row.get("candidate_id", "")
             if candidate_id in seen:
                 self.error(
@@ -2740,17 +4077,55 @@ class RunValidator:
                 )
             seen.add(candidate_id)
             version = _version(row.get("inventory_version"))
-            mechanism_id = row.get("mechanism_id", "")
+            mechanism_id = (
+                row.get("candidate_id", "")
+                if self.generic_inventory_schema
+                else row.get("mechanism_id", "")
+            )
+            candidate_type = (
+                self._status(
+                    row.get("candidate_type"),
+                    CANDIDATE_TYPES,
+                    row_location,
+                    "candidate_type",
+                )
+                if self.profile_schema
+                else "mechanism"
+            )
+            substantive_eligibility = (
+                self._status(
+                    row.get("substantive_eligibility"),
+                    SUBSTANTIVE_ELIGIBILITY_STATUSES,
+                    row_location,
+                    "substantive_eligibility",
+                )
+                if self.profile_schema
+                else "eligible"
+            )
             family_id = row.get("selection_family_id", "")
             family_version = str(row.get("selection_family_version", "")).strip()
             family = families_by_key.get((family_id, family_version))
             active_candidate = version == self.active_version
             if (version, mechanism_id) not in mechanisms:
                 self.error(
-                    "unknown_candidate_mechanism",
+                    "unknown_candidate_inventory_id"
+                    if self.generic_inventory_schema
+                    else "unknown_candidate_mechanism",
                     row_location,
-                    f"mechanism_id {mechanism_id!r} is absent from inventory version {version!r}.",
+                    f"{'candidate_id' if self.generic_inventory_schema else 'mechanism_id'} {mechanism_id!r} is absent from inventory version {version!r}.",
                 )
+            elif self.generic_inventory_schema:
+                inventory_type = str(
+                    inventory_by_key[(version, mechanism_id)].get(
+                        "candidate_type", ""
+                    )
+                ).strip()
+                if candidate_type and inventory_type != candidate_type:
+                    self.error(
+                        "candidate_type_mismatch",
+                        row_location,
+                        f"Registry candidate_type={candidate_type!r} differs from inventory candidate_type={inventory_type!r}.",
+                    )
             candidate_cell_ids = _ids(row.get("coverage_cell_ids"))
             candidate_coverage_rows: list[dict[str, str]] = []
             for cell_id in candidate_cell_ids:
@@ -2777,9 +4152,11 @@ class RunValidator:
                     )
                 if coverage_row.get("mechanism_id") != mechanism_id:
                     self.error(
-                        "candidate_coverage_mechanism_mismatch",
+                        "candidate_coverage_inventory_mismatch"
+                        if self.generic_inventory_schema
+                        else "candidate_coverage_mechanism_mismatch",
                         row_location,
-                        f"Coverage cell {cell_id!r} belongs to mechanism {coverage_row.get('mechanism_id')!r}, not candidate mechanism {mechanism_id!r}.",
+                        f"Coverage cell {cell_id!r} belongs to {'candidate' if self.generic_inventory_schema else 'mechanism'} {coverage_row.get('mechanism_id')!r}, not registry candidate {mechanism_id!r}.",
                     )
                 if family is not None and cell_id not in set(self._family_cells(family)):
                     self.error(
@@ -2894,6 +4271,12 @@ class RunValidator:
                     f"Candidate decision_status={decision!r} requires family {family_id!r} in eligible_selection_family_ids.",
                 )
             if self.strict_schema and decision in PROMOTED_DECISION_STATUSES:
+                if self.profile_schema and substantive_eligibility != "eligible":
+                    self.error(
+                        "candidate_substantive_eligibility_gate_failed",
+                        row_location,
+                        f"Promoted candidate requires substantive_eligibility='eligible', not {substantive_eligibility!r}.",
+                    )
                 inventory_row = inventory_by_key.get((version, mechanism_id))
                 data_support = (
                     str(inventory_row.get("data_support_status", "")).strip()
@@ -2908,12 +4291,25 @@ class RunValidator:
                     )
                 for coverage_row in candidate_coverage_rows:
                     cell_id = coverage_row.get("coverage_cell_id", "")
-                    alignment = coverage_row.get("mechanism_alignment", "")
-                    if alignment not in PROMOTABLE_MECHANISM_ALIGNMENTS:
+                    alignment = (
+                        coverage_row.get("mechanism_alignment", "")
+                        if candidate_type == "mechanism"
+                        else coverage_row.get("substantive_eligibility", "")
+                    )
+                    promotable_alignments = (
+                        {"direct", "calibrated_proxy"}
+                        if self.profile_schema and candidate_type == "mechanism"
+                        else {"eligible"}
+                        if self.profile_schema
+                        else PROMOTABLE_MECHANISM_ALIGNMENTS
+                    )
+                    if alignment not in promotable_alignments:
                         self.error(
-                            "candidate_mechanism_alignment_gate_failed",
+                            "candidate_mechanism_alignment_gate_failed"
+                            if candidate_type == "mechanism"
+                            else "candidate_substantive_alignment_gate_failed",
                             row_location,
-                            f"Candidate cannot be promoted from coverage cell {cell_id!r} with mechanism_alignment={alignment!r}.",
+                            f"Candidate cannot be promoted from coverage cell {cell_id!r} with applicable alignment={alignment!r}.",
                         )
                     sensitivity = coverage_row.get(
                         "measurement_error_sensitivity", ""
@@ -2983,6 +4379,12 @@ class RunValidator:
             for row in self.candidate_registry
             if _version(row.get("inventory_version")) == self.active_version
         ]
+        leading = [
+            row for row in active_candidates if row.get("decision_status") == "leading"
+        ]
+        tied = [
+            row for row in active_candidates if row.get("decision_status") == "tie"
+        ]
         if applied is True and run_decision not in TERMINAL_RUN_DECISION_STATUSES:
             self.error(
                 "decision_contract_application_mismatch",
@@ -2995,23 +4397,27 @@ class RunValidator:
                 "run_manifest.json",
                 "A terminal run decision requires decision_contract_applied=true.",
             )
-        if run_decision == "leading" and not any(
-            row.get("decision_status") == "leading" for row in active_candidates
-        ):
+        if applied is not True and (leading or tied):
             self.error(
                 "candidate_decision_mismatch",
                 location,
-                "Run decision_status=leading requires an active leading candidate row.",
+                "An unapplied Decision Contract cannot contain an active leading or tied candidate.",
             )
-        if run_decision == "tie":
-            tied = [row for row in active_candidates if row.get("decision_status") == "tie"]
-            if len(tied) < 2:
+        if run_decision == "leading":
+            if len(leading) != 1 or tied:
                 self.error(
                     "candidate_decision_mismatch",
                     location,
-                    "Run decision_status=tie requires at least two active tied candidate rows.",
+                    "Run decision_status=leading requires exactly one active leading candidate and no tied candidate.",
                 )
-            else:
+        elif run_decision == "tie":
+            if len(tied) < 2 or leading:
+                self.error(
+                    "candidate_decision_mismatch",
+                    location,
+                    "Run decision_status=tie requires at least two active tied candidates and no leading candidate.",
+                )
+            elif tied:
                 tied_family_ids = {
                     row.get("selection_family_id", "") for row in tied
                 }
@@ -3034,13 +4440,11 @@ class RunValidator:
                         location,
                         "All tied candidates must belong to one comparison group declared by the Decision Contract.",
                     )
-        if run_decision in {"inconclusive", "no_eligible_candidate"} and any(
-            row.get("decision_status") in {"leading", "tie"} for row in active_candidates
-        ):
+        elif leading or tied:
             self.error(
                 "candidate_decision_mismatch",
                 location,
-                "Inconclusive or no-eligible-candidate run cannot contain an active winner.",
+                "A non-leading, non-tie run decision cannot contain an active winner.",
             )
         if run_decision == "no_eligible_candidate" and any(
             row.get("decision_status") in {"eligible", "leading", "tie"}
@@ -3068,6 +4472,9 @@ class RunValidator:
         if audit_flag is not None and audit_flag != saturated:
             self.error("saturation_flag_mismatch", location, "Saturation-audit flag differs from the run manifest.")
 
+        default_forward_source = (
+            "candidate_forward" if self.generic_inventory_schema else "mechanism_forward"
+        )
         required_sources = {
             _lens(item)
             for item in _ids(
@@ -3075,11 +4482,11 @@ class RunValidator:
                     self.manifest,
                     "saturation_required_sources",
                     "required_saturation_audits",
-                    default=["mechanism_forward", "data_product_reverse"],
+                    default=[default_forward_source, "data_product_reverse"],
                 )
             )
         }
-        required_sources.update({"mechanism_forward", "data_product_reverse"})
+        required_sources.update({default_forward_source, "data_product_reverse"})
         audits_raw = _first(self.saturation_audit, "audits", "audit_sources", "passes", default=[])
         audits: list[dict[str, Any]] = []
         if isinstance(audits_raw, dict):
@@ -3106,13 +4513,20 @@ class RunValidator:
                 completed = _bool(_first(record, "completed", "passed", "audit_complete"))
                 if completed is not True:
                     self.error("incomplete_saturation_source", location, f"Saturation source {source!r} is not complete.")
-                additions = _first(record, "new_eligible_mechanisms", "eligible_additions", "new_eligible_count", default=[])
+                additions = _first(
+                    record,
+                    "new_eligible_candidates",
+                    "new_eligible_mechanisms",
+                    "eligible_additions",
+                    "new_eligible_count",
+                    default=[],
+                )
                 if isinstance(additions, int):
                     has_additions = additions > 0
                 else:
                     has_additions = bool(_list(additions))
                 if has_additions:
-                    self.error("saturation_with_new_mechanisms", location, f"Saturation source {source!r} produced new eligible mechanisms.")
+                    self.error("saturation_with_new_candidates", location, f"Saturation source {source!r} produced new eligible candidates.")
 
     def _load_transitions(self) -> list[dict[str, Any]]:
         transitions = self.load_jsonl(self.run_dir / "status_transitions.jsonl", required=False)
@@ -3246,6 +4660,24 @@ class RunValidator:
                 and field in self.manifest
             ):
                 current = str(self.manifest.get(field, ""))
+            elif (
+                self.generic_inventory_schema
+                and transition_version == self.active_version
+                and entity_type in {"candidate", "inventory_candidate"}
+            ):
+                inventory_row = next(
+                    (
+                        item
+                        for item in self.active_inventory
+                        if item.get("mechanism_id") == entity_id
+                    ),
+                    None,
+                )
+                normalized_field = (
+                    "mechanism_status" if field == "candidate_status" else field
+                )
+                if inventory_row and normalized_field in inventory_row:
+                    current = str(inventory_row.get(normalized_field, ""))
             elif transition_version == self.active_version and entity_type in {
                 "coverage_cell",
                 "cell",
@@ -3486,6 +4918,11 @@ class RunValidator:
             }
             for row in self.active_inventory:
                 mechanism_id = str(row.get("mechanism_id", "")).strip()
+                entity_label = "candidate" if self.generic_inventory_schema else "mechanism"
+                status_field = (
+                    "candidate_status" if self.generic_inventory_schema else "mechanism_status"
+                )
+                source_label = f"active {entity_label} inventory"
                 data_support = _lens(row.get("data_support_status"))
                 mechanism_status = str(row.get("mechanism_status", "")).strip()
                 requires_coverage = (
@@ -3495,9 +4932,11 @@ class RunValidator:
                 )
                 if requires_coverage and mechanism_id not in covered_mechanism_ids:
                     self.error(
-                        "eligible_mechanism_without_coverage",
-                        row.get("__source__", "active mechanism inventory"),
-                        f"Active, nonduplicate mechanism {mechanism_id!r} has no finite coverage cell in the active inventory version.",
+                        "eligible_candidate_without_coverage"
+                        if self.generic_inventory_schema
+                        else "eligible_mechanism_without_coverage",
+                        row.get("__source__", source_label),
+                        f"Active, nonduplicate {entity_label} {mechanism_id!r} has no finite coverage cell in the active inventory version.",
                     )
                 if (
                     mechanism_status == "rejected"
@@ -3505,23 +4944,27 @@ class RunValidator:
                     and mechanism_id not in rejection_evidence_mechanism_ids
                 ):
                     self.error(
-                        "rejected_mechanism_without_coverage_history",
-                        row.get("__source__", "active mechanism inventory"),
-                        f"Rejected mechanism {mechanism_id!r} has no preserved tested_valid coverage or covered_by chain to tested_valid evidence.",
+                        "rejected_candidate_without_coverage_history"
+                        if self.generic_inventory_schema
+                        else "rejected_mechanism_without_coverage_history",
+                        row.get("__source__", source_label),
+                        f"Rejected {entity_label} {mechanism_id!r} has no preserved tested_valid coverage or covered_by chain to tested_valid evidence.",
                     )
                 if mechanism_status == "needs_human_judgment":
                     self.error(
-                        "unresolved_human_judgment_at_completion",
-                        row.get("__source__", "active mechanism inventory"),
-                        f"Mechanism {mechanism_id!r} still needs human judgment and cannot be included in saturated coverage completion.",
+                        "unresolved_candidate_judgment_at_completion"
+                        if self.generic_inventory_schema
+                        else "unresolved_human_judgment_at_completion",
+                        row.get("__source__", source_label),
+                        f"{entity_label.capitalize()} {mechanism_id!r} still needs human judgment and cannot be included in saturated coverage completion.",
                     )
                 if data_support == "not_assessed" and _blank(
                     row.get("duplicate_of")
                 ):
                     self.error(
                         "unresolved_data_support_at_completion",
-                        row.get("__source__", "active mechanism inventory"),
-                        f"Mechanism {mechanism_id!r} has data_support_status='not_assessed' at saturated coverage completion.",
+                        row.get("__source__", source_label),
+                        f"{entity_label.capitalize()} {mechanism_id!r} has data_support_status='not_assessed' at saturated coverage completion ({status_field}={mechanism_status!r}).",
                     )
 
         if manifest_complete is not None and manifest_complete != computed_complete:
@@ -3630,6 +5073,36 @@ def validate_run(run_dir: Path) -> dict[str, Any]:
     return RunValidator(run_dir).validate()
 
 
+def _output_input_collision(
+    run_dir: Path,
+    output: Path | None,
+    report: Mapping[str, Any],
+) -> str | None:
+    """Return the run-input label that --output would overwrite, if any."""
+
+    if output is None:
+        return None
+    try:
+        output_resolved = output.resolve()
+        root = run_dir.resolve()
+    except OSError:
+        return None
+    checked = report.get("checked_files", {})
+    if not isinstance(checked, Mapping):
+        return None
+    for label in checked:
+        candidate = Path(str(label))
+        if not candidate.is_absolute():
+            candidate = root / candidate
+        try:
+            candidate_resolved = candidate.resolve()
+        except OSError:
+            continue
+        if output_resolved == candidate_resolved:
+            return str(label)
+    return None
+
+
 def _write_csv(path: Path, fieldnames: Sequence[str], rows: Sequence[Mapping[str, Any]]) -> None:
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
@@ -3641,7 +5114,212 @@ def _write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def initialize_run(run_dir: Path) -> dict[str, Any]:
+def create_upgrade_snapshot(run_dir: Path, to_profile: str) -> dict[str, Any]:
+    """Create a non-overwriting, hash-bound snapshot for a profile upgrade.
+
+    The helper deliberately does not edit run_manifest.json.  It returns the
+    exact profile_history entry to append after the caller reviews the copied
+    evidence and performs the profile migration.
+    """
+
+    root = run_dir.resolve()
+    if not root.is_dir():
+        return {
+            "snapshot": "refused",
+            "run_directory": str(root),
+            "reason": "Run directory does not exist.",
+        }
+    validator = RunValidator(root)
+    manifest_path = validator._safe_internal_file(
+        "run_manifest.json",
+        "run_manifest.json",
+        kind="current run manifest",
+    )
+    if manifest_path is None:
+        return {
+            "snapshot": "refused",
+            "run_directory": str(root),
+            "reason": "Current run manifest is unavailable or unsafe.",
+            "errors": [issue.as_dict() for issue in validator.errors],
+        }
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {
+            "snapshot": "refused",
+            "run_directory": str(root),
+            "reason": f"Cannot parse run_manifest.json: {exc}",
+        }
+    if not isinstance(manifest, Mapping):
+        return {
+            "snapshot": "refused",
+            "run_directory": str(root),
+            "reason": "run_manifest.json must be an object.",
+        }
+    current_profile = str(manifest.get("research_profile", "")).strip()
+    if current_profile not in RESEARCH_PROFILES or to_profile not in RESEARCH_PROFILES:
+        return {
+            "snapshot": "refused",
+            "run_directory": str(root),
+            "reason": f"Both current and target profiles must be one of {sorted(RESEARCH_PROFILES)}.",
+        }
+    if PROFILE_RANK[to_profile] <= PROFILE_RANK[current_profile]:
+        return {
+            "snapshot": "refused",
+            "run_directory": str(root),
+            "reason": f"Target {to_profile!r} must be stricter than current profile {current_profile!r}.",
+        }
+    current_report = validate_run(root)
+    if not current_report.get("valid"):
+        return {
+            "snapshot": "refused",
+            "run_directory": str(root),
+            "reason": "Current profile must pass validation before its history can be sealed for upgrade.",
+            "validation_errors": current_report.get("errors", []),
+        }
+    history = manifest.get("profile_history")
+    if not isinstance(history, list) or not history:
+        return {
+            "snapshot": "refused",
+            "run_directory": str(root),
+            "reason": "Current manifest requires a nonempty profile_history before upgrade.",
+        }
+    required_by_profile = {
+        "fixed_test": {
+            "run_manifest.json",
+            "claim_card.json",
+            "data_versions.json",
+        },
+        "adaptive_search": {
+            "run_manifest.json",
+            "decision_contract.json",
+            "prior_exposure_audit.json",
+            "data_versions.json",
+            "search_ledger.jsonl",
+            "selection_families.json",
+            "status_transitions.jsonl",
+            "candidate_registry.csv",
+        },
+    }
+    logical_paths = set(required_by_profile[current_profile])
+    round_records = manifest.get("round_artifacts")
+    if not isinstance(round_records, list) or not round_records:
+        return {
+            "snapshot": "refused",
+            "run_directory": str(root),
+            "reason": "Current manifest must retain a nonempty round_artifacts list.",
+        }
+    for record in round_records:
+        if not isinstance(record, Mapping):
+            return {
+                "snapshot": "refused",
+                "run_directory": str(root),
+                "reason": "Every round_artifacts entry must be an object.",
+            }
+        for field in ("report_path", "reproduce_path"):
+            value = str(record.get(field, "")).strip()
+            if not value:
+                return {
+                    "snapshot": "refused",
+                    "run_directory": str(root),
+                    "reason": f"Every round record must define {field}.",
+                }
+            logical_paths.add(value)
+
+    sources: dict[str, Path] = {}
+    for logical_path in sorted(logical_paths):
+        source = validator._safe_internal_file(
+            logical_path,
+            f"upgrade source {logical_path}",
+            kind="upgrade source artifact",
+        )
+        if source is not None:
+            sources[logical_path] = source
+    if validator.errors or set(sources) != logical_paths:
+        return {
+            "snapshot": "refused",
+            "run_directory": str(root),
+            "reason": "One or more required prior-profile artifacts are missing or unsafe.",
+            "errors": [issue.as_dict() for issue in validator.errors],
+        }
+
+    sequence = len(history) + 1
+    history_root = root / "history"
+    if history_root.is_symlink():
+        return {
+            "snapshot": "refused",
+            "run_directory": str(root),
+            "reason": "history/ cannot be a symbolic link.",
+        }
+    snapshot_root = history_root / (
+        f"profile_upgrade_{sequence:03d}_{current_profile}_to_{to_profile}"
+    )
+    if snapshot_root.exists() or snapshot_root.is_symlink():
+        return {
+            "snapshot": "refused",
+            "run_directory": str(root),
+            "reason": f"Snapshot target {snapshot_root.relative_to(root)!s} already exists; no files were changed.",
+        }
+    created_at = datetime.now(timezone.utc).isoformat()
+    artifact_records: list[dict[str, str]] = []
+    created_files: list[str] = []
+    try:
+        snapshot_root.mkdir(parents=True, exist_ok=False)
+        for logical_path, source in sorted(sources.items()):
+            destination = snapshot_root / "artifacts" / logical_path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(source.read_bytes())
+            relative_destination = str(destination.relative_to(root))
+            created_files.append(relative_destination)
+            artifact_records.append(
+                {
+                    "logical_path": logical_path,
+                    "snapshot_path": relative_destination,
+                    "sha256": hashlib.sha256(destination.read_bytes()).hexdigest(),
+                }
+            )
+        snapshot = {
+            "snapshot_schema_version": "1.0",
+            "profile": current_profile,
+            "captured_at": created_at,
+            "target_profile": to_profile,
+            "artifacts": artifact_records,
+        }
+        snapshot_path = snapshot_root / "preservation_snapshot.json"
+        _write_json(snapshot_path, snapshot)
+        snapshot_relative = str(snapshot_path.relative_to(root))
+        created_files.append(snapshot_relative)
+        snapshot_sha256 = hashlib.sha256(snapshot_path.read_bytes()).hexdigest()
+    except OSError as exc:
+        return {
+            "snapshot": "failed",
+            "run_directory": str(root),
+            "reason": f"Snapshot creation stopped: {exc}",
+            "created_files": sorted(created_files),
+        }
+    return {
+        "snapshot": "created",
+        "run_directory": str(root),
+        "from_profile": current_profile,
+        "to_profile": to_profile,
+        "created_files": sorted(created_files),
+        "next_profile_history_entry": {
+            "profile": to_profile,
+            "started_at": created_at,
+            "preservation_snapshot_path": snapshot_relative,
+            "preservation_snapshot_sha256": snapshot_sha256,
+        },
+        "next_action": "Review the snapshot, migrate profile artifacts, then append the returned entry to profile_history without deleting earlier entries.",
+    }
+
+
+def initialize_run(run_dir: Path, profile: str) -> dict[str, Any]:
+    if profile not in RESEARCH_PROFILES:
+        return {
+            "init": "refused",
+            "run_directory": str(run_dir.resolve()),
+            "reason": f"profile must be one of {sorted(RESEARCH_PROFILES)}.",
+        }
     root = run_dir.resolve()
     if root.exists():
         if not root.is_dir():
@@ -3704,12 +5382,25 @@ def initialize_run(run_dir: Path) -> dict[str, Any]:
             writer.writerows(rows)
         created.append(relative)
 
-    manifest = {
+    round_record = {
+        "round_id": "round_000",
+        "status": "planned",
+        "report_path": "rounds/round_000/report.md",
+        "reproduce_path": "rounds/round_000/reproduce_commands.txt",
+        "sealed_at": None,
+        "report_sha256": todo,
+        "reproduce_sha256": todo,
+    }
+    manifest: dict[str, Any] = {
         "run_id": run_id,
         "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
+        "research_profile": profile,
+        "profile_history": [{"profile": profile, "started_at": created_at}],
+        "stage_status": "planned",
+        "round_artifacts": [round_record],
         "question": todo,
         "scientific_scope": todo,
-        "execution_mode": "design_only",
+        "execution_mode": "single_round" if profile == "fixed_test" else "multi_round",
         "created_at": created_at,
         "output_root": str(root),
         "governance_status": "not_assessed",
@@ -3719,41 +5410,45 @@ def initialize_run(run_dir: Path) -> dict[str, Any]:
         "data_product_scope": [todo],
         "data_versions_file": "data_versions.json",
         "data_version_set_id": "data-v001",
-        "decision_contract_version": "dc-v001",
-        "prior_exposure_audit_version": "pe-v001",
-        "inventory_version": "v001",
-        "inventory_status": "draft",
-        "search_status": "inventory_building",
-        "inventory_saturated": False,
-        "coverage_complete": False,
-        "search_ledger_audited": False,
-        "decision_contract_applied": False,
-        "decision_status": "not_evaluated",
-        "inventory_audit_protocol": todo,
-        "inventory_generation_lenses": [
-            "mechanism_forward",
-            "data_product_reverse",
-        ],
-        "coverage_unit_definition": todo,
-        "coverage_closure_rules": sorted(CLOSED_COVERAGE_STATUSES),
-        "saturation_rule": todo,
-        "saturation_required_sources": [
-            "mechanism_forward",
-            "data_product_reverse",
-        ],
-        "selection_family_policy": todo,
-        "complete_selection_path_policy": todo,
-        "evidence_partition_policy": todo,
-        "data_look_policy": todo,
-        "compute_authorization_id": todo,
-        "execution_resource_envelope": {"status": "not_assessed", "details": todo},
-        "resource_pause_policy": todo,
-        "user_specified_limits": {"status": "not_assessed", "details": todo},
         "safety_boundary": todo,
-        "verification_policy": todo,
         "consistency_validator_version": VALIDATOR_VERSION,
         "last_consistency_check": None,
     }
+    if profile in {"adaptive_search", "coverage_search"}:
+        manifest.update(
+            {
+                "decision_contract_version": "dc-v001",
+                "prior_exposure_audit_version": "pe-v001",
+                "search_ledger_audited": False,
+                "decision_contract_applied": False,
+                "decision_status": "not_evaluated",
+                "selection_family_policy": todo,
+                "complete_selection_path_policy": todo,
+                "evidence_partition_policy": todo,
+                "data_look_policy": todo,
+                "verification_policy": todo,
+            }
+        )
+    if profile == "coverage_search":
+        manifest.update(
+            {
+                "inventory_version": "v001",
+                "inventory_status": "draft",
+                "search_status": "inventory_building",
+                "inventory_saturated": False,
+                "coverage_complete": False,
+                "inventory_audit_protocol": todo,
+                "inventory_generation_lenses": ["candidate_forward", "data_product_reverse"],
+                "coverage_unit_definition": todo,
+                "coverage_closure_rules": sorted(CLOSED_COVERAGE_STATUSES),
+                "saturation_rule": todo,
+                "saturation_required_sources": ["candidate_forward", "data_product_reverse"],
+                "compute_authorization_id": todo,
+                "execution_resource_envelope": {"status": "not_assessed", "details": todo},
+                "resource_pause_policy": todo,
+                "user_specified_limits": {"status": "not_assessed", "details": todo},
+            }
+        )
     decision_contract = {
         "decision_contract_version": "dc-v001",
         "decision_id": todo,
@@ -3818,9 +5513,30 @@ def initialize_run(run_dir: Path) -> dict[str, Any]:
         "data_version_set_id": "data-v001",
         "data_versions": [],
     }
+    claim_card = {
+        "claim_id": todo,
+        "claim": todo,
+        "target_population": todo,
+        "analysis_population": todo,
+        "supported_sample_id": todo,
+        "estimand": todo,
+        "minimum_meaningful_effect": todo,
+        "analysis_or_test": todo,
+        "decision_rule": todo,
+        "falsifier": todo,
+        "specification_timing": todo,
+        "prior_exposure_status": "not_assessed",
+        "evidence_stage": "exploratory",
+        "result_status": "not_run",
+        "effect_summary": todo,
+        "uncertainty_summary": todo,
+        "main_caveat": todo,
+        "data_version_ids": [],
+        "completed_as_scoped": False,
+    }
     selection_families = {"families": [], "history": []}
     saturation_audit = {
-        "inventory_version": "v001",
+        "inventory_version": "v001" if profile == "coverage_search" else None,
         "inventory_saturated": False,
         "audits": [],
     }
@@ -3855,9 +5571,6 @@ def initialize_run(run_dir: Path) -> dict[str, Any]:
         "inventory_version": "v001",
         "artifact_versions": {
             "artifact_schema": ARTIFACT_SCHEMA_VERSION,
-            "inventory": "v001",
-            "decision_contract": "dc-v001",
-            "prior_exposure_audit": "pe-v001",
             "data_version_set": "data-v001",
         },
         "valid": False,
@@ -3874,43 +5587,60 @@ def initialize_run(run_dir: Path) -> dict[str, Any]:
         "counts": {},
         "checked_files": {},
     }
+    if profile in {"adaptive_search", "coverage_search"}:
+        consistency_placeholder["artifact_versions"].update(
+            {
+                "decision_contract": "dc-v001",
+                "prior_exposure_audit": "pe-v001",
+            }
+        )
+    if profile == "coverage_search":
+        consistency_placeholder["artifact_versions"]["inventory"] = "v001"
 
     try:
         write_json("run_manifest.json", manifest)
-        write_json("decision_contract.json", decision_contract)
-        write_json("prior_exposure_audit.json", prior_exposure)
         write_json("data_versions.json", data_versions)
-        write_csv(
-            "inventories/mechanism_inventory_v001.csv",
-            sorted(INVENTORY_REQUIRED_COLUMNS),
-        )
-        write_csv(
-            "inventories/coverage_matrix_v001.csv",
-            sorted(COVERAGE_REQUIRED_COLUMNS | STRICT_COVERAGE_REQUIRED_FIELDS),
-        )
-        write_json("inventories/saturation_audit_v001.json", saturation_audit)
-        write_jsonl("search_ledger.jsonl", [])
-        write_json("selection_families.json", selection_families)
-        write_csv(
-            "execution_queue.csv",
-            tuple(EXECUTION_QUEUE_COLUMN_ALIASES),
-        )
-        write_jsonl("status_transitions.jsonl", [])
-        write_csv("candidate_registry.csv", sorted(CANDIDATE_REQUIRED_FIELDS))
+        if profile == "fixed_test":
+            write_json("claim_card.json", claim_card)
+        else:
+            write_json("decision_contract.json", decision_contract)
+            write_json("prior_exposure_audit.json", prior_exposure)
+            write_jsonl("search_ledger.jsonl", [])
+            write_json("selection_families.json", selection_families)
+            write_jsonl("status_transitions.jsonl", [])
+            if profile == "adaptive_search":
+                write_csv("candidate_registry.csv", sorted(ADAPTIVE_CANDIDATE_REQUIRED_FIELDS))
+            else:
+                write_csv(
+                    "inventories/candidate_inventory_v001.csv",
+                    sorted(GENERIC_INVENTORY_REQUIRED_COLUMNS),
+                )
+                write_csv(
+                    "inventories/coverage_matrix_v001.csv",
+                    sorted(GENERIC_COVERAGE_REQUIRED_COLUMNS),
+                )
+                write_json("inventories/saturation_audit_v001.json", saturation_audit)
+                write_csv("execution_queue.csv", tuple(EXECUTION_QUEUE_COLUMN_ALIASES))
+                generic_registry_fields = (
+                    (CANDIDATE_REQUIRED_FIELDS - {"mechanism_id"})
+                    | V15_COVERAGE_CANDIDATE_FIELDS
+                )
+                write_csv("candidate_registry.csv", sorted(generic_registry_fields))
         write_text(
             "rounds/round_000/report.md",
-            "# Round 000 draft\n\n- Question: TODO\n- Scope and governance: TODO\n- Decision Contract: TODO\n- Coverage plan: TODO\n- Next admissible action: TODO\n",
+            f"# Round 000 draft\n\n- Research profile: {profile}\n- Question: TODO\n- Scope and governance: TODO\n- Result or next action: TODO\n",
         )
-        write_json("rounds/round_000/inventory.json", round_inventory)
-        write_csv("rounds/round_000/summary.csv", ROUND_SUMMARY_COLUMNS)
         write_text(
             "rounds/round_000/reproduce_commands.txt",
             "TODO: record exact, secret-free reproduction commands before execution.\n",
         )
-        write_text(
-            "rounds/round_000/round_gate.md",
-            "# Round 000 gate\n\n- [ ] Freeze scope and governance.\n- [ ] Complete the Decision Contract and prior-exposure audit.\n- [ ] Freeze inventory, coverage, selection-family, and evidence-scale rules.\n- [ ] Run the consistency validator before execution.\n",
-        )
+        if profile == "coverage_search":
+            write_json("rounds/round_000/inventory.json", round_inventory)
+            write_csv("rounds/round_000/summary.csv", GENERIC_ROUND_SUMMARY_COLUMNS)
+            write_text(
+                "rounds/round_000/round_gate.md",
+                "# Round 000 gate\n\n- [ ] Freeze scope and governance.\n- [ ] Complete the Decision Contract and prior-exposure audit.\n- [ ] Freeze candidate inventory, coverage, selection-family, and evidence-scale rules.\n- [ ] Run the consistency validator before execution.\n",
+            )
         write_json("consistency_report.json", consistency_placeholder)
     except (OSError, csv.Error, ValueError) as exc:
         return {
@@ -3924,6 +5654,7 @@ def initialize_run(run_dir: Path) -> dict[str, Any]:
         "init": "created",
         "run_directory": str(root),
         "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
+        "research_profile": profile,
         "created_files": sorted(created),
         "next_command": f"{Path(__file__).name} {root}",
     }
@@ -3931,9 +5662,31 @@ def initialize_run(run_dir: Path) -> dict[str, Any]:
 
 def _build_self_test_fixture(root: Path) -> None:
     (root / "inventories").mkdir(parents=True)
+    round_root = root / "rounds" / "round_001"
+    round_root.mkdir(parents=True)
+    report_path = round_root / "report.md"
+    reproduce_path = round_root / "reproduce_commands.txt"
+    report_path.write_text("# Sealed synthetic round\n", encoding="utf-8")
+    reproduce_path.write_text("synthetic-command --frozen\n", encoding="utf-8")
     manifest = {
         "run_id": "self-test-run",
         "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
+        "research_profile": "coverage_search",
+        "profile_history": [
+            {"profile": "coverage_search", "started_at": "2000-01-01T00:00:00Z"}
+        ],
+        "stage_status": "completed_as_scoped",
+        "round_artifacts": [
+            {
+                "round_id": "round_001",
+                "status": "completed",
+                "report_path": "rounds/round_001/report.md",
+                "reproduce_path": "rounds/round_001/reproduce_commands.txt",
+                "sealed_at": "2000-01-01T00:00:00Z",
+                "report_sha256": hashlib.sha256(report_path.read_bytes()).hexdigest(),
+                "reproduce_sha256": hashlib.sha256(reproduce_path.read_bytes()).hexdigest(),
+            }
+        ],
         "question": "Does the test mechanism predict the registered observable?",
         "scientific_scope": "synthetic self-test",
         "execution_mode": "multi_round",
@@ -4252,6 +6005,8 @@ def _build_self_test_fixture(root: Path) -> None:
     )
     candidate_fields = [
         "candidate_id",
+        "candidate_type",
+        "substantive_eligibility",
         "inventory_version",
         "mechanism_id",
         "coverage_cell_ids",
@@ -4278,6 +6033,8 @@ def _build_self_test_fixture(root: Path) -> None:
         [
             {
                 "candidate_id": "CAN001",
+                "candidate_type": "mechanism",
+                "substantive_eligibility": "eligible",
                 "inventory_version": "v001",
                 "mechanism_id": "M001",
                 "coverage_cell_ids": "C001",
@@ -4438,6 +6195,311 @@ def _convert_self_test_fixture_to_zero_coverage(
     )
 
 
+def _seal_initialized_round(root: Path) -> None:
+    report_path = root / "rounds" / "round_000" / "report.md"
+    reproduce_path = root / "rounds" / "round_000" / "reproduce_commands.txt"
+    report_path.write_text("# Completed synthetic round\n", encoding="utf-8")
+    reproduce_path.write_text("synthetic-command --frozen\n", encoding="utf-8")
+    manifest_path = root / "run_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["stage_status"] = "completed_as_scoped"
+    manifest["round_artifacts"] = [
+        {
+            "round_id": "round_000",
+            "status": "completed",
+            "report_path": "rounds/round_000/report.md",
+            "reproduce_path": "rounds/round_000/reproduce_commands.txt",
+            "sealed_at": "2000-01-01T00:00:00Z",
+            "report_sha256": hashlib.sha256(report_path.read_bytes()).hexdigest(),
+            "reproduce_sha256": hashlib.sha256(reproduce_path.read_bytes()).hexdigest(),
+        }
+    ]
+    _write_json(manifest_path, manifest)
+
+
+def _build_fixed_profile_fixture(root: Path) -> None:
+    result = initialize_run(root, "fixed_test")
+    if result.get("init") != "created":
+        raise RuntimeError(f"cannot create fixed fixture: {result}")
+    manifest_path = root / "run_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest.update(
+        {
+            "question": "Does the prespecified synthetic effect meet its rule?",
+            "scientific_scope": "one synthetic fixed test",
+            "governance_status": "cleared",
+        }
+    )
+    _write_json(manifest_path, manifest)
+    _write_json(
+        root / "data_versions.json",
+        {
+            "data_version_set_id": "data-v001",
+            "data_versions": [
+                {"data_product_id": "D001", "data_version_id": "DV001", "source": "synthetic"}
+            ],
+        },
+    )
+    _write_json(
+        root / "claim_card.json",
+        {
+            "claim_id": "CL001",
+            "claim": "The prespecified synthetic effect meets the decision rule.",
+            "target_population": "synthetic population",
+            "analysis_population": "synthetic population",
+            "supported_sample_id": "S001",
+            "estimand": "synthetic mean difference",
+            "minimum_meaningful_effect": 0.1,
+            "analysis_or_test": "prespecified synthetic test",
+            "decision_rule": "support at or above 0.1 with registered uncertainty",
+            "falsifier": "effect below 0.1",
+            "specification_timing": "pre_result_frozen",
+            "prior_exposure_status": "no_known_exposure",
+            "evidence_stage": "exploratory",
+            "result_status": "supported",
+            "effect_summary": "effect 0.2",
+            "uncertainty_summary": "registered interval excludes 0.1",
+            "main_caveat": "synthetic fixture",
+            "data_version_ids": ["DV001"],
+            "completed_as_scoped": True,
+        },
+    )
+    _seal_initialized_round(root)
+
+
+def _build_adaptive_profile_fixture(root: Path) -> None:
+    result = initialize_run(root, "adaptive_search")
+    if result.get("init") != "created":
+        raise RuntimeError(f"cannot create adaptive fixture: {result}")
+    manifest_path = root / "run_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest.update(
+        {
+            "question": "Which synthetic adaptive candidate meets the rule?",
+            "scientific_scope": "one synthetic adaptive selection family",
+            "governance_status": "cleared",
+            "search_ledger_audited": True,
+            "decision_contract_applied": True,
+            "decision_status": "leading",
+        }
+    )
+    _write_json(manifest_path, manifest)
+    _write_json(
+        root / "data_versions.json",
+        {
+            "data_version_set_id": "data-v001",
+            "data_versions": [
+                {"data_product_id": "D001", "data_version_id": "DV001", "source": "synthetic"}
+            ],
+        },
+    )
+    _write_json(
+        root / "decision_contract.json",
+        {
+            "decision_contract_version": "dc-v001",
+            "decision_id": "DEC001",
+            "decision_question": "Which adaptive candidate meets the frozen rule?",
+            "eligible_candidate_classes": ["model"],
+            "eligible_selection_family_ids": ["SF001"],
+            "declared_selection_family_ids": ["SF001"],
+            "ranked_selection_family_ids": ["SF001"],
+            "comparison_key_definition": "population|sample|estimand|quality|stage",
+            "comparability_rule": "compare only the registered common key",
+            "estimand": "synthetic prediction error",
+            "target_population": "synthetic population",
+            "analysis_population": "synthetic population",
+            "selection_population": "synthetic population",
+            "reporting_population": "synthetic population",
+            "substantive_eligibility_rule": "candidate addresses the frozen target",
+            "measurement_error_policy": "not applicable to this synthetic candidate",
+            "transportability_requirement": "same_population",
+            "transportability_status": "not_required",
+            "evidence_scale_mapping": {
+                "scale_relation": "not_applicable",
+                "reason": "no screen-to-decision scale transfer",
+            },
+            "ranking_evidence": {"criterion": "registered prediction error"},
+            "decision_rule": "select the unique candidate meeting the threshold",
+            "minimum_meaningful_difference": 0.1,
+            "complexity_and_data_quality_rule": "use registered quality regime",
+            "tie_rule": "report a tie within 0.01",
+            "inconclusive_rule": "report inconclusive if uncertainty overlaps threshold",
+            "complete_selection_path_method": "end-to-end null calibration",
+            "specification_timing": "pre_result_frozen",
+            "comparison_groups": [
+                {
+                    "comparison_group_id": "CG001",
+                    "selection_family_ids": ["SF001"],
+                    "comparison_key": "synthetic-population|S001|prediction-error|clean|exploratory",
+                }
+            ],
+            "freeze_time": "2000-01-01T00:00:00Z",
+            "amendment_policy": "version outcome-driven amendments as adaptive",
+        },
+    )
+    _write_json(
+        root / "prior_exposure_audit.json",
+        {
+            "prior_exposure_audit_version": "pe-v001",
+            "audit_status": "complete",
+            "prior_exposure_status": "no_known_exposure",
+            "sources_checked": ["synthetic records"],
+            "overlap_unit": "synthetic observation",
+            "overlapping_data": [],
+            "prior_analyses": [],
+            "prior_parameter_attempts": [],
+            "prior_data_looks": [],
+            "prior_holdout_exposure": False,
+            "unknown_gaps": [],
+            "resulting_evidence_stage_limits": [],
+            "audited_at": "2000-01-01T00:00:00Z",
+            "confirmatory_status": "unrestricted_by_prior_exposure",
+            "future_verification_status": "eligible_if_untouched",
+            "sample_code_or_skill_change_restores_confirmatory": False,
+        },
+    )
+    ledger_entry = {
+        "ledger_entry_id": "L001",
+        "candidate_id": "A001",
+        "selection_family_id": "SF001",
+        "selection_family_version": "sf-v001",
+        "decision_influence": True,
+        "selection_path_stage": "screen",
+        "data_look_id": "look-001",
+        "seed_policy_id": "deterministic",
+        "data_version_ids": ["DV001"],
+        "input_and_code_state": {"data_version_ids": ["DV001"], "code_state": "synthetic"},
+        "execution_status": "completed",
+        "result_status": "supported",
+        "artifact_paths": [],
+    }
+    (root / "search_ledger.jsonl").write_text(json.dumps(ledger_entry) + "\n", encoding="utf-8")
+    _write_json(
+        root / "selection_families.json",
+        {
+            "families": [
+                {
+                    "selection_family_id": "SF001",
+                    "selection_family_version": "sf-v001",
+                    "decision_id": "DEC001",
+                    "candidate_ids": ["A001"],
+                    "selection_path_ledger_entry_ids": ["L001"],
+                    "selection_path_complete": True,
+                    "inference_method": "end-to-end null calibration",
+                    "comparability_status": "comparable_within_family",
+                    "comparison_key": "synthetic-population|S001|prediction-error|clean|exploratory",
+                    "target_population": "synthetic population",
+                    "supported_sample_id": "S001",
+                    "estimand": "prediction error",
+                    "data_quality_regime": "clean",
+                    "evidence_stage": "exploratory",
+                    "transportability_requirement": "same_population",
+                    "transportability_status": "not_required",
+                }
+            ],
+            "history": [],
+        },
+    )
+    candidate = {
+        "candidate_id": "A001",
+        "candidate_type": "model",
+        "substantive_eligibility": "eligible",
+        "mechanism_alignment": "",
+        "measurement_error_relevant": "false",
+        "measurement_error_sensitivity": "not_required",
+        "selection_family_id": "SF001",
+        "selection_family_version": "sf-v001",
+        "comparison_key": "synthetic-population|S001|prediction-error|clean|exploratory",
+        "comparability_status": "comparable_within_family",
+        "decision_status": "leading",
+        "specification_timing": "pre_result_frozen",
+        "prior_exposure_status": "no_known_exposure",
+        "confirmatory_status": "unrestricted_by_prior_exposure",
+        "future_verification_status": "eligible_if_untouched",
+        "evidence_stage": "exploratory",
+        "verification_status": "unverified",
+        "effect_summary": "registered prediction error improved",
+        "uncertainty_summary": "registered interval",
+        "support_summary": "supported on registered sample",
+        "ledger_entry_ids": "L001",
+        "decision_reason": "met frozen rule",
+    }
+    _write_csv(root / "candidate_registry.csv", sorted(ADAPTIVE_CANDIDATE_REQUIRED_FIELDS), [candidate])
+    _seal_initialized_round(root)
+
+
+def _convert_fixture_to_generic_inventory(root: Path) -> None:
+    manifest_path = root / "run_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["saturation_required_sources"] = [
+        "candidate_forward",
+        "data_product_reverse",
+    ]
+    _write_json(manifest_path, manifest)
+    saturation_path = root / "inventories" / "saturation_audit_v001.json"
+    saturation = json.loads(saturation_path.read_text(encoding="utf-8"))
+    for audit in saturation.get("audits", []):
+        if audit.get("source") == "mechanism_forward":
+            audit["source"] = "candidate_forward"
+    _write_json(saturation_path, saturation)
+    for mechanism_path in sorted((root / "inventories").glob("mechanism_inventory_*.csv")):
+        with mechanism_path.open("r", encoding="utf-8", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        generic_rows = []
+        for row in rows:
+            generic_rows.append(
+                {
+                    "inventory_version": row["inventory_version"],
+                    "candidate_id": row["mechanism_id"],
+                    "parent_candidate_id": row["parent_mechanism_id"],
+                    "candidate_type": "mechanism",
+                    "candidate": row["mechanism"],
+                    "distinct_role": row["distinct_pathway"],
+                    "inclusion_rationale": row["inclusion_rationale"],
+                    "generation_lens": row["generation_lens"],
+                    "applicable_regime": row["applicable_regime"],
+                    "predicted_signature": row["predicted_signature"],
+                    "required_data_products": row["required_data_products"],
+                    "data_support_status": row["data_support_status"],
+                    "candidate_status": row["mechanism_status"],
+                    "specification_timing": row["specification_timing"],
+                    "duplicate_of": row["duplicate_of"],
+                }
+            )
+        suffix = mechanism_path.name[len("mechanism_inventory_") :]
+        _write_csv(root / "inventories" / f"candidate_inventory_{suffix}", sorted(GENERIC_INVENTORY_REQUIRED_COLUMNS), generic_rows)
+        mechanism_path.unlink()
+    for coverage_path in sorted((root / "inventories").glob("coverage_matrix_*.csv")):
+        with coverage_path.open("r", encoding="utf-8", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        generic_rows = []
+        for row in rows:
+            row = dict(row)
+            row["candidate_id"] = row.pop("mechanism_id")
+            row["substantive_eligibility"] = "eligible"
+            generic_rows.append(row)
+        fields = sorted(set(GENERIC_COVERAGE_REQUIRED_COLUMNS) | {"covered_by_cell_id"})
+        _write_csv(coverage_path, fields, generic_rows)
+    registry_path = root / "candidate_registry.csv"
+    with registry_path.open("r", encoding="utf-8", newline="") as handle:
+        registry = list(csv.DictReader(handle))
+    for row in registry:
+        row["candidate_id"] = row.pop("mechanism_id")
+        row["candidate_type"] = "mechanism"
+        row["substantive_eligibility"] = "eligible"
+    fields = sorted((CANDIDATE_REQUIRED_FIELDS - {"mechanism_id"}) | V15_COVERAGE_CANDIDATE_FIELDS)
+    _write_csv(registry_path, fields, registry)
+
+
+def _convert_self_test_fixture_to_v14(root: Path) -> None:
+    manifest_path = root / "run_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["artifact_schema_version"] = "1.4.0"
+    for field in ("research_profile", "profile_history", "stage_status", "round_artifacts"):
+        manifest.pop(field, None)
+    _write_json(manifest_path, manifest)
+
+
 def _downgrade_self_test_fixture_to_legacy(root: Path) -> None:
     manifest_path = root / "run_manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -4472,6 +6534,343 @@ def _downgrade_self_test_fixture_to_legacy(root: Path) -> None:
     _write_json(families_path, families)
 
 
+def _run_hardening_self_tests(temp_root: Path) -> dict[str, bool]:
+    """Exercise profile-boundary and preservation checks added in schema 1.5."""
+
+    results: dict[str, bool] = {}
+
+    future_root = temp_root / "unsupported-future-schema-run"
+    future_root.mkdir()
+    _build_self_test_fixture(future_root)
+    future_manifest_path = future_root / "run_manifest.json"
+    future_manifest = json.loads(future_manifest_path.read_text(encoding="utf-8"))
+    future_manifest["artifact_schema_version"] = "9.0.0"
+    _write_json(future_manifest_path, future_manifest)
+    future_report = validate_run(future_root)
+    results["unsupported_future_schema"] = (
+        not future_report["valid"]
+        and any(
+            item["code"] == "unsupported_artifact_schema_version"
+            for item in future_report["errors"]
+        )
+    )
+
+    hidden_root = temp_root / "adaptive-hidden-coverage-run"
+    _build_adaptive_profile_fixture(hidden_root)
+    (hidden_root / "inventories").mkdir()
+    (hidden_root / "inventories" / "coverage_matrix_malformed.csv").write_text(
+        "not,a,valid,coverage,matrix\n", encoding="utf-8"
+    )
+    hidden_report = validate_run(hidden_root)
+    results["adaptive_hidden_coverage_artifact"] = (
+        not hidden_report["valid"]
+        and any(
+            item["code"] == "profile_underfit_coverage_evidence"
+            for item in hidden_report["errors"]
+        )
+    )
+
+    behavior_root = temp_root / "adaptive-hidden-coverage-behavior-run"
+    _build_adaptive_profile_fixture(behavior_root)
+    behavior_ledger_path = behavior_root / "search_ledger.jsonl"
+    behavior_entry = json.loads(behavior_ledger_path.read_text(encoding="utf-8"))
+    behavior_entry["coverage_cell_id"] = "C001"
+    behavior_ledger_path.write_text(json.dumps(behavior_entry) + "\n", encoding="utf-8")
+    behavior_report = validate_run(behavior_root)
+    results["adaptive_hidden_coverage_behavior"] = (
+        not behavior_report["valid"]
+        and any(
+            item["code"] == "profile_underfit_coverage_behavior"
+            for item in behavior_report["errors"]
+        )
+    )
+
+    def mutate_adaptive_candidate(
+        root: Path, updates: Mapping[str, str]
+    ) -> dict[str, Any]:
+        candidate_path = root / "candidate_registry.csv"
+        with candidate_path.open("r", encoding="utf-8", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+            fields = list(rows[0])
+        rows[0].update(updates)
+        _write_csv(candidate_path, fields, rows)
+        return validate_run(root)
+
+    alignment_root = temp_root / "nonmechanism-alignment-run"
+    _build_adaptive_profile_fixture(alignment_root)
+    alignment_report = mutate_adaptive_candidate(
+        alignment_root, {"mechanism_alignment": "direct"}
+    )
+    results["alignment_only_for_mechanisms"] = (
+        not alignment_report["valid"]
+        and any(
+            item["code"] == "candidate_type_alignment_mismatch"
+            for item in alignment_report["errors"]
+        )
+    )
+
+    mechanism_na_root = temp_root / "mechanism-not-applicable-alignment-run"
+    _build_adaptive_profile_fixture(mechanism_na_root)
+    mechanism_na_report = mutate_adaptive_candidate(
+        mechanism_na_root,
+        {
+            "candidate_type": "mechanism",
+            "mechanism_alignment": "not_applicable",
+        },
+    )
+    results["mechanism_alignment_not_applicable_rejected"] = (
+        not mechanism_na_report["valid"]
+        and any(
+            item["code"] == "candidate_type_alignment_mismatch"
+            for item in mechanism_na_report["errors"]
+        )
+    )
+
+    coverage_alignment_root = temp_root / "coverage-nonmechanism-alignment-run"
+    coverage_alignment_root.mkdir()
+    _build_self_test_fixture(coverage_alignment_root)
+    _convert_fixture_to_generic_inventory(coverage_alignment_root)
+    inventory_path = (
+        coverage_alignment_root
+        / "inventories"
+        / "candidate_inventory_v001.csv"
+    )
+    with inventory_path.open("r", encoding="utf-8", newline="") as handle:
+        inventory_rows = list(csv.DictReader(handle))
+        inventory_fields = list(inventory_rows[0])
+    inventory_rows[0]["candidate_type"] = "model"
+    _write_csv(inventory_path, inventory_fields, inventory_rows)
+    registry_path = coverage_alignment_root / "candidate_registry.csv"
+    with registry_path.open("r", encoding="utf-8", newline="") as handle:
+        registry_rows = list(csv.DictReader(handle))
+        registry_fields = list(registry_rows[0])
+    registry_rows[0]["candidate_type"] = "model"
+    _write_csv(registry_path, registry_fields, registry_rows)
+    coverage_alignment_report = validate_run(coverage_alignment_root)
+    results["coverage_alignment_only_for_mechanisms"] = (
+        not coverage_alignment_report["valid"]
+        and any(
+            item["code"] == "candidate_type_alignment_mismatch"
+            for item in coverage_alignment_report["errors"]
+        )
+    )
+
+    coverage_mechanism_na_root = temp_root / "coverage-mechanism-not-applicable-run"
+    coverage_mechanism_na_root.mkdir()
+    _build_self_test_fixture(coverage_mechanism_na_root)
+    _convert_fixture_to_generic_inventory(coverage_mechanism_na_root)
+    coverage_mechanism_na_path = (
+        coverage_mechanism_na_root
+        / "inventories"
+        / "coverage_matrix_v001.csv"
+    )
+    with coverage_mechanism_na_path.open(
+        "r", encoding="utf-8", newline=""
+    ) as handle:
+        coverage_mechanism_na_rows = list(csv.DictReader(handle))
+        coverage_mechanism_na_fields = list(coverage_mechanism_na_rows[0])
+    coverage_mechanism_na_rows[0]["mechanism_alignment"] = "not_applicable"
+    _write_csv(
+        coverage_mechanism_na_path,
+        coverage_mechanism_na_fields,
+        coverage_mechanism_na_rows,
+    )
+    coverage_mechanism_na_report = validate_run(coverage_mechanism_na_root)
+    results["coverage_mechanism_alignment_not_applicable_rejected"] = (
+        not coverage_mechanism_na_report["valid"]
+        and any(
+            item["code"] == "candidate_type_alignment_mismatch"
+            for item in coverage_mechanism_na_report["errors"]
+        )
+    )
+
+    irrelevant_error_root = temp_root / "irrelevant-measurement-error-run"
+    _build_adaptive_profile_fixture(irrelevant_error_root)
+    irrelevant_error_report = mutate_adaptive_candidate(
+        irrelevant_error_root,
+        {
+            "measurement_error_relevant": "false",
+            "measurement_error_sensitivity": "passed",
+        },
+    )
+    results["irrelevant_measurement_error_semantics"] = (
+        not irrelevant_error_report["valid"]
+        and any(
+            item["code"] == "measurement_error_relevance_mismatch"
+            for item in irrelevant_error_report["errors"]
+        )
+    )
+
+    collision_root = temp_root / "output-collision-run"
+    _build_fixed_profile_fixture(collision_root)
+    collision_report = validate_run(collision_root)
+    sealed_report = collision_root / "rounds" / "round_000" / "report.md"
+    results["output_collision"] = (
+        _output_input_collision(collision_root, sealed_report, collision_report)
+        == "rounds/round_000/report.md"
+        and _output_input_collision(
+            collision_root,
+            collision_root / "consistency_report.json",
+            collision_report,
+        )
+        is None
+    )
+
+    regression_root = temp_root / "fixed-completion-regression-run"
+    _build_fixed_profile_fixture(regression_root)
+    regression_manifest_path = regression_root / "run_manifest.json"
+    regression_manifest = json.loads(
+        regression_manifest_path.read_text(encoding="utf-8")
+    )
+    regression_manifest["stage_status"] = "in_progress"
+    regression_manifest["round_artifacts"][0] = {
+        "round_id": "round_000",
+        "status": "planned",
+        "report_path": "rounds/round_000/report.md",
+        "reproduce_path": "rounds/round_000/reproduce_commands.txt",
+    }
+    _write_json(regression_manifest_path, regression_manifest)
+    regression_report = validate_run(regression_root)
+    results["fixed_completion_one_way"] = (
+        not regression_report["valid"]
+        and any(
+            item["code"] == "fixed_completion_state_regression"
+            for item in regression_report["errors"]
+        )
+    )
+
+    unordered_root = temp_root / "unordered-profile-history-run"
+    _build_adaptive_profile_fixture(unordered_root)
+    unordered_manifest_path = unordered_root / "run_manifest.json"
+    unordered_manifest = json.loads(unordered_manifest_path.read_text(encoding="utf-8"))
+    unordered_manifest["profile_history"] = [
+        {"profile": "adaptive_search", "started_at": "2001-01-01T00:00:00Z"},
+        {"profile": "adaptive_search", "started_at": "2000-01-01T00:00:00Z"},
+    ]
+    _write_json(unordered_manifest_path, unordered_manifest)
+    unordered_report = validate_run(unordered_root)
+    results["profile_history_timestamp_order"] = (
+        not unordered_report["valid"]
+        and any(
+            item["code"] == "profile_history_timestamp_order"
+            for item in unordered_report["errors"]
+        )
+    )
+
+    symlink_root = temp_root / "symlink-upgrade-snapshot-run"
+    _build_adaptive_profile_fixture(symlink_root)
+    external_snapshot = temp_root / "external-upgrade-snapshot.json"
+    external_snapshot.write_text("{}\n", encoding="utf-8")
+    symlink_path = symlink_root / "preservation-snapshot-link.json"
+    symlink_path.symlink_to(external_snapshot)
+    symlink_manifest_path = symlink_root / "run_manifest.json"
+    symlink_manifest = json.loads(symlink_manifest_path.read_text(encoding="utf-8"))
+    symlink_manifest["profile_history"] = [
+        {"profile": "fixed_test", "started_at": "1999-01-01T00:00:00Z"},
+        {
+            "profile": "adaptive_search",
+            "started_at": "2000-01-01T00:00:00Z",
+            "preservation_snapshot_path": "preservation-snapshot-link.json",
+            "preservation_snapshot_sha256": hashlib.sha256(
+                external_snapshot.read_bytes()
+            ).hexdigest(),
+        },
+    ]
+    _write_json(symlink_manifest_path, symlink_manifest)
+    symlink_report = validate_run(symlink_root)
+    results["upgrade_snapshot_rejects_symlink"] = (
+        not symlink_report["valid"]
+        and any(
+            item["code"] == "symlink_artifact_path"
+            for item in symlink_report["errors"]
+        )
+    )
+
+    source_root = temp_root / "upgrade-snapshot-source-fixed-run"
+    _build_fixed_profile_fixture(source_root)
+    snapshot_result = create_upgrade_snapshot(source_root, "adaptive_search")
+    target_root = temp_root / "valid-hash-bound-upgrade-run"
+    _build_adaptive_profile_fixture(target_root)
+    if snapshot_result.get("snapshot") == "created":
+        source_history = source_root / "history"
+        for source in sorted(source_history.rglob("*")):
+            relative = source.relative_to(source_root)
+            destination = target_root / relative
+            if source.is_dir():
+                destination.mkdir(parents=True, exist_ok=True)
+            else:
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(source.read_bytes())
+        target_manifest_path = target_root / "run_manifest.json"
+        target_manifest = json.loads(target_manifest_path.read_text(encoding="utf-8"))
+        source_manifest = json.loads(
+            (source_root / "run_manifest.json").read_text(encoding="utf-8")
+        )
+        target_manifest["profile_history"] = [
+            source_manifest["profile_history"][0],
+            snapshot_result["next_profile_history_entry"],
+        ]
+        _write_json(target_manifest_path, target_manifest)
+        upgrade_report = validate_run(target_root)
+        results["hash_bound_upgrade_snapshot_positive"] = upgrade_report["valid"]
+
+        snapshot_relative = Path(
+            snapshot_result["next_profile_history_entry"][
+                "preservation_snapshot_path"
+            ]
+        )
+        target_snapshot_path = target_root / snapshot_relative
+        target_snapshot = json.loads(
+            target_snapshot_path.read_text(encoding="utf-8")
+        )
+        target_snapshot["artifacts"] = [
+            artifact
+            for artifact in target_snapshot["artifacts"]
+            if artifact["logical_path"]
+            != "rounds/round_000/report.md"
+        ]
+        _write_json(target_snapshot_path, target_snapshot)
+        target_manifest = json.loads(target_manifest_path.read_text(encoding="utf-8"))
+        target_manifest["profile_history"][-1][
+            "preservation_snapshot_sha256"
+        ] = hashlib.sha256(target_snapshot_path.read_bytes()).hexdigest()
+        _write_json(target_manifest_path, target_manifest)
+        missing_round_report = validate_run(target_root)
+        results["upgrade_snapshot_requires_round_evidence"] = (
+            not missing_round_report["valid"]
+            and any(
+                item["code"] == "incomplete_profile_upgrade_round_snapshot"
+                for item in missing_round_report["errors"]
+            )
+        )
+    else:
+        results["hash_bound_upgrade_snapshot_positive"] = False
+        results["upgrade_snapshot_requires_round_evidence"] = False
+
+    generic_root = temp_root / "generic-completion-diagnostics-run"
+    generic_root.mkdir()
+    _build_self_test_fixture(generic_root)
+    _convert_self_test_fixture_to_zero_coverage(
+        generic_root,
+        data_support_status="supported",
+        mechanism_status="active",
+    )
+    _convert_fixture_to_generic_inventory(generic_root)
+    generic_report = validate_run(generic_root)
+    generic_errors = [
+        item
+        for item in generic_report["errors"]
+        if item["code"] == "eligible_candidate_without_coverage"
+    ]
+    results["generic_completion_diagnostics"] = (
+        not generic_report["valid"]
+        and bool(generic_errors)
+        and all("mechanism" not in item["message"].lower() for item in generic_errors)
+    )
+
+    return results
+
+
 def run_self_test() -> dict[str, Any]:
     with tempfile.TemporaryDirectory(prefix="scientific-autoresearch-validator-") as temp_dir:
         temp_root = Path(temp_dir)
@@ -4486,6 +6885,112 @@ def run_self_test() -> dict[str, Any]:
                 "reason": "valid fixture was rejected",
                 "valid_fixture_report": valid_report,
             }
+
+        generic_root = temp_root / "valid-generic-coverage-run"
+        generic_root.mkdir()
+        _build_self_test_fixture(generic_root)
+        _convert_fixture_to_generic_inventory(generic_root)
+        generic_report = validate_run(generic_root)
+        generic_valid = generic_report["valid"]
+
+        fixed_root = temp_root / "valid-fixed-run"
+        _build_fixed_profile_fixture(fixed_root)
+        fixed_report = validate_run(fixed_root)
+        fixed_valid = fixed_report["valid"]
+
+        adaptive_root = temp_root / "valid-adaptive-run"
+        _build_adaptive_profile_fixture(adaptive_root)
+        adaptive_report = validate_run(adaptive_root)
+        adaptive_valid = adaptive_report["valid"]
+
+        v14_root = temp_root / "valid-v14-run"
+        v14_root.mkdir()
+        _build_self_test_fixture(v14_root)
+        _convert_self_test_fixture_to_v14(v14_root)
+        v14_report = validate_run(v14_root)
+        v14_valid = v14_report["valid"] and v14_report["warning_count"] == 0
+
+        fixed_underfit_root = temp_root / "fixed-underfit-run"
+        _build_fixed_profile_fixture(fixed_underfit_root)
+        _write_json(fixed_underfit_root / "decision_contract.json", {"unexpected": True})
+        fixed_underfit_report = validate_run(fixed_underfit_root)
+        fixed_underfit_codes = {
+            item["code"] for item in fixed_underfit_report["errors"]
+        }
+        fixed_underfit_detected = (
+            "profile_underfit_adaptive_artifacts" in fixed_underfit_codes
+            and not fixed_underfit_report["valid"]
+        )
+
+        upgrade_root = temp_root / "unattested-profile-upgrade-run"
+        _build_adaptive_profile_fixture(upgrade_root)
+        upgrade_manifest_path = upgrade_root / "run_manifest.json"
+        upgrade_manifest = json.loads(upgrade_manifest_path.read_text(encoding="utf-8"))
+        upgrade_manifest["profile_history"] = [
+            {"profile": "fixed_test", "started_at": "1999-01-01T00:00:00Z"},
+            {"profile": "adaptive_search", "started_at": "2000-01-01T00:00:00Z"},
+        ]
+        _write_json(upgrade_manifest_path, upgrade_manifest)
+        upgrade_report = validate_run(upgrade_root)
+        upgrade_codes = {item["code"] for item in upgrade_report["errors"]}
+        upgrade_preservation_detected = {
+            "profile_upgrade_history_not_preserved",
+            "profile_upgrade_exposure_not_preserved",
+        }.issubset(upgrade_codes) and not upgrade_report["valid"]
+
+        upgrade_missing_claim_root = temp_root / "upgrade-missing-fixed-claim-run"
+        _build_adaptive_profile_fixture(upgrade_missing_claim_root)
+        missing_claim_manifest_path = upgrade_missing_claim_root / "run_manifest.json"
+        missing_claim_manifest = json.loads(missing_claim_manifest_path.read_text(encoding="utf-8"))
+        missing_claim_manifest["profile_history"] = [
+            {"profile": "fixed_test", "started_at": "1999-01-01T00:00:00Z"},
+            {
+                "profile": "adaptive_search",
+                "started_at": "2000-01-01T00:00:00Z",
+                "history_preserved": True,
+                "prior_exposure_preserved": True,
+            },
+        ]
+        _write_json(missing_claim_manifest_path, missing_claim_manifest)
+        upgrade_missing_claim_report = validate_run(upgrade_missing_claim_root)
+        upgrade_missing_claim_codes = {
+            item["code"] for item in upgrade_missing_claim_report["errors"]
+        }
+        upgrade_claim_preservation_detected = (
+            "profile_upgrade_fixed_claim_not_preserved"
+            in upgrade_missing_claim_codes
+            and not upgrade_missing_claim_report["valid"]
+        )
+
+        round_hash_root = temp_root / "tampered-sealed-round-run"
+        _build_fixed_profile_fixture(round_hash_root)
+        (round_hash_root / "rounds" / "round_000" / "report.md").write_text(
+            "tampered after sealing\n", encoding="utf-8"
+        )
+        round_hash_report = validate_run(round_hash_root)
+        round_hash_codes = {item["code"] for item in round_hash_report["errors"]}
+        round_hash_detected = (
+            "sealed_round_hash_mismatch" in round_hash_codes
+            and not round_hash_report["valid"]
+        )
+
+        adaptive_saturation_root = temp_root / "adaptive-saturation-claim-run"
+        _build_adaptive_profile_fixture(adaptive_saturation_root)
+        adaptive_saturation_path = adaptive_saturation_root / "run_manifest.json"
+        adaptive_saturation_manifest = json.loads(adaptive_saturation_path.read_text(encoding="utf-8"))
+        adaptive_saturation_manifest["search_status"] = "complete_within_scope"
+        adaptive_saturation_manifest["inventory_saturated"] = True
+        _write_json(adaptive_saturation_path, adaptive_saturation_manifest)
+        adaptive_saturation_report = validate_run(adaptive_saturation_root)
+        adaptive_saturation_codes = {
+            item["code"] for item in adaptive_saturation_report["errors"]
+        }
+        stage_vs_saturation_detected = (
+            fixed_valid
+            and adaptive_valid
+            and "profile_underfit_saturation_claim" in adaptive_saturation_codes
+            and not adaptive_saturation_report["valid"]
+        )
 
         not_applicable_scale_root = temp_root / "not-applicable-scale-run"
         not_applicable_scale_root.mkdir()
@@ -4788,7 +7293,7 @@ def run_self_test() -> dict[str, Any]:
         )
 
         init_root = temp_root / "initialized-run"
-        init_report = initialize_run(init_root)
+        init_report = initialize_run(init_root, "coverage_search")
         initialized_files = {
             str(path.relative_to(init_root))
             for path in init_root.rglob("*")
@@ -4802,16 +7307,19 @@ def run_self_test() -> dict[str, Any]:
                 return set(next(csv.reader(handle)))
 
         init_headers_valid = (
-            initialized_header("inventories/mechanism_inventory_v001.csv")
-            == INVENTORY_REQUIRED_COLUMNS
+            initialized_header("inventories/candidate_inventory_v001.csv")
+            == GENERIC_INVENTORY_REQUIRED_COLUMNS
             and initialized_header("inventories/coverage_matrix_v001.csv")
-            == COVERAGE_REQUIRED_COLUMNS | STRICT_COVERAGE_REQUIRED_FIELDS
+            == GENERIC_COVERAGE_REQUIRED_COLUMNS
             and initialized_header("candidate_registry.csv")
-            == CANDIDATE_REQUIRED_FIELDS
+            == (
+                (CANDIDATE_REQUIRED_FIELDS - {"mechanism_id"})
+                | V15_COVERAGE_CANDIDATE_FIELDS
+            )
             and initialized_header("execution_queue.csv")
             == set(EXECUTION_QUEUE_COLUMN_ALIASES)
             and initialized_header("rounds/round_000/summary.csv")
-            == set(ROUND_SUMMARY_COLUMNS)
+            == set(GENERIC_ROUND_SUMMARY_COLUMNS)
         )
         init_validation_report = validate_run(init_root)
         init_validation_codes = {
@@ -4822,7 +7330,7 @@ def run_self_test() -> dict[str, Any]:
         )
         init_structure_valid = (
             init_report.get("init") == "created"
-            and initialized_files == INIT_CANONICAL_FILES
+            and initialized_files == COVERAGE_INIT_FILES
             and init_headers_valid
             and not init_validation_report["valid"]
             and "missing_required_field" in init_validation_codes
@@ -4840,10 +7348,10 @@ def run_self_test() -> dict[str, Any]:
         manifest_before_refusal = (init_root / "run_manifest.json").read_text(
             encoding="utf-8"
         )
-        init_refusal_report = initialize_run(init_root)
+        init_refusal_report = initialize_run(init_root, "coverage_search")
         init_file_target = temp_root / "existing-init-target"
         init_file_target.write_text("preserve me\n", encoding="utf-8")
-        init_file_refusal_report = initialize_run(init_file_target)
+        init_file_refusal_report = initialize_run(init_file_target, "coverage_search")
         init_overwrite_refused = (
             init_refusal_report.get("init") == "refused"
             and (init_root / "run_manifest.json").read_text(encoding="utf-8")
@@ -5656,8 +8164,19 @@ def run_self_test() -> dict[str, Any]:
             and not malformed_schema_report["valid"]
         )
 
+        hardening_results = _run_hardening_self_tests(temp_root)
+
         if not all(
             (
+                fixed_valid,
+                adaptive_valid,
+                generic_valid,
+                v14_valid,
+                fixed_underfit_detected,
+                upgrade_preservation_detected,
+                upgrade_claim_preservation_detected,
+                round_hash_detected,
+                stage_vs_saturation_detected,
                 family_detected,
                 not_applicable_scale_valid,
                 distinct_screening_valid,
@@ -5701,12 +8220,22 @@ def run_self_test() -> dict[str, Any]:
                 duplicate_statistic_detected,
                 not_applicable_collision_detected,
                 malformed_schema_detected,
+                all(hardening_results.values()),
             )
         ):
             return {
                 "self_test": "failed",
                 "reason": "one or more injected faults were not detected",
                 "faults_detected": {
+                    "fixed_profile_positive": fixed_valid,
+                    "adaptive_profile_positive": adaptive_valid,
+                    "generic_coverage_profile_positive": generic_valid,
+                    "schema_1_4_positive": v14_valid,
+                    "fixed_profile_underfit": fixed_underfit_detected,
+                    "profile_upgrade_preservation": upgrade_preservation_detected,
+                    "profile_upgrade_claim_preservation": upgrade_claim_preservation_detected,
+                    "sealed_round_hash": round_hash_detected,
+                    "stage_completion_not_saturation": stage_vs_saturation_detected,
                     "broken_family_reference": family_detected,
                     "not_applicable_scale_positive": not_applicable_scale_valid,
                     "distinct_screening_statistics_positive": distinct_screening_valid,
@@ -5750,8 +8279,18 @@ def run_self_test() -> dict[str, Any]:
                     "duplicate_screening_statistic_scope": duplicate_statistic_detected,
                     "not_applicable_mapping_scope_collision": not_applicable_collision_detected,
                     "malformed_artifact_schema_version": malformed_schema_detected,
+                    **hardening_results,
                 },
                 "family_fixture_report": family_report,
+                "fixed_fixture_report": fixed_report,
+                "adaptive_fixture_report": adaptive_report,
+                "generic_coverage_fixture_report": generic_report,
+                "schema_1_4_fixture_report": v14_report,
+                "fixed_underfit_fixture_report": fixed_underfit_report,
+                "upgrade_fixture_report": upgrade_report,
+                "upgrade_missing_claim_fixture_report": upgrade_missing_claim_report,
+                "round_hash_fixture_report": round_hash_report,
+                "adaptive_saturation_fixture_report": adaptive_saturation_report,
                 "not_applicable_scale_fixture_report": not_applicable_scale_report,
                 "distinct_screening_fixture_report": distinct_screening_report,
                 "zero_eligible_fixture_reports": zero_eligible_reports,
@@ -5796,11 +8335,19 @@ def run_self_test() -> dict[str, Any]:
                 "duplicate_statistic_fixture_report": duplicate_statistic_report,
                 "not_applicable_collision_fixture_report": not_applicable_collision_report,
                 "malformed_schema_fixture_report": malformed_schema_report,
+                "hardening_results": hardening_results,
             }
         return {
             "self_test": "passed",
             "validator_version": VALIDATOR_VERSION,
             "valid_fixture_error_count": valid_report["error_count"],
+            "valid_profile_error_counts": {
+                "fixed_test": fixed_report["error_count"],
+                "adaptive_search": adaptive_report["error_count"],
+                "coverage_search_generic": generic_report["error_count"],
+                "coverage_search_legacy": valid_report["error_count"],
+                "schema_1_4": v14_report["error_count"],
+            },
             "valid_not_applicable_scale_error_count": not_applicable_scale_report[
                 "error_count"
             ],
@@ -5812,6 +8359,15 @@ def run_self_test() -> dict[str, Any]:
             "valid_family_version_history": True,
             "valid_unknown_exposure_error_count": unknown_exposure_report["error_count"],
             "faults_detected": {
+                "fixed_profile_positive": True,
+                "adaptive_profile_positive": True,
+                "generic_coverage_profile_positive": True,
+                "schema_1_4_positive": True,
+                "fixed_profile_underfit": True,
+                "profile_upgrade_preservation": True,
+                "profile_upgrade_claim_preservation": True,
+                "sealed_round_hash": True,
+                "stage_completion_not_saturation": True,
                 "broken_family_reference": True,
                 "not_applicable_scale_positive": True,
                 "distinct_screening_statistics_positive": True,
@@ -5854,6 +8410,7 @@ def run_self_test() -> dict[str, Any]:
                 "duplicate_screening_statistic_scope": True,
                 "not_applicable_mapping_scope_collision": True,
                 "malformed_artifact_schema_version": True,
+                **hardening_results,
             },
             "fault_error_codes": {
                 "broken_family_reference": sorted(family_codes),
@@ -5940,7 +8497,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--init",
         metavar="RUN_DIR",
         type=Path,
-        help="Create a non-overwriting schema-1.4.0 Round-0 draft skeleton.",
+        help="Create a non-overwriting schema-1.5.0 profile-aware Round-0 draft skeleton.",
+    )
+    modes.add_argument(
+        "--snapshot-upgrade",
+        metavar="RUN_DIR",
+        type=Path,
+        help="Create a non-overwriting hash-bound snapshot before a profile upgrade.",
+    )
+    parser.add_argument(
+        "--profile",
+        choices=sorted(RESEARCH_PROFILES),
+        help="Required with --init; one of fixed_test, adaptive_search, coverage_search.",
+    )
+    parser.add_argument(
+        "--to-profile",
+        choices=sorted(RESEARCH_PROFILES),
+        help="Required with --snapshot-upgrade; must be stricter than the current profile.",
     )
     args = parser.parse_args(argv)
     if args.self_test:
@@ -5948,14 +8521,44 @@ def main(argv: Sequence[str] | None = None) -> int:
         _emit(report, args.output)
         return 0 if report.get("self_test") == "passed" else 1
     if args.init is not None:
-        if args.run_dir is not None or args.output is not None:
-            parser.error("--init cannot be combined with run_dir or --output")
-        report = initialize_run(args.init)
+        if args.run_dir is not None or args.output is not None or args.to_profile is not None:
+            parser.error("--init cannot be combined with run_dir, --output, or --to-profile")
+        if args.profile is None:
+            parser.error("--profile is required with --init for schema 1.5.0")
+        report = initialize_run(args.init, args.profile)
         _emit(report, None)
         return 0 if report.get("init") == "created" else 1
+    if args.snapshot_upgrade is not None:
+        if args.run_dir is not None or args.output is not None or args.profile is not None:
+            parser.error("--snapshot-upgrade cannot be combined with run_dir, --output, or --profile")
+        if args.to_profile is None:
+            parser.error("--to-profile is required with --snapshot-upgrade")
+        report = create_upgrade_snapshot(args.snapshot_upgrade, args.to_profile)
+        _emit(report, None)
+        return 0 if report.get("snapshot") == "created" else 1
+    if args.profile is not None:
+        parser.error("--profile is only valid with --init; validation infers the recorded profile")
+    if args.to_profile is not None:
+        parser.error("--to-profile is only valid with --snapshot-upgrade")
     if args.run_dir is None:
         parser.error("run_dir is required unless --self-test or --init is used")
     report = validate_run(args.run_dir)
+    collision = _output_input_collision(args.run_dir, args.output, report)
+    if collision is not None:
+        report = dict(report)
+        errors = list(report.get("errors", []))
+        errors.append(
+            {
+                "code": "output_overwrites_run_input",
+                "location": str(args.output),
+                "message": f"--output resolves to validated run input {collision!r}; the report was emitted only to stdout.",
+            }
+        )
+        report["errors"] = errors
+        report["error_count"] = len(errors)
+        report["valid"] = False
+        _emit(report, None)
+        return 1
     _emit(report, args.output)
     return 0 if report["valid"] else 1
 

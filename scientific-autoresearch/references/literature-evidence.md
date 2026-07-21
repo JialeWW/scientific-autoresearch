@@ -1,6 +1,6 @@
 # Literature and Evidence Premise
 
-Use this file when a mechanism depends on prior work, a result may be promoted as novel, or literature conflict affects interpretation.
+Use this file when a candidate or scientific premise depends on prior work, a result may be promoted as novel, or literature conflict affects interpretation.
 
 ## 1. Define the Search Scope
 
@@ -44,7 +44,7 @@ Include conflicting, null, and methodologically limiting evidence rather than on
 
 ## 4. Connect Literature to the Autoresearch Loop
 
-- Use prior work to define plausible mechanisms, meaningful effect scales, controls, and failure modes.
+- Use prior work to define plausible candidate rationales and, when relevant, mechanisms, meaningful effect scales, controls, and failure modes.
 - Do not use literature after the fact only to rationalize a discovered pattern.
 - Freeze literature-derived thresholds, windows, or priors before confirmation when possible.
 - If a result conflicts with prior work, test whether population, support, measurement, scale, or model differences explain the conflict before claiming novelty.

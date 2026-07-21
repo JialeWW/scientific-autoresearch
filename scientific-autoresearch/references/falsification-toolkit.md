@@ -7,7 +7,7 @@ Choose checks that could change the conclusion. Distinguish falsification from g
 Register each important check before running it:
 
 ```text
-claim_or_mechanism
+candidate_or_claim
 main_alternative
 test_or_control
 prediction_under_claim
@@ -56,7 +56,7 @@ Influence analysis diagnoses dependence on cases. It is not independent verifica
 - Generate known nonzero effects over a meaningful scale range.
 - Inject signals into realistic backgrounds.
 - Measure bias, coverage, calibration, false-positive rate, recovery, and failure regions.
-- Verify that the pipeline fails when the mechanism-specific component is removed.
+- Verify that the pipeline fails when the candidate-specific signal or, for a mechanistic claim, the mechanism-specific component is removed.
 
 ## Invariance and Conservation
 
@@ -68,7 +68,7 @@ Test invariances, symmetries, units, conservation laws, monotonicity, or limitin
 - Save complete grids, not only the winner.
 - Use a justified end-to-end null, multiplicity, selective, sequential, hierarchical, Bayesian, or other path-covering method, or reserve sealed verification evidence.
 - Keep a scan winner exploratory until verified.
-- Do not use favorable physical storytelling as a substitute for selection control.
+- Do not use favorable post-result storytelling as a substitute for selection control.
 
 ## Promotion Audit
 
@@ -79,6 +79,6 @@ Before promotion, ask:
 3. Was support and sensitivity sufficient for the check to fail meaningfully?
 4. Does the check target the main alternative or only reproduce the same assumptions?
 5. Is the evidence same-data consistency, alternate proxy, alternate sample, holdout verification, simulation truth, or external replication?
-6. Did the candidate survive because the mechanism predicted the result, or because the explanation changed afterward?
+6. Did the candidate survive because its frozen substantive rationale predicted the result, or because the rationale changed afterward?
 
-Record the answer and its consequence for `mechanism_status`, `formulation_status`, and `verification_status`.
+Record the answer and its consequence for the frozen candidate or claim and `verification_status`. Use `candidate_status` for a typed candidate; use `mechanism_status` only for a mechanistic inventory. Preserve a changed formulation by ID and timing rather than assigning the undefined label `formulation_status`.

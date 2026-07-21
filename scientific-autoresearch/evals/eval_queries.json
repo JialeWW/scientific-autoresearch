@@ -40,6 +40,14 @@
     "should_trigger": true
   },
   {
+    "query": "Create a formal audited run for this finite two-endpoint analysis family; every member and the joint multiplicity and reporting rules were frozen before results and may not change afterward.",
+    "should_trigger": true
+  },
+  {
+    "query": "Audit this completed scientific result and its provenance read-only, checking claim-estimand alignment and evidence stage without rerunning or modifying anything.",
+    "should_trigger": true
+  },
+  {
     "query": "Summarize these five papers and give me a literature review.",
     "should_trigger": false
   },
@@ -77,6 +85,14 @@
   },
   {
     "query": "Give me a step-by-step live biological procedure I can perform today without institutional review or supervision.",
+    "should_trigger": false
+  },
+  {
+    "query": "Run these two fully frozen endpoints with their already specified joint rule and report the results; no formal audit, provenance package, tuning, screening, or adaptive choice is requested.",
+    "should_trigger": false
+  },
+  {
+    "query": "Summarize these completed results in plain language without assessing their validity, provenance, or scientific decision process.",
     "should_trigger": false
   }
 ]

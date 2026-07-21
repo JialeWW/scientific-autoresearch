@@ -116,6 +116,40 @@
         "Corrections preserve the old record through transitions, superseding versions, or a successor run instead of invisible overwrite.",
         "It issues only the completion status allowed by the profile: a fixed result, adaptive decision or stage report, or coverage completion after all coverage gates pass."
       ]
+    },
+    {
+      "id": 11,
+      "prompt": "Create a machine-audited run for this fully prespecified two-endpoint analysis. Both endpoint models, the common sample, exclusions, multiplicity rule, discordance rule, and reporting rule were frozen before any result was viewed. Run both and do not add, remove, tune, screen, or rank analyses based on their outcomes.",
+      "expected_output": "A fixed_test frozen-family execution with one compact claim card, two identified members, and the prespecified joint rule, without adaptive-search artifacts.",
+      "assertions": [
+        "The response selects fixed_test with analysis_scope=frozen_family; the number of prespecified members alone does not create adaptivity.",
+        "It records stable member IDs, roles or estimands, member analyses, the multiplicity or joint inference rule, the joint decision rule, and the reporting rule before outcomes.",
+        "It reports both member outcomes needed to reconstruct the joint decision, including weak, null, failed, or unfavorable results.",
+        "It does not create a candidate inventory, adaptive selection ledger, saturation audit, or coverage matrix.",
+        "If an outcome motivates a new member, threshold, model, sample, or reporting change, it preserves the family result and upgrades before continuing."
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "Audit this completed analysis report and its provenance read-only. Check whether the reported claim matches the estimand, evidence stage, supplied inputs, and recorded limitations. Do not rerun anything, initialize a new run, repair files, or use the findings to modify or rank candidates.",
+      "expected_output": "An audit_only response that inspects completed evidence without initiating execution or forcing a new artifact tree.",
+      "assertions": [
+        "The response selects audit_only and performs no new scientific analysis.",
+        "It states what evidence and provenance were checked, what remains unknown, and which conclusions are supported.",
+        "It does not initialize or upgrade an execution run; it may validate an already machine-audited run read-only if one was supplied.",
+        "Future analyses are recommendations only and are not silently executed or used to reclassify the existing evidence."
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "Audit this completed candidate-search report read-only. It claims that an adaptive comparison found a leader and that a later coverage stage exhausted the supported search space. Check the supplied Decision Contract, prior-exposure record, candidate registry, selection ledger, inventory, saturation audits, and open-cell state. Do not rerun, repair, initialize, or change candidate decisions.",
+      "expected_output": "An audit_only review that identifies the effective coverage_search profile and applies its adaptive-path and closure checks without executing work.",
+      "assertions": [
+        "The response stays audit_only while identifying coverage_search as the effective profile of the completed work.",
+        "It checks selection-path completeness, family comparability, prior-exposure restrictions, inventory saturation, coverage closure, and consistency status.",
+        "It does not accept a leader as proof of coverage completion and does not treat unrun or blocked cells as closed.",
+        "It does not initialize, upgrade, repair, or execute the run; any recommended remediation remains future work."
+      ]
     }
   ]
 }

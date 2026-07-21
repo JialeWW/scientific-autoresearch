@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.5 - 2026-07-21
+
+- Added non-executing `audit_only` and separated the default conceptual record from optional machine-audited artifacts.
+- Kept design, fixed, adaptive, and bounded coverage stages conceptual by default while requiring a validated machine-audited history for a formal `complete_within_scope` claim.
+- Extended `fixed_test` to finite prespecified analysis families under frozen joint inference and reporting rules; a family upgrades only when outcomes alter its scope or rule.
+- Bounded prior-exposure review, consolidated statistical method guidance, and reduced final-report branch narration through linked registries and ledgers.
+- Reduced coverage fragmentation by requiring substantive candidate distinctness, permitting coherent finite-domain cells, batching inventory additions, and carrying forward unaffected closure.
+- Upgraded the validator and artifact schema to 1.5.1 with frozen-family checks while retaining schema-1.5.0 fixed-test compatibility.
+
 ## 0.2.4 - 2026-07-21
 
 - Reframed the formal skill description around positive activation signals: requested audit or provenance, scientific adaptivity, candidate comparison, and data-supported coverage.

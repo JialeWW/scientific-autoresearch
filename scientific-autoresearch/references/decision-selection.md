@@ -1,28 +1,19 @@
 # Decision, Exposure, and Selection Protocol
 
-Use this protocol for `adaptive_search` and `coverage_search`: whenever a run generates, modifies, screens, compares, ranks, retains, or promotes candidates. A genuinely prespecified `fixed_test` does not need this protocol; if its result motivates another choice, preserve that result and upgrade the run before continuing. This protocol prevents a broad search from becoming an implicit contest for the smallest p-value.
+Use this protocol for outcome-adaptive `adaptive_search` and `coverage_search`. A prespecified finite comparison remains `fixed_test` when its members, methods, multiplicity or joint rule, and reporting rule cannot change after outcomes. If an outcome motivates a change, preserve the frozen result and upgrade before continuing.
+
+Record the protocol in the working report under `conceptual_record`. Use the named JSON, CSV, and JSONL files only under `machine_audited` mode or when continuing an existing machine-audited run.
 
 ## 1. Freeze a Decision Contract
 
-Before candidate-specific outcomes are inspected, write `decision_contract.json`. Define:
+Before candidate-specific outcomes are inspected, freeze a compact Decision Contract. Its core defines:
 
-- the decision that the search is intended to support;
-- the target, analysis, selection, and reporting populations;
-- the candidate classes eligible for that decision;
-- the substantive eligibility rule applied before statistical ranking;
-- the measurement-error policy, including the pathway that makes a sensitivity analysis required, or a reason it is not applicable;
-- the transportability requirement when populations differ, the evidence needed to pass it, or a reason no transport claim is made;
-- the selection families within which candidates may be compared;
-- the evidence used for eligibility, ranking, falsification, and promotion;
-- the mapping from a screening statistic to the decision or prediction scale when those evidence roles differ, including what happens when they disagree;
-- the decision rule that maps that evidence to an action or status;
-- the estimand and minimum scientifically meaningful difference;
-- how uncertainty, robustness, predictive adequacy, mechanistic specificity, complexity, and data quality enter the decision;
-- the tie or practical-equivalence rule;
-- the inconclusive rule and the action it triggers;
-- the treatment of candidates that are not mutually comparable;
-- the complete-selection-path inference strategy;
-- the freeze time, version, and conditions under which the contract may be amended.
+- the scientific or operational decision, eligible candidate classes, substantive eligibility, target population, supported sample, and estimand;
+- comparable selection families and the evidence used for screening, ranking, falsification, and promotion;
+- the decision, tie or practical-equivalence, inconclusive, and noncomparable-candidate rules;
+- the minimum meaningful difference, selection-path inference strategy, freeze time, version, and amendment conditions.
+
+Add conditional clauses only when their pathway exists: distinct analysis, selection, or reporting populations and transport requirements; selection-relevant measurement error; screen-to-decision scale mapping and discordance; stochastic aggregation; or explicit complexity and data-quality tradeoffs. One stated not-applicable reason is sufficient.
 
 The contract may choose a frequentist, Bayesian, predictive, decision-theoretic, or hybrid rule, but it must be interpretable for the scientific question. The smallest nominal p-value is never a default ranking rule.
 
@@ -30,13 +21,13 @@ Here, population means the scientific target domain, system class, distribution,
 
 Substantive eligibility is a gate, not a post-result plausibility score. Declare each candidate type, such as mechanism, model, feature, simulation, or design. For mechanistic candidates, freeze `mechanism_alignment` as `direct`, `calibrated_proxy`, `diagnostic_only`, `unsupported`, or `not_assessed`. For a nonmechanistic scientific or operational decision, use `not_applicable` with a reason and apply the declared `substantive_eligibility` rule instead. Diagnostics and unsupported proxies remain in the record but cannot become a substantive leader through statistical strength alone.
 
-When screening and decision evidence differ, freeze one `evidence_scale_mapping` record per distinct family and screening-statistic relation: both statistics or models, their estimands and scales, the scale relation, the validation or calibration rule, and the discordance rule. A family may have multiple records for genuinely different screening statistics, but each `(selection_family_id, screening_statistic)` pair must have exactly one mapping. When there is no selection-influencing screen, use one compact `not_applicable` record with a reason instead of manufacturing full mapping work. A rank statistic can support monotone association while remaining silent about raw-scale slope, calibration, residual structure, or predictive loss. Unless a prespecified mapping is validated, a screen may prioritize execution but cannot substitute for the decision-scale test. Preserve disagreements and apply the frozen tie, inconclusive, parallel, or rejection rule rather than selecting whichever scale looks favorable.
+When screening and decision evidence differ, freeze one mapping per distinct family and screening-statistic relation: both evidence definitions, estimands and scales, the scale relation, validation or calibration rule, and discordance rule. A rank statistic can support monotone association while remaining silent about raw-scale slope, calibration, residual structure, or predictive loss. Without a validated mapping, a screen may prioritize execution but cannot replace decision-scale evidence.
 
 If the contract changes after outcome inspection, preserve the earlier version, record the trigger, mark the change `post_result_adaptive`, and treat decisions affected by the change as exploratory unless a valid adaptive procedure already covered it. If no contract existed before outcomes were viewed, the first retrospective contract is also `post_result_adaptive`; it cannot create a pre-result freeze retroactively.
 
 ## 2. Audit Prior Exposure
 
-Before assigning an evidence stage, write `prior_exposure_audit.json`. Search project records, notebooks, reports, issue histories, code, logs, prior runs, and available human disclosures for:
+Before assigning an evidence stage, freeze a bounded exposure-audit scope: relevant projects or repositories, sources to inspect, overlap unit, date range or effort budget, available custodians or disclosures, and a completion rule. Then inspect the declared sources for:
 
 - earlier analyses using the same or overlapping observations, participants, simulations, benchmarks, or labels;
 - parameter, feature, sample, exclusion, threshold, model, seed, checkpoint, or formulation attempts;
@@ -45,7 +36,7 @@ Before assigning an evidence stage, write `prior_exposure_audit.json`. Search pr
 - previous data splits or holdouts and whether they remained sealed;
 - undocumented or uncertain exposure.
 
-Record what was checked, who or what supplied the information, overlap scope, known attempts, uncertain gaps, and the resulting evidence-stage restriction.
+Record what was checked, unavailable sources, who or what supplied the information, overlap scope, known attempts, uncertain gaps, and the resulting evidence-stage restriction. Complete the declared audit when every available in-scope source was checked or the frozen effort bound was reached. Do not expand into unrelated project archaeology; unresolved relevant gaps become `unknown` rather than disappearing.
 
 Keep the current evidence label separate from future verification eligibility. Exposed evidence remains exploratory or internal-only even when a prospectively frozen candidate could later be tested on genuinely untouched data.
 
@@ -118,4 +109,4 @@ At decision time:
 6. report sensitivity to reasonable contract, prior, model, and data-quality choices;
 7. distinguish exploratory preference, internally validated evidence, and independent verification.
 
-Write the candidate-level outcomes to `candidate_registry.csv` and set the run manifest's `decision_contract_applied` and terminal `decision_status`. If evidence does not separate eligible candidates by the declared rule, report `tie` or `inconclusive`. If none pass eligibility, use `no_eligible_candidate`. Do not force a winner for narrative convenience.
+Record candidate-level outcomes in a registry or equivalent table. Under `machine_audited`, write `candidate_registry.csv` and set the run manifest's `decision_contract_applied` and terminal `decision_status`. Summarize outcome classes in prose and link the complete registry rather than narrating every branch. If evidence does not separate eligible candidates by the declared rule, report `tie` or `inconclusive`; if none pass, use `no_eligible_candidate`.

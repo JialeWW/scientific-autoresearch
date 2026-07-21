@@ -1,16 +1,16 @@
 # Canonical Status Schema
 
-This is an audit and validator-diagnosis reference, not default Agent context. For schema `1.5.0`, the initializer and `scripts/validate_run.py` are authoritative for fields, enums, and transition checks. Do not copy this page into every run.
+This is an audit and validator-diagnosis reference, not default Agent context. For schema `1.5.1`, the initializer and `scripts/validate_run.py` are authoritative for fields, enums, and transition checks. Do not copy this page into every run.
 
 ## Profile and Stage
 
-`design_only` creates no run artifacts unless the user asks for them. Executed runs use one `research_profile`:
+`design_only` and `audit_only` create no execution-run artifacts by default; `audit_only` may validate an existing run read-only. Executed runs use one `research_profile`:
 
-- `fixed_test`: one claim, sample, analysis, and decision rule were fixed before the result.
+- `fixed_test`: one claim and sample use either one prespecified analysis or a finite prespecified analysis family under a frozen joint decision rule.
 - `adaptive_search`: candidate generation, modification, screening, retention, ranking, or promotion can depend on viewed results.
 - `coverage_search`: the run additionally claims systematic coverage of a finite, versioned, data-supported candidate space.
 
-Profiles are ordered `fixed_test < adaptive_search < coverage_search`. `profile_history` is append-only and its offset-aware `started_at` values are strictly increasing. Before an upgrade, validate the source and run `scripts/validate_run.py --snapshot-upgrade RUN_DIR --to-profile PROFILE`. The returned upgrade entry records `preservation_snapshot_path` and `preservation_snapshot_sha256`; append it only after reviewing the non-overwriting copy. A preservation snapshot declares the prior profile, capture time, target profile, and an artifact list whose entries contain `logical_path`, internal nonsymlink `snapshot_path`, and verified `sha256`. It must include the prior manifest, that profile's required artifacts, and every round report and reproduction record indexed by the prior manifest. Boolean preservation attestations alone are insufficient. A downgrade is invalid. A changed sample, codebase, model, tool, workflow, or skill version never restores confirmatory status.
+Profiles are ordered `fixed_test < adaptive_search < coverage_search`. A frozen family remains `fixed_test` unless outcomes change its membership, methods, thresholds, sample, multiplicity or joint rule, or reporting rule. `profile_history` is append-only and its offset-aware `started_at` values are strictly increasing. Before an upgrade, validate the source and run `scripts/validate_run.py --snapshot-upgrade RUN_DIR --to-profile PROFILE`. The returned upgrade entry records `preservation_snapshot_path` and `preservation_snapshot_sha256`; append it only after reviewing the non-overwriting copy. A preservation snapshot declares the prior profile, capture time, target profile, and an artifact list whose entries contain `logical_path`, internal nonsymlink `snapshot_path`, and verified `sha256`. It must include the prior manifest, that profile's required artifacts, and every round report and reproduction record indexed by the prior manifest. Boolean preservation attestations alone are insufficient. A downgrade is invalid. A changed sample, codebase, model, tool, workflow, or skill version never restores confirmatory status.
 
 Use `stage_status` independently of scientific completion:
 
@@ -43,7 +43,7 @@ Activate a gate only when its stated pathway exists; record why it is not applic
 - Measurement error is applicable when uncertainty can change support, eligibility, subgroup membership, thresholding, ranking, or interpretation. In adaptive candidates, record this as `measurement_error_relevant=true`. Use `measurement_error_sensitivity` = `planned`, `passed`, `failed`, or `inconclusive`; otherwise use `not_required` after assessment or justified `not_applicable`. An applicable gate must pass before promotion.
 - Transportability is applicable when evidence is used across materially different target, analysis, selection, or reporting populations. Use requirement `same_population`, `validation_required`, or `parallel_only`, with status `not_required`, `planned`, `passed`, `failed`, or `inconclusive`. Required validation must pass before direct comparison; unsupported transport remains parallel.
 - Evidence-scale mapping is applicable when screening and decision evidence differ in statistic, estimand, scale, or role. Use relation `same_scale`, `monotone_only`, `calibrated_mapping`, `separate_roles`, or justified `not_applicable`, and freeze validation and discordance rules. Rank association alone does not establish raw-scale prediction.
-- Complete-selection-path inference and multiplicity control are applicable whenever data-informed generation, modification, screening, ranking, repeated looks, or multiple tests can influence one decision. The method is domain-specific; the complete influential path is not optional.
+- A frozen finite analysis family uses its prespecified joint or multiplicity rule without an adaptive ledger. Complete-selection-path inference is applicable whenever outcome-informed generation, modification, screening, ranking, or repeated looks can influence one decision. The method is domain-specific; the complete influential path is not optional.
 
 ## Shared Scientific Statuses
 
@@ -101,7 +101,7 @@ Priority changes execution order only. Unrun or blocked cells remain open and st
 
 `search_status` = `inventory_building`, `coverage_in_progress`, `verification_ready`, `resource_limited_pause`, `user_limited_stop`, `governance_blocked`, `human_decision_required`, or `complete_within_scope`.
 
-Use `complete_within_scope` only when, for the same active version:
+Use `complete_within_scope` only for a validated machine-audited coverage record when, for the same active version:
 
 ```text
 inventory_saturated
@@ -124,4 +124,4 @@ A completed round, promoted candidate, stage report, exhausted resource envelope
 - Preserve weak, null, invalid, failed, abandoned, blocked, and unfavorable branches.
 - Use the validator before resume and before any stage, pause, or completion report. Metadata consistency and numerical reproduction are separate claims.
 
-Schema `<=1.4` remains readable under its legacy full-run behavior. Do not relabel a legacy run as `1.5.0`; initialize or migrate the profile metadata and artifacts explicitly.
+Schema `<=1.4` remains readable under its legacy full-run behavior. Schema `1.5.0` profile runs remain readable, with a missing fixed-test `analysis_scope` interpreted as `single_test`. Do not relabel a legacy run; initialize or migrate profile metadata and artifacts explicitly.

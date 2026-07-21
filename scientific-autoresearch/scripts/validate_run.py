@@ -31,14 +31,17 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 
-VALIDATOR_VERSION = "1.5.0"
-ARTIFACT_SCHEMA_VERSION = "1.5.0"
+VALIDATOR_VERSION = "1.5.1"
+ARTIFACT_SCHEMA_VERSION = "1.5.1"
+PROFILE_SCHEMA_VERSION = "1.5.0"
+FIXED_FAMILY_SCHEMA_VERSION = "1.5.1"
 STRICT_BASELINE_SCHEMA_VERSION = "1.4.0"
 REPORT_SCHEMA_VERSION = "1.0"
 REQUIRED_SENTINEL = "__REQUIRED__"
 
 RESEARCH_PROFILES = {"fixed_test", "adaptive_search", "coverage_search"}
 PROFILE_RANK = {"fixed_test": 0, "adaptive_search": 1, "coverage_search": 2}
+ANALYSIS_SCOPES = {"single_test", "frozen_family"}
 STAGE_STATUSES = {"planned", "in_progress", "completed_as_scoped", "blocked", "abandoned"}
 CANDIDATE_TYPES = {"mechanism", "model", "feature", "simulation", "design", "other"}
 SUBSTANTIVE_ELIGIBILITY_STATUSES = {"eligible", "ineligible", "not_assessed"}
@@ -728,6 +731,20 @@ FIXED_CLAIM_REQUIRED_FIELDS = {
     "data_version_ids",
     "completed_as_scoped",
 }
+FIXED_FAMILY_REQUIRED_FIELDS = {
+    "multiplicity_or_joint_inference_rule",
+    "reporting_rule",
+    "members",
+}
+FIXED_FAMILY_MEMBER_REQUIRED_FIELDS = {
+    "member_id",
+    "role",
+    "claim_or_estimand",
+    "analysis_or_test",
+    "result_status",
+    "effect_summary",
+    "uncertainty_summary",
+}
 EXECUTION_QUEUE_COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
     "coverage_cell_id": ("coverage_cell_id",),
     "execution_tier": ("execution_tier", "tier"),
@@ -982,6 +999,7 @@ class RunValidator:
         self.manifest: dict[str, Any] = {}
         self.strict_schema = False
         self.profile_schema = False
+        self.schema_1_5_1 = False
         self.research_profile = ""
         self.generic_inventory_schema = False
         self.active_version = ""
@@ -1355,7 +1373,10 @@ class RunValidator:
             schema_value, STRICT_BASELINE_SCHEMA_VERSION
         )
         self.profile_schema = _schema_at_least(
-            schema_value, ARTIFACT_SCHEMA_VERSION
+            schema_value, PROFILE_SCHEMA_VERSION
+        )
+        self.schema_1_5_1 = _schema_at_least(
+            schema_value, FIXED_FAMILY_SCHEMA_VERSION
         )
         supported_schema = _parse_schema_version(ARTIFACT_SCHEMA_VERSION)
         if not _blank(schema_value) and parsed_schema is None:
@@ -1886,6 +1907,41 @@ class RunValidator:
                 "Coverage stage completion requires search_ledger_audited=true; it still does not imply inventory saturation.",
             )
         if profile == "fixed_test":
+            expanded_manifest_fields = {
+                "decision_contract_version",
+                "decision_contract_id",
+                "prior_exposure_audit_version",
+                "prior_exposure_audit_id",
+                "search_ledger_audited",
+                "decision_contract_applied",
+                "decision_status",
+                "selection_family_policy",
+                "complete_selection_path_policy",
+                "evidence_partition_policy",
+                "data_look_policy",
+                "verification_policy",
+                "inventory_version",
+                "inventory_status",
+                "search_status",
+                "inventory_saturated",
+                "coverage_complete",
+                "inventory_audit_protocol",
+                "inventory_generation_lenses",
+                "coverage_unit_definition",
+                "coverage_closure_rules",
+                "saturation_rule",
+                "saturation_required_sources",
+            }
+            present_manifest_fields = sorted(
+                field for field in expanded_manifest_fields if field in self.manifest
+            )
+            if present_manifest_fields:
+                self.error(
+                    "profile_underfit_adaptive_state",
+                    "run_manifest.json",
+                    "fixed_test contains adaptive/coverage manifest state "
+                    f"{present_manifest_fields}; upgrade the profile instead of validating under reduced gates.",
+                )
             expanded_artifacts = [
                 "decision_contract.json",
                 "prior_exposure_audit.json",
@@ -1958,6 +2014,110 @@ class RunValidator:
                     "upgrade to coverage_search so these artifacts cannot bypass coverage validation.",
                 )
 
+    def _validate_fixed_analysis_family(
+        self,
+        claim: Mapping[str, Any],
+        *,
+        completed: bool | None,
+    ) -> None:
+        location = "claim_card.json"
+        raw_scope = claim.get("analysis_scope")
+        if _blank(raw_scope):
+            if self.schema_1_5_1:
+                self.error(
+                    "missing_required_field",
+                    location,
+                    "Required field 'analysis_scope' is missing or blank.",
+                )
+            scope = "single_test"
+        else:
+            scope = str(raw_scope).strip()
+            if scope not in ANALYSIS_SCOPES:
+                self.error(
+                    "invalid_analysis_scope",
+                    location,
+                    f"analysis_scope={scope!r} is not one of {sorted(ANALYSIS_SCOPES)}.",
+                )
+                return
+
+        if claim.get("specification_timing") != "pre_result_frozen":
+            error_code = (
+                "fixed_family_not_preresult"
+                if scope == "frozen_family"
+                else "fixed_test_not_preresult"
+            )
+            self.error(
+                error_code,
+                location,
+                "A fixed analysis or family must be frozen before its related outcomes are inspected.",
+            )
+
+        family = claim.get("analysis_family")
+        if scope == "single_test":
+            if family not in (None, {}, []):
+                self.error(
+                    "fixed_analysis_scope_mismatch",
+                    location,
+                    "analysis_scope='single_test' cannot include a nonempty analysis_family.",
+                )
+            return
+
+        if not self.schema_1_5_1:
+            self.error(
+                "fixed_family_requires_schema_1_5_1",
+                location,
+                "analysis_scope='frozen_family' requires artifact_schema_version>=1.5.1.",
+            )
+        if not isinstance(family, Mapping):
+            self.error(
+                "invalid_fixed_analysis_family",
+                location,
+                "analysis_family must be an object for analysis_scope='frozen_family'.",
+            )
+            return
+
+        self._required(family, f"{location}#analysis_family", FIXED_FAMILY_REQUIRED_FIELDS)
+        members = family.get("members")
+        if not isinstance(members, list) or len(members) < 2:
+            self.error(
+                "fixed_family_too_small",
+                f"{location}#analysis_family.members",
+                "A frozen analysis family requires at least two prespecified members.",
+            )
+            return
+
+        seen_ids: set[str] = set()
+        for index, member in enumerate(members, start=1):
+            member_location = f"{location}#analysis_family.members[{index}]"
+            if not isinstance(member, Mapping):
+                self.error(
+                    "invalid_fixed_family_member",
+                    member_location,
+                    "Each analysis-family member must be an object.",
+                )
+                continue
+            self._required(member, member_location, FIXED_FAMILY_MEMBER_REQUIRED_FIELDS)
+            member_id = str(member.get("member_id", "")).strip()
+            if member_id and member_id in seen_ids:
+                self.error(
+                    "duplicate_fixed_family_member_id",
+                    member_location,
+                    f"member_id {member_id!r} is duplicated.",
+                )
+            seen_ids.add(member_id)
+            member_status = self._status(
+                member.get("result_status"),
+                RESULT_STATUSES,
+                member_location,
+                "result_status",
+            )
+            if completed is True and member_status == "not_run":
+                self.error(
+                    "fixed_family_completion_incomplete",
+                    member_location,
+                    "A completed frozen family cannot contain a not_run member.",
+                )
+
     def _validate_fixed_profile(self) -> None:
         self._load_data_registry()
         self._validate_data_versions()
@@ -1989,6 +2149,7 @@ class RunValidator:
             completed = _bool(claim.get("completed_as_scoped"))
             if completed is None:
                 self.error("invalid_boolean", location, "completed_as_scoped must be a boolean.")
+            self._validate_fixed_analysis_family(claim, completed=completed)
             if completed is True and result_status == "not_run":
                 self.error("fixed_completion_without_result", location, "A completed fixed test must record a result.")
             if completed is True and self.manifest.get("stage_status") != "completed_as_scoped":
@@ -2315,6 +2476,11 @@ class RunValidator:
                 self.error("incomparable_candidate_selected", item_location, "Leading/tied candidate must be comparable within family.")
             if prior in {"known_overlap", "unknown", "not_assessed"} and confirmatory == "unrestricted_by_prior_exposure":
                 self.error("candidate_prior_exposure_conflict", item_location, "Candidate confirmatory status conflicts with prior exposure.")
+            self._validate_candidate_exposure_alignment(
+                prior,
+                confirmatory,
+                item_location,
+            )
             for ledger_id in _ids(row.get("ledger_entry_ids")):
                 entry = ledger_by_id.get(ledger_id)
                 if entry is None:
@@ -3945,6 +4111,60 @@ class RunValidator:
             if not any(key in self.prior_exposure for key in keys):
                 self.error("missing_prior_exposure_record", location, f"Prior-exposure audit must explicitly record {concept}, even when empty.")
 
+        if self.schema_1_5_1:
+            boundary_fields = {
+                "projects_or_repositories_in_scope": (
+                    "projects_or_repositories_in_scope",
+                    "projects_in_scope",
+                ),
+                "date_range_or_effort_budget": (
+                    "date_range_or_effort_budget",
+                    "audit_time_or_effort_boundary",
+                ),
+                "completion_rule": (
+                    "completion_rule",
+                    "audit_completion_rule",
+                ),
+            }
+            for concept, keys in boundary_fields.items():
+                if not any(key in self.prior_exposure for key in keys):
+                    self.error(
+                        "missing_prior_exposure_boundary",
+                        location,
+                        f"Schema 1.5.1 prior-exposure audit must record {concept}.",
+                    )
+            if audit_status in {"complete", "unknown"}:
+                scoped_projects = _first(
+                    self.prior_exposure,
+                    *boundary_fields["projects_or_repositories_in_scope"],
+                )
+                checked_sources = _first(self.prior_exposure, "sources_checked")
+                overlap_unit = _first(self.prior_exposure, "overlap_unit")
+                for concept, incomplete in (
+                    (
+                        "projects_or_repositories_in_scope",
+                        not _list(scoped_projects),
+                    ),
+                    ("sources_checked", not _list(checked_sources)),
+                    ("overlap_unit", _blank(overlap_unit)),
+                ):
+                    if incomplete:
+                        self.error(
+                            "incomplete_prior_exposure_boundary",
+                            location,
+                            f"audit_status={audit_status!r} requires a nonblank {concept}.",
+                        )
+                for concept in (
+                    "date_range_or_effort_budget",
+                    "completion_rule",
+                ):
+                    if _blank(_first(self.prior_exposure, *boundary_fields[concept])):
+                        self.error(
+                            "incomplete_prior_exposure_boundary",
+                            location,
+                            f"audit_status={audit_status!r} requires a nonblank {concept}.",
+                        )
+
         has_exposure = any(bool(_list(values[name])) for name in ("prior_analyses", "parameter_attempts", "result_views"))
         overlap_value = values["overlapping_data"]
         overlap_bool = _bool(overlap_value)
@@ -3968,6 +4188,14 @@ class RunValidator:
                     location,
                     "audit_status=unknown requires explicit unresolved exposure gaps.",
                 )
+        if audit_status == "complete" and _list(
+            _first(self.prior_exposure, "unknown_gaps", "uncertain_gaps")
+        ):
+            self.error(
+                "prior_exposure_unresolved_gaps",
+                location,
+                "audit_status=complete cannot retain unresolved exposure gaps; use audit_status=unknown and prior_exposure_status=unknown.",
+            )
         if audit_status == "not_applicable":
             if prior_status != "not_applicable":
                 self.error(
@@ -4009,6 +4237,45 @@ class RunValidator:
         text = _json_text(self.prior_exposure)
         if "restore" in text and "confirmatory" in text and any(term in text for term in ("code version", "skill version", "sample change", "workflow version")):
             self.warn("review_confirmatory_restoration_text", location, "Audit text mentions restoring confirmatory status through a version or sample change; review manually.")
+
+    def _validate_candidate_exposure_alignment(
+        self,
+        prior_status: str,
+        confirmatory_status: str,
+        location: str,
+    ) -> None:
+        run_prior_status = self.prior_exposure_status
+        run_confirmatory_status = str(
+            _first(
+                self.prior_exposure,
+                "confirmatory_status",
+                "current_evidence_status",
+                "evidence_eligibility",
+                default="",
+            )
+        ).strip()
+        if (
+            run_prior_status in {"known_overlap", "unknown", "not_assessed"}
+            and prior_status == "no_known_exposure"
+        ) or (
+            run_prior_status == "not_applicable"
+            and prior_status != "not_applicable"
+        ):
+            self.error(
+                "candidate_run_prior_exposure_mismatch",
+                location,
+                f"Candidate prior_exposure_status={prior_status!r} is less restrictive than run audit status {run_prior_status!r}.",
+            )
+        if (
+            run_confirmatory_status
+            and run_confirmatory_status != "unrestricted_by_prior_exposure"
+            and confirmatory_status == "unrestricted_by_prior_exposure"
+        ):
+            self.error(
+                "candidate_run_confirmatory_status_mismatch",
+                location,
+                f"Candidate confirmatory_status={confirmatory_status!r} conflicts with run audit status {run_confirmatory_status!r}.",
+            )
 
     def _validate_candidate_registry(self) -> None:
         path = self.run_dir / "candidate_registry.csv"
@@ -4363,6 +4630,11 @@ class RunValidator:
                     row_location,
                     "Candidate current-evidence status is incompatible with its prior exposure.",
                 )
+            self._validate_candidate_exposure_alignment(
+                prior_status,
+                confirmatory,
+                row_location,
+            )
             if decision in {"leading", "tie"} and comparability not in {
                 "comparable_within_family",
             }:
@@ -5497,7 +5769,10 @@ def initialize_run(run_dir: Path, profile: str) -> dict[str, Any]:
         "prior_exposure_status": "not_assessed",
         "confirmatory_status": "unknown",
         "future_verification_status": todo,
+        "projects_or_repositories_in_scope": [],
         "sources_checked": [],
+        "date_range_or_effort_budget": todo,
+        "completion_rule": todo,
         "overlap_unit": todo,
         "overlapping_data": [],
         "prior_analyses": [],
@@ -5516,6 +5791,7 @@ def initialize_run(run_dir: Path, profile: str) -> dict[str, Any]:
     claim_card = {
         "claim_id": todo,
         "claim": todo,
+        "analysis_scope": "single_test",
         "target_population": todo,
         "analysis_population": todo,
         "supported_sample_id": todo,
@@ -5979,7 +6255,10 @@ def _build_self_test_fixture(root: Path) -> None:
             "prior_exposure_audit_version": "pe-v001",
             "audit_status": "complete",
             "prior_exposure_status": "no_known_exposure",
+            "projects_or_repositories_in_scope": ["synthetic fixture"],
             "sources_checked": ["synthetic run records"],
+            "date_range_or_effort_budget": "all synthetic fixture records through 2000-01-01",
+            "completion_rule": "all declared synthetic fixture records inspected",
             "overlap_unit": "synthetic observation",
             "overlapping_data": [],
             "prior_analyses": [],
@@ -6245,6 +6524,7 @@ def _build_fixed_profile_fixture(root: Path) -> None:
         {
             "claim_id": "CL001",
             "claim": "The prespecified synthetic effect meets the decision rule.",
+            "analysis_scope": "single_test",
             "target_population": "synthetic population",
             "analysis_population": "synthetic population",
             "supported_sample_id": "S001",
@@ -6265,6 +6545,43 @@ def _build_fixed_profile_fixture(root: Path) -> None:
         },
     )
     _seal_initialized_round(root)
+
+
+def _convert_fixed_fixture_to_family(root: Path) -> None:
+    claim_path = root / "claim_card.json"
+    claim = json.loads(claim_path.read_text(encoding="utf-8"))
+    claim.update(
+        {
+            "analysis_scope": "frozen_family",
+            "analysis_or_test": "prespecified two-member synthetic family",
+            "decision_rule": "apply the frozen joint rule to both members",
+            "analysis_family": {
+                "multiplicity_or_joint_inference_rule": "closed two-member family rule",
+                "reporting_rule": "report both members and the joint decision",
+                "members": [
+                    {
+                        "member_id": "M001",
+                        "role": "primary endpoint",
+                        "claim_or_estimand": "synthetic mean difference",
+                        "analysis_or_test": "prespecified synthetic test A",
+                        "result_status": "supported",
+                        "effect_summary": "effect 0.2",
+                        "uncertainty_summary": "registered interval excludes 0.1",
+                    },
+                    {
+                        "member_id": "M002",
+                        "role": "prespecified falsifier",
+                        "claim_or_estimand": "synthetic negative-control difference",
+                        "analysis_or_test": "prespecified synthetic test B",
+                        "result_status": "null",
+                        "effect_summary": "effect near zero",
+                        "uncertainty_summary": "registered interval includes zero",
+                    },
+                ],
+            },
+        }
+    )
+    _write_json(claim_path, claim)
 
 
 def _build_adaptive_profile_fixture(root: Path) -> None:
@@ -6343,7 +6660,10 @@ def _build_adaptive_profile_fixture(root: Path) -> None:
             "prior_exposure_audit_version": "pe-v001",
             "audit_status": "complete",
             "prior_exposure_status": "no_known_exposure",
+            "projects_or_repositories_in_scope": ["synthetic fixture"],
             "sources_checked": ["synthetic records"],
+            "date_range_or_effort_budget": "all synthetic fixture records through 2000-01-01",
+            "completion_rule": "all declared synthetic fixture records inspected",
             "overlap_unit": "synthetic observation",
             "overlapping_data": [],
             "prior_analyses": [],
@@ -6898,6 +7218,150 @@ def run_self_test() -> dict[str, Any]:
         fixed_report = validate_run(fixed_root)
         fixed_valid = fixed_report["valid"]
 
+        post_result_single_root = temp_root / "post-result-fixed-single-run"
+        _build_fixed_profile_fixture(post_result_single_root)
+        post_result_single_path = post_result_single_root / "claim_card.json"
+        post_result_single_claim = json.loads(
+            post_result_single_path.read_text(encoding="utf-8")
+        )
+        post_result_single_claim["specification_timing"] = "post_result_adaptive"
+        _write_json(post_result_single_path, post_result_single_claim)
+        post_result_single_report = validate_run(post_result_single_root)
+        post_result_single_detected = any(
+            item["code"] == "fixed_test_not_preresult"
+            for item in post_result_single_report["errors"]
+        )
+
+        legacy_fixed_root = temp_root / "valid-schema-1-5-0-fixed-run"
+        _build_fixed_profile_fixture(legacy_fixed_root)
+        legacy_fixed_manifest_path = legacy_fixed_root / "run_manifest.json"
+        legacy_fixed_manifest = json.loads(
+            legacy_fixed_manifest_path.read_text(encoding="utf-8")
+        )
+        legacy_fixed_manifest["artifact_schema_version"] = "1.5.0"
+        _write_json(legacy_fixed_manifest_path, legacy_fixed_manifest)
+        legacy_fixed_claim_path = legacy_fixed_root / "claim_card.json"
+        legacy_fixed_claim = json.loads(
+            legacy_fixed_claim_path.read_text(encoding="utf-8")
+        )
+        legacy_fixed_claim.pop("analysis_scope", None)
+        _write_json(legacy_fixed_claim_path, legacy_fixed_claim)
+        legacy_fixed_report = validate_run(legacy_fixed_root)
+        legacy_fixed_valid = legacy_fixed_report["valid"]
+
+        fixed_family_root = temp_root / "valid-fixed-family-run"
+        _build_fixed_profile_fixture(fixed_family_root)
+        _convert_fixed_fixture_to_family(fixed_family_root)
+        fixed_family_report = validate_run(fixed_family_root)
+        fixed_family_valid = fixed_family_report["valid"]
+
+        one_member_root = temp_root / "one-member-fixed-family-run"
+        _build_fixed_profile_fixture(one_member_root)
+        _convert_fixed_fixture_to_family(one_member_root)
+        one_member_path = one_member_root / "claim_card.json"
+        one_member_claim = json.loads(one_member_path.read_text(encoding="utf-8"))
+        one_member_claim["analysis_family"]["members"] = one_member_claim[
+            "analysis_family"
+        ]["members"][:1]
+        _write_json(one_member_path, one_member_claim)
+        one_member_report = validate_run(one_member_root)
+        one_member_detected = any(
+            item["code"] == "fixed_family_too_small"
+            for item in one_member_report["errors"]
+        )
+
+        missing_family_rule_root = temp_root / "missing-rule-fixed-family-run"
+        _build_fixed_profile_fixture(missing_family_rule_root)
+        _convert_fixed_fixture_to_family(missing_family_rule_root)
+        missing_family_rule_path = missing_family_rule_root / "claim_card.json"
+        missing_family_rule_claim = json.loads(
+            missing_family_rule_path.read_text(encoding="utf-8")
+        )
+        missing_family_rule_claim["analysis_family"].pop("reporting_rule")
+        _write_json(missing_family_rule_path, missing_family_rule_claim)
+        missing_family_rule_report = validate_run(missing_family_rule_root)
+        missing_family_rule_detected = any(
+            item["code"] == "missing_required_field"
+            and "reporting_rule" in item["message"]
+            for item in missing_family_rule_report["errors"]
+        )
+
+        duplicate_member_root = temp_root / "duplicate-member-fixed-family-run"
+        _build_fixed_profile_fixture(duplicate_member_root)
+        _convert_fixed_fixture_to_family(duplicate_member_root)
+        duplicate_member_path = duplicate_member_root / "claim_card.json"
+        duplicate_member_claim = json.loads(
+            duplicate_member_path.read_text(encoding="utf-8")
+        )
+        duplicate_member_claim["analysis_family"]["members"][1]["member_id"] = "M001"
+        _write_json(duplicate_member_path, duplicate_member_claim)
+        duplicate_member_report = validate_run(duplicate_member_root)
+        duplicate_member_detected = any(
+            item["code"] == "duplicate_fixed_family_member_id"
+            for item in duplicate_member_report["errors"]
+        )
+
+        post_result_family_root = temp_root / "post-result-fixed-family-run"
+        _build_fixed_profile_fixture(post_result_family_root)
+        _convert_fixed_fixture_to_family(post_result_family_root)
+        post_result_family_path = post_result_family_root / "claim_card.json"
+        post_result_family_claim = json.loads(
+            post_result_family_path.read_text(encoding="utf-8")
+        )
+        post_result_family_claim["specification_timing"] = "post_result_adaptive"
+        _write_json(post_result_family_path, post_result_family_claim)
+        post_result_family_report = validate_run(post_result_family_root)
+        post_result_family_detected = any(
+            item["code"] == "fixed_family_not_preresult"
+            for item in post_result_family_report["errors"]
+        )
+
+        incomplete_family_root = temp_root / "incomplete-fixed-family-run"
+        _build_fixed_profile_fixture(incomplete_family_root)
+        _convert_fixed_fixture_to_family(incomplete_family_root)
+        incomplete_family_path = incomplete_family_root / "claim_card.json"
+        incomplete_family_claim = json.loads(
+            incomplete_family_path.read_text(encoding="utf-8")
+        )
+        incomplete_family_claim["analysis_family"]["members"][1][
+            "result_status"
+        ] = "not_run"
+        _write_json(incomplete_family_path, incomplete_family_claim)
+        incomplete_family_report = validate_run(incomplete_family_root)
+        incomplete_family_detected = any(
+            item["code"] == "fixed_family_completion_incomplete"
+            for item in incomplete_family_report["errors"]
+        )
+
+        scope_mismatch_root = temp_root / "fixed-scope-mismatch-run"
+        _build_fixed_profile_fixture(scope_mismatch_root)
+        scope_mismatch_path = scope_mismatch_root / "claim_card.json"
+        scope_mismatch_claim = json.loads(
+            scope_mismatch_path.read_text(encoding="utf-8")
+        )
+        scope_mismatch_claim["analysis_family"] = {"members": []}
+        _write_json(scope_mismatch_path, scope_mismatch_claim)
+        scope_mismatch_report = validate_run(scope_mismatch_root)
+        scope_mismatch_detected = any(
+            item["code"] == "fixed_analysis_scope_mismatch"
+            for item in scope_mismatch_report["errors"]
+        )
+
+        legacy_family_root = temp_root / "legacy-schema-fixed-family-run"
+        _build_fixed_profile_fixture(legacy_family_root)
+        _convert_fixed_fixture_to_family(legacy_family_root)
+        legacy_family_manifest_path = legacy_family_root / "run_manifest.json"
+        legacy_family_manifest = json.loads(
+            legacy_family_manifest_path.read_text(encoding="utf-8")
+        )
+        legacy_family_manifest["artifact_schema_version"] = "1.5.0"
+        _write_json(legacy_family_manifest_path, legacy_family_manifest)
+        legacy_family_report = validate_run(legacy_family_root)
+        legacy_family_detected = any(
+            item["code"] == "fixed_family_requires_schema_1_5_1"
+            for item in legacy_family_report["errors"]
+        )
+
         adaptive_root = temp_root / "valid-adaptive-run"
         _build_adaptive_profile_fixture(adaptive_root)
         adaptive_report = validate_run(adaptive_root)
@@ -6920,6 +7384,26 @@ def run_self_test() -> dict[str, Any]:
         fixed_underfit_detected = (
             "profile_underfit_adaptive_artifacts" in fixed_underfit_codes
             and not fixed_underfit_report["valid"]
+        )
+
+        fixed_manifest_state_root = temp_root / "fixed-hidden-adaptive-state-run"
+        _build_fixed_profile_fixture(fixed_manifest_state_root)
+        fixed_manifest_state_path = fixed_manifest_state_root / "run_manifest.json"
+        fixed_manifest_state = json.loads(
+            fixed_manifest_state_path.read_text(encoding="utf-8")
+        )
+        fixed_manifest_state.update(
+            {
+                "decision_contract_applied": False,
+                "decision_status": "not_evaluated",
+                "inventory_version": "v001",
+            }
+        )
+        _write_json(fixed_manifest_state_path, fixed_manifest_state)
+        fixed_manifest_state_report = validate_run(fixed_manifest_state_root)
+        fixed_manifest_state_detected = any(
+            item["code"] == "profile_underfit_adaptive_state"
+            for item in fixed_manifest_state_report["errors"]
         )
 
         upgrade_root = temp_root / "unattested-profile-upgrade-run"
@@ -7777,6 +8261,45 @@ def run_self_test() -> dict[str, Any]:
             and not prior_completion_report["valid"]
         )
 
+        exposure_boundary_root = temp_root / "incomplete-prior-exposure-boundary-run"
+        exposure_boundary_root.mkdir()
+        _build_self_test_fixture(exposure_boundary_root)
+        exposure_boundary_path = exposure_boundary_root / "prior_exposure_audit.json"
+        exposure_boundary_value = json.loads(
+            exposure_boundary_path.read_text(encoding="utf-8")
+        )
+        exposure_boundary_value["projects_or_repositories_in_scope"] = []
+        exposure_boundary_value["sources_checked"] = []
+        exposure_boundary_value["overlap_unit"] = ""
+        _write_json(exposure_boundary_path, exposure_boundary_value)
+        exposure_boundary_report = validate_run(exposure_boundary_root)
+        exposure_boundary_codes = {
+            item["code"] for item in exposure_boundary_report["errors"]
+        }
+        exposure_boundary_detected = (
+            "incomplete_prior_exposure_boundary" in exposure_boundary_codes
+            and not exposure_boundary_report["valid"]
+        )
+
+        unresolved_gap_root = temp_root / "complete-audit-with-unresolved-gap-run"
+        _build_adaptive_profile_fixture(unresolved_gap_root)
+        unresolved_gap_path = unresolved_gap_root / "prior_exposure_audit.json"
+        unresolved_gap_value = json.loads(
+            unresolved_gap_path.read_text(encoding="utf-8")
+        )
+        unresolved_gap_value["unknown_gaps"] = [
+            "one relevant legacy result log is unavailable"
+        ]
+        _write_json(unresolved_gap_path, unresolved_gap_value)
+        unresolved_gap_report = validate_run(unresolved_gap_root)
+        unresolved_gap_codes = {
+            item["code"] for item in unresolved_gap_report["errors"]
+        }
+        unresolved_gap_detected = (
+            "prior_exposure_unresolved_gaps" in unresolved_gap_codes
+            and not unresolved_gap_report["valid"]
+        )
+
         unknown_exposure_root = temp_root / "justified-unknown-exposure-run"
         unknown_exposure_root.mkdir()
         _build_self_test_fixture(unknown_exposure_root)
@@ -7804,6 +8327,42 @@ def run_self_test() -> dict[str, Any]:
         )
         unknown_exposure_report = validate_run(unknown_exposure_root)
         unknown_exposure_valid = unknown_exposure_report["valid"]
+
+        candidate_exposure_reports: dict[str, dict[str, Any]] = {}
+        candidate_exposure_codes: dict[str, set[str]] = {}
+        for profile_name in ("adaptive_search", "coverage_search"):
+            candidate_exposure_root = temp_root / f"{profile_name}-candidate-exposure-mismatch-run"
+            if profile_name == "adaptive_search":
+                _build_adaptive_profile_fixture(candidate_exposure_root)
+            else:
+                candidate_exposure_root.mkdir()
+                _build_self_test_fixture(candidate_exposure_root)
+            candidate_exposure_path = (
+                candidate_exposure_root / "prior_exposure_audit.json"
+            )
+            candidate_exposure_value = json.loads(
+                candidate_exposure_path.read_text(encoding="utf-8")
+            )
+            candidate_exposure_value["audit_status"] = "unknown"
+            candidate_exposure_value["prior_exposure_status"] = "unknown"
+            candidate_exposure_value["unknown_gaps"] = [
+                "one relevant legacy result log is unavailable"
+            ]
+            candidate_exposure_value["confirmatory_status"] = "unknown"
+            _write_json(candidate_exposure_path, candidate_exposure_value)
+            candidate_exposure_report = validate_run(candidate_exposure_root)
+            candidate_exposure_reports[profile_name] = candidate_exposure_report
+            candidate_exposure_codes[profile_name] = {
+                item["code"] for item in candidate_exposure_report["errors"]
+            }
+        candidate_exposure_detected = all(
+            {
+                "candidate_run_prior_exposure_mismatch",
+                "candidate_run_confirmatory_status_mismatch",
+            }.issubset(candidate_exposure_codes[profile_name])
+            and not candidate_exposure_reports[profile_name]["valid"]
+            for profile_name in candidate_exposure_reports
+        )
 
         comparability_root = temp_root / "legacy-comparability-status-run"
         comparability_root.mkdir()
@@ -8169,10 +8728,21 @@ def run_self_test() -> dict[str, Any]:
         if not all(
             (
                 fixed_valid,
+                post_result_single_detected,
+                legacy_fixed_valid,
+                fixed_family_valid,
+                one_member_detected,
+                missing_family_rule_detected,
+                duplicate_member_detected,
+                post_result_family_detected,
+                incomplete_family_detected,
+                scope_mismatch_detected,
+                legacy_family_detected,
                 adaptive_valid,
                 generic_valid,
                 v14_valid,
                 fixed_underfit_detected,
+                fixed_manifest_state_detected,
                 upgrade_preservation_detected,
                 upgrade_claim_preservation_detected,
                 round_hash_detected,
@@ -8204,7 +8774,10 @@ def run_self_test() -> dict[str, Any]:
                 pause_detected,
                 family_metadata_detected,
                 prior_completion_detected,
+                exposure_boundary_detected,
+                unresolved_gap_detected,
                 unknown_exposure_valid,
+                candidate_exposure_detected,
                 comparability_detected,
                 tie_detected,
                 support_limited_candidate_detected,
@@ -8228,10 +8801,21 @@ def run_self_test() -> dict[str, Any]:
                 "reason": "one or more injected faults were not detected",
                 "faults_detected": {
                     "fixed_profile_positive": fixed_valid,
+                    "fixed_single_preresult_freeze": post_result_single_detected,
+                    "schema_1_5_0_fixed_compatibility": legacy_fixed_valid,
+                    "fixed_family_positive": fixed_family_valid,
+                    "fixed_family_minimum_size": one_member_detected,
+                    "fixed_family_required_rules": missing_family_rule_detected,
+                    "fixed_family_unique_member_ids": duplicate_member_detected,
+                    "fixed_family_preresult_freeze": post_result_family_detected,
+                    "fixed_family_completion": incomplete_family_detected,
+                    "fixed_family_scope_consistency": scope_mismatch_detected,
+                    "fixed_family_schema_gate": legacy_family_detected,
                     "adaptive_profile_positive": adaptive_valid,
                     "generic_coverage_profile_positive": generic_valid,
                     "schema_1_4_positive": v14_valid,
                     "fixed_profile_underfit": fixed_underfit_detected,
+                    "fixed_profile_hidden_state": fixed_manifest_state_detected,
                     "profile_upgrade_preservation": upgrade_preservation_detected,
                     "profile_upgrade_claim_preservation": upgrade_claim_preservation_detected,
                     "sealed_round_hash": round_hash_detected,
@@ -8263,7 +8847,10 @@ def run_self_test() -> dict[str, Any]:
                     "incomplete_governance_pause": pause_detected,
                     "family_metadata_mismatch": family_metadata_detected,
                     "incomplete_prior_exposure_completion": prior_completion_detected,
+                    "bounded_prior_exposure_audit": exposure_boundary_detected,
+                    "unresolved_prior_exposure_gap": unresolved_gap_detected,
                     "justified_unknown_exposure_positive": unknown_exposure_valid,
+                    "candidate_run_exposure_alignment": candidate_exposure_detected,
                     "legacy_comparability_status": comparability_detected,
                     "tie_without_common_group": tie_detected,
                     "ineligible_data_support_candidate": support_limited_candidate_detected,
@@ -8283,10 +8870,21 @@ def run_self_test() -> dict[str, Any]:
                 },
                 "family_fixture_report": family_report,
                 "fixed_fixture_report": fixed_report,
+                "post_result_single_fixture_report": post_result_single_report,
+                "legacy_fixed_fixture_report": legacy_fixed_report,
+                "fixed_family_fixture_report": fixed_family_report,
+                "one_member_family_fixture_report": one_member_report,
+                "missing_family_rule_fixture_report": missing_family_rule_report,
+                "duplicate_member_family_fixture_report": duplicate_member_report,
+                "post_result_family_fixture_report": post_result_family_report,
+                "incomplete_family_fixture_report": incomplete_family_report,
+                "scope_mismatch_fixture_report": scope_mismatch_report,
+                "legacy_family_fixture_report": legacy_family_report,
                 "adaptive_fixture_report": adaptive_report,
                 "generic_coverage_fixture_report": generic_report,
                 "schema_1_4_fixture_report": v14_report,
                 "fixed_underfit_fixture_report": fixed_underfit_report,
+                "fixed_manifest_state_fixture_report": fixed_manifest_state_report,
                 "upgrade_fixture_report": upgrade_report,
                 "upgrade_missing_claim_fixture_report": upgrade_missing_claim_report,
                 "round_hash_fixture_report": round_hash_report,
@@ -8319,7 +8917,10 @@ def run_self_test() -> dict[str, Any]:
                 "pause_fixture_report": pause_report,
                 "family_metadata_fixture_report": family_metadata_report,
                 "prior_completion_fixture_report": prior_completion_report,
+                "exposure_boundary_fixture_report": exposure_boundary_report,
+                "unresolved_gap_fixture_report": unresolved_gap_report,
                 "unknown_exposure_fixture_report": unknown_exposure_report,
+                "candidate_exposure_fixture_reports": candidate_exposure_reports,
                 "comparability_fixture_report": comparability_report,
                 "tie_fixture_report": tie_report,
                 "ineligible_support_candidate_fixture_reports": ineligible_support_candidate_reports,
@@ -8343,6 +8944,8 @@ def run_self_test() -> dict[str, Any]:
             "valid_fixture_error_count": valid_report["error_count"],
             "valid_profile_error_counts": {
                 "fixed_test": fixed_report["error_count"],
+                "fixed_test_schema_1_5_0": legacy_fixed_report["error_count"],
+                "fixed_test_frozen_family": fixed_family_report["error_count"],
                 "adaptive_search": adaptive_report["error_count"],
                 "coverage_search_generic": generic_report["error_count"],
                 "coverage_search_legacy": valid_report["error_count"],
@@ -8360,10 +8963,21 @@ def run_self_test() -> dict[str, Any]:
             "valid_unknown_exposure_error_count": unknown_exposure_report["error_count"],
             "faults_detected": {
                 "fixed_profile_positive": True,
+                "fixed_single_preresult_freeze": True,
+                "schema_1_5_0_fixed_compatibility": True,
+                "fixed_family_positive": True,
+                "fixed_family_minimum_size": True,
+                "fixed_family_required_rules": True,
+                "fixed_family_unique_member_ids": True,
+                "fixed_family_preresult_freeze": True,
+                "fixed_family_completion": True,
+                "fixed_family_scope_consistency": True,
+                "fixed_family_schema_gate": True,
                 "adaptive_profile_positive": True,
                 "generic_coverage_profile_positive": True,
                 "schema_1_4_positive": True,
                 "fixed_profile_underfit": True,
+                "fixed_profile_hidden_state": True,
                 "profile_upgrade_preservation": True,
                 "profile_upgrade_claim_preservation": True,
                 "sealed_round_hash": True,
@@ -8395,6 +9009,9 @@ def run_self_test() -> dict[str, Any]:
                 "incomplete_governance_pause": True,
                 "family_metadata_mismatch": True,
                 "incomplete_prior_exposure_completion": True,
+                "bounded_prior_exposure_audit": True,
+                "unresolved_prior_exposure_gap": True,
+                "candidate_run_exposure_alignment": True,
                 "legacy_comparability_status": True,
                 "tie_without_common_group": True,
                 "ineligible_data_support_candidate": True,
@@ -8449,6 +9066,12 @@ def run_self_test() -> dict[str, Any]:
                 "incomplete_governance_pause": sorted(pause_codes),
                 "family_metadata_mismatch": sorted(family_metadata_codes),
                 "incomplete_prior_exposure_completion": sorted(prior_completion_codes),
+                "bounded_prior_exposure_audit": sorted(exposure_boundary_codes),
+                "unresolved_prior_exposure_gap": sorted(unresolved_gap_codes),
+                "candidate_run_exposure_alignment": {
+                    key: sorted(value)
+                    for key, value in candidate_exposure_codes.items()
+                },
                 "legacy_comparability_status": sorted(comparability_codes),
                 "tie_without_common_group": sorted(tie_codes),
                 "ineligible_data_support_candidate": sorted(
@@ -8497,7 +9120,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--init",
         metavar="RUN_DIR",
         type=Path,
-        help="Create a non-overwriting schema-1.5.0 profile-aware Round-0 draft skeleton.",
+        help="Create a non-overwriting schema-1.5.1 profile-aware Round-0 draft skeleton.",
     )
     modes.add_argument(
         "--snapshot-upgrade",
@@ -8524,7 +9147,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.run_dir is not None or args.output is not None or args.to_profile is not None:
             parser.error("--init cannot be combined with run_dir, --output, or --to-profile")
         if args.profile is None:
-            parser.error("--profile is required with --init for schema 1.5.0")
+            parser.error("--profile is required with --init for schema 1.5.1")
         report = initialize_run(args.init, args.profile)
         _emit(report, None)
         return 0 if report.get("init") == "created" else 1

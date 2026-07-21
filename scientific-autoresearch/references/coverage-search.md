@@ -26,7 +26,7 @@ specification_timing
 duplicate_of
 ```
 
-Use `pre_result_frozen` when the entry was fixed before related outcomes were inspected and `post_result_adaptive` otherwise. Preserve every prior inventory version. A new eligible candidate creates a new version and a recorded diff; never silently insert it into an old version. A compatibility schema may retain a legacy mechanism-specific column name, but it must not force nonmechanistic candidates to make mechanistic claims.
+Use `pre_result_frozen` when the entry was fixed before related outcomes were inspected and `post_result_adaptive` otherwise. Preserve every prior inventory version. Batch additions discovered at one audit checkpoint into one successor version and record the diff; never silently insert them into an old version. A compatibility schema may retain a legacy mechanism-specific column name, but it must not force nonmechanistic candidates to make mechanistic claims.
 
 Keep scientifically plausible but currently untestable entries with `candidate_status=needs_data`. They document the boundary of the available data but do not enter the executable coverage denominator.
 
@@ -53,7 +53,7 @@ At Round 0, decide whether the problem warrants a third independent source, such
 
 Track mechanisms separately from measurement, selection, quality, model, feature, simulation, design, and method candidates. Merge semantic duplicates within the appropriate type and record the surviving ID and justification.
 
-A proposed addition is eligible only when it is nonredundant and has at least one distinct prediction that current authorized data can test. Otherwise retain it as duplicate, out of scope, or needs data.
+A proposed addition is eligible as a new candidate only when it has all three: a distinct substantive role, at least one distinct prediction that current authorized data can test, and a possible effect on the frozen decision. A parameter value, threshold, proxy, or implementation variant without a distinct role remains a formulation under its parent candidate. Otherwise retain the proposal as a formulation, duplicate, out of scope, or needs data.
 
 ## 3. Define Finite Coverage Cells
 
@@ -87,7 +87,7 @@ specification_timing
 
 The scientific space may contain any number of candidates over time, but each inventory version and each candidate's executable formulation set must be finite and auditable.
 
-Construct cells through `candidate -> observable or test role -> formulation`. A constrained or full product is valid only when each axis and resulting cell has a frozen substantive, control, or diagnostic role; only decision-eligible cells enter ranking. Do not flatten unrelated candidate types, proxies, and parameter combinations into one ranked pool. For continuous spaces, freeze a substantively justified range plus one of:
+Construct cells through `candidate -> observable or test role -> formulation`. Use the coarsest cell that preserves a distinct scientific falsifier or decision role. One cell may cover a finite parameter domain under a frozen grid, sampling, marginalization, integration, recovery, or convergence rule; do not create one scientific cell per trivial parameter value. A constrained or full product is valid only when each axis and resulting cell has a frozen substantive, control, or diagnostic role; only decision-eligible cells enter ranking. Do not flatten unrelated candidate types, proxies, and parameter combinations into one ranked pool. For continuous spaces, freeze a substantively justified range plus one of:
 
 - a finite grid and resolution;
 - a sampling distribution and draw count;
@@ -126,7 +126,7 @@ Set `inventory_saturated=true` only when all conditions hold:
 
 The required audits must be distinct, prespecified inventory passes; ordinary execution rounds that happen not to suggest a new candidate do not count. Record each source, reviewer or procedure, search scope, date, inventory version, additions, duplicate decisions, and unresolved gaps.
 
-Any new eligible candidate increments `inventory_version`, expands the coverage denominator, and resets the saturation sequence. New data products or a changed scientific question require a new inventory version.
+A batch containing one or more new eligible candidates increments `inventory_version`, expands the coverage denominator, and resets the saturation sequence. Carry forward still-valid closed cells with explicit predecessor links; reopen only cells or families whose scientific meaning, support, formulation, or inference changed. New data products or a changed scientific question require a new inventory version and a recorded affected-scope assessment.
 
 ## 6. Close Coverage
 
@@ -147,7 +147,7 @@ closed eligible cells / all eligible cells in the same inventory version
 
 Declare `coverage_complete=true` only when every eligible cell in that version is closed and the ledger and family-level inference are audited.
 
-Scientific completion requires:
+Scientific completion requires a validated `machine_audited` record and:
 
 ```text
 inventory_saturated
@@ -160,6 +160,8 @@ AND consistency_validator_passed
 ```
 
 Resource, time, cost, authorization, or user-limit exhaustion does not close cells. Use `resource_limited_pause`, `governance_blocked`, or `user_limited_stop`, report every open cell, and preserve an exact resume point.
+
+A `conceptual_record` may support design, execution, and bounded stage or pause reporting. Before claiming `complete_within_scope`, migrate the complete history into the machine-audited schema and pass its consistency checks; do not recreate only the favorable terminal state.
 
 ## 7. Schedule Without Shrinking Coverage
 
@@ -183,4 +185,4 @@ Always preserve the boundary:
 
 > This search does not establish exhaustiveness beyond the data-supported search space.
 
-When the declared candidate class is mechanistic, the more specific wording “mechanisms and observables” is appropriate. Do not write “all possible mechanisms,” “all possible models,” “exhaustive scientific search,” or an equivalent universal claim.
+When the declared candidate class is mechanistic, the more specific wording “mechanisms and observables” is appropriate. In reports, summarize candidate and branch classes with counts and representative conclusions, and link the complete inventory, registry, and ledger; do not narrate every row in prose. Do not write “all possible mechanisms,” “all possible models,” “exhaustive scientific search,” or an equivalent universal claim.

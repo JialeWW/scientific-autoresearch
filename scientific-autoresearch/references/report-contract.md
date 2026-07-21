@@ -1,8 +1,8 @@
 # Report and Artifact Contract
 
-This is an audit and validator-diagnosis reference. Ordinary work should select a profile in `SKILL.md`, let the initializer create its schema, and fill only applicable records. The validator, not prose copied from this page, is authoritative for schema `1.5.0` fields.
+This reference applies to `machine_audited` mode and validator diagnosis. Under the default `conceptual_record` mode, keep the same scientific content in a compact working report or existing project records without creating prescribed filenames. Conceptual coverage work may issue a bounded stage or pause report, but a `complete_within_scope` claim requires migration to a validated machine-audited record. The validator, not prose copied from this page, is authoritative for schema `1.5.1` fields.
 
-`design_only` creates no run directory or artifacts by default. When execution is authorized, initialize an empty path with:
+`design_only` creates no run directory or artifacts by default. `audit_only` inspects existing material and may validate an existing run read-only; it does not initialize an execution run. When machine-audited execution is requested and authorized, initialize an empty path with:
 
 ```text
 python scientific-autoresearch/scripts/validate_run.py --init RUN_DIR --profile PROFILE
@@ -39,13 +39,13 @@ All paths below are relative to the run directory. Conditional files are created
 | `final_report.md` | — | — | only `complete_within_scope` |
 | `consistency_report.json` | required | required | required |
 
-The schema-1.5 coverage initializer uses `inventories/candidate_inventory_vNNN.csv`. `mechanism_inventory_vNNN.csv` remains a legacy-compatible input, but do not maintain both as competing active inventories.
+The schema-1.5.x coverage initializer uses `inventories/candidate_inventory_vNNN.csv`. `mechanism_inventory_vNNN.csv` remains a legacy-compatible input, but do not maintain both as competing active inventories.
 
 Schema `<=1.4` remains readable with its legacy full-run behavior. Do not change only `artifact_schema_version`; migrate profile metadata and artifacts or leave the run legacy.
 
 ## Shared Manifest and Versioned Rounds
 
-Every schema-1.5 run manifest records at least run identity, question, scientific scope, `artifact_schema_version`, `research_profile`, `stage_status`, ordered `profile_history`, execution mode, governance status, data-version-set ID, and `round_artifacts`. Adaptive and coverage profiles add their contract and audit versions; coverage adds its inventory and search fields.
+Every schema-1.5.x run manifest records at least run identity, question, scientific scope, `artifact_schema_version`, `research_profile`, `stage_status`, ordered `profile_history`, execution mode, governance status, data-version-set ID, and `round_artifacts`. Adaptive and coverage profiles add their contract and audit versions; coverage adds its inventory and search fields.
 
 Profiles may only upgrade:
 
@@ -55,7 +55,7 @@ fixed_test -> adaptive_search -> coverage_search
 
 Append the transition and preserve prior exposure, weak results, failures, selections, and earlier artifacts. Never reinitialize or downgrade to erase history.
 
-For a formal run, first validate the current profile, then create the upgrade evidence without overwriting it:
+For an existing machine-audited execution run, first validate the current profile, then create the upgrade evidence without overwriting it:
 
 ```text
 python scientific-autoresearch/scripts/validate_run.py \
@@ -70,19 +70,22 @@ Top-level registries are append-only or versioned. If a frozen contract, family,
 
 ## `fixed_test`: Compact Claim and Result
 
-`claim_card.json` is the sole scientific contract for a true fixed test. The initialized schema includes the required fields; scientifically, it freezes:
+`claim_card.json` is the sole scientific contract for a true frozen analysis. The initialized schema includes the required fields; scientifically, it freezes:
 
-- claim, target and analysis populations, supported sample, estimand, minimum meaningful effect, one analysis or test, and one decision rule;
-- data-version IDs, exclusions and transformations, parameters, seed policy when stochastic, falsifier, specification timing, and prior exposure to overlapping evidence;
+- claim, target and analysis populations, supported sample, estimand, and minimum meaningful effect;
+- `analysis_scope=single_test` or `frozen_family`; for a family, stable member IDs, each member's prespecified role or method, a multiplicity or joint inference rule, and one joint decision rule;
+- data-version IDs, exclusions and transformations, parameters, seed policy when stochastic, prespecified checks and falsifier, specification timing, and prior exposure to overlapping evidence;
 - result status, effect and uncertainty summaries, main caveat, and whether the test completed as scoped.
 
-The round report states the actual inputs, method, assumptions, effect in meaningful units, uncertainty, falsification outcome, result status, limitation, and reproduction recipe. Preserve null, weak, invalid, failed, or unfavorable outcomes. `stage_status=completed_as_scoped` closes the bounded test, not a search.
+The round report states the actual inputs, methods, assumptions, every member needed to reconstruct a joint decision, effects in meaningful units, uncertainty, falsification outcomes, result status, limitations, and reproduction recipe. A prespecified check remains inside the frozen family. Preserve null, weak, invalid, failed, or unfavorable outcomes. `stage_status=completed_as_scoped` closes the bounded analysis, not a search.
+
+For `analysis_scope=frozen_family`, `analysis_family` records `multiplicity_or_joint_inference_rule`, `reporting_rule`, and at least two uniquely identified `members`. Each member records its role, claim or estimand, analysis or test, result status, effect summary, and uncertainty summary. Schema 1.5.0 fixed-test records without `analysis_scope` remain valid as single analyses; frozen families require schema 1.5.1 or later.
 
 If an inspected outcome motivates another candidate, formulation, threshold, sample, statistic, model, or ranking, upgrade before continuing. Preserve the fixed-test record as prior exposure; do not rewrite it as adaptive discovery or independent confirmation.
 
 ## `adaptive_search`: Complete Adaptive Path
 
-Before adaptive outcome access, freeze the Decision Contract, prior-exposure audit, selection families, and data versions. Append to the ledger every generation, modification, screen, data look, retry, failure, retention, ranking, verification-targeting, or promotion step that can influence the decision.
+Before adaptive outcome access, freeze the Decision Contract, bounded prior-exposure audit, selection families, and data versions. Bound the audit by declared projects or repositories, sources, overlap unit, date range or effort budget, and completion rule. Append to the ledger every generation, modification, screen, data look, retry, failure, retention, ranking, verification-targeting, or promotion step that can influence the decision.
 
 The typed `candidate_registry.csv` declares `candidate_type`, substantive eligibility, selection-family identity and version, comparison key, comparability, specification timing, prior-exposure and evidence stages, verification, effects, uncertainty, supporting ledger entries, decision status, and reason. `mechanism_alignment` is decision-bearing only for `candidate_type=mechanism`; nonmechanistic candidates use justified `not_applicable` and still pass the general substantive-eligibility rule.
 
@@ -109,7 +112,7 @@ The saturation audit records the candidate-forward and data-product-reverse audi
 
 Issue `pause_report.md` when user, resource, governance, or other limits end execution with open cells. Include the active version, saturation state, closed/open/invalid/blocked counts, full queue, ledger/family versions, resource use, blocker, and resume requirements. This can be the final deliverable for the authorization window but is not scientific completion.
 
-Issue `final_report.md` only when the validator accepts `search_status=complete_within_scope`. It must report the frozen decision outcome, including ties, inconclusive or no eligible candidate; every weak, null, invalid, failed, support-limited, parallel, needs-data, or blocked branch; selection-path inference; prior exposure and evidence stage; dominant uncertainties; scope boundaries; and what new data or assumptions could extend the search.
+Issue `final_report.md` only when the validator accepts `search_status=complete_within_scope`. Report the frozen decision outcome, including ties, inconclusive or no eligible candidate; summarize counts and conclusions for weak, null, invalid, failed, support-limited, parallel, needs-data, and blocked classes; link the complete registry and ledger; and state selection-path inference, prior exposure, evidence stage, dominant uncertainties, scope boundaries, and what new data or assumptions could extend the search.
 
 ## Round Reports and Reproduction
 

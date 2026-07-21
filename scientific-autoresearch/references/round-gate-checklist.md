@@ -1,6 +1,6 @@
 # Profile-Aware Round Gate
 
-Use this checklist for artifact audit or validator diagnosis after an executed round. `design_only` has no round gate unless the user requested one. Apply the shared items and only the chosen profile section; do not create placeholder work for an inapplicable gate.
+Use this checklist for machine-artifact audit or validator diagnosis after an executed round. `design_only` and `audit_only` have no round gate. Apply the shared items and only the recorded execution profile; do not create placeholder work for an inapplicable gate.
 
 ## Every Executed Profile
 
@@ -16,10 +16,11 @@ Use this checklist for artifact audit or validator diagnosis after an executed r
 
 ## `fixed_test`
 
-- Does `claim_card.json` describe exactly one prespecified claim, sample, analysis or test, and decision rule?
-- Did execution remain inside that frozen test, without outcome-dependent candidates, variants, thresholds, subgroups, screening, or ranking?
+- Does `claim_card.json` describe one prespecified claim and sample with either one analysis or a finite frozen analysis family under a joint decision rule?
+- For a frozen family, are member IDs, member methods or roles, the multiplicity or joint inference rule, and discordance/reporting rule fixed and complete?
+- Did execution apply only the frozen family, including its prespecified gates, assumption, falsification, robustness, screening, or ranking rules, without outcome-informed changes to membership, methods, thresholds, subgroups, rules, or reporting?
 - If the result motivated any addition or modification, was the run upgraded to `adaptive_search` before continuing, with the original result and exposure preserved?
-- Is the report called a completed bounded test rather than a completed search?
+- Is the report called a completed frozen analysis rather than a completed search?
 
 ## `adaptive_search`
 

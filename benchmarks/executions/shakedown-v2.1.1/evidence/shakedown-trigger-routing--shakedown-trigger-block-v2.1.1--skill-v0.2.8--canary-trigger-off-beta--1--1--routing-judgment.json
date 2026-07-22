@@ -1,0 +1,15 @@
+{
+  "case_spec_sha256": "sha256:1f41b351f43e92078d5e6c961afd3142bf8ac43317dc8f249831454ab3ebb9af",
+  "evidence_sha256": "sha256:aa019e370c34634573e96877de08c49809f8eadf06e5d6b4f6a7d8e0dc04b2d4",
+  "execution_identity_sha256": "sha256:6b29c33627e49c3b9c1564ac283253bc1a3ae1b4617d31d8964c06b3326da51e",
+  "predicted_trigger": false,
+  "prompt_sha256": "sha256:d84bdf64648a3ecefea2aabbc9ab9a804d89b0a305e9f4e23f9df559288613a6",
+  "routing_extractor": {
+    "id": "canary-json-routing-extractor",
+    "kind": "deterministic",
+    "version": "1"
+  },
+  "routing_protocol_id": "deterministic-canary-routing-v1",
+  "routing_protocol_sha256": "sha256:e6f87d33212a1ff36de0d31dd54b579135281b9957f6f5d4670cb7cb515a66b9",
+  "scored_at": "2026-07-22T12:16:02+00:00"
+}

@@ -1,0 +1,10 @@
+{
+  "decision_rule": "Read the Boolean predicted_trigger field from the fixture response.",
+  "extractor_identity": {
+    "id": "canary-json-routing-extractor",
+    "kind": "deterministic",
+    "version": "1"
+  },
+  "routing_protocol_id": "deterministic-canary-routing-v1",
+  "routing_protocol_schema_version": "1.0.0"
+}

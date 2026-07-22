@@ -1,0 +1,111 @@
+{
+  "protocol_index_schema_version": "1.1.0",
+  "latest_protocol_version": "2.1.2",
+  "protocols": [
+    {
+      "benchmark_protocol_version": "2.0.0",
+      "release_under_test": "0.2.7",
+      "status": "historical",
+      "manifest_path": "benchmarks/manifest-v2.0.0.json",
+      "manifest_sha256": "sha256:38169dcc0ba0c6c24906a4eb6bf5248e58378347179ff96bddf98d1a2a0f8109",
+      "scorer_path": "benchmarks/score-v2.0.0.py",
+      "scorer_sha256": "sha256:19d8ba84a19c2a450d92b02de6e218cee669a887ac9a56d1bbd0d6c285a9f4a5"
+    },
+    {
+      "benchmark_protocol_version": "2.1.0",
+      "release_under_test": "0.2.8",
+      "status": "historical_not_evaluated",
+      "manifest_path": "benchmarks/manifest.json",
+      "manifest_sha256": "sha256:76063b3f8f6155938a01a7810951ca3beaac84f5cc1f2d34b22aca90c31f2e96",
+      "scorer_path": "benchmarks/score.py",
+      "scorer_sha256": "sha256:409f19d74a69b417b96dfabea7c62d1973e96b0dc04957937a00144ae1d92549"
+    },
+    {
+      "benchmark_protocol_version": "2.1.1",
+      "release_under_test": "0.2.8",
+      "status": "superseded_review_no_go_not_evaluated",
+      "manifest_path": "benchmarks/manifest-v2.1.1.json",
+      "manifest_sha256": "sha256:cf3943270a4d2645eb96ce0a4ba583894577b731723363477a4de4ac6e1ec724",
+      "scorer_path": "benchmarks/score-v2.1.1.py",
+      "scorer_sha256": "sha256:801e17a84bc04c00cb0ec1757bdaf2b5c6da6ee3b51def90b715824c3c7c889f"
+    },
+    {
+      "benchmark_protocol_version": "2.1.2",
+      "release_under_test": "0.2.8",
+      "status": "current_protocol_not_evaluated",
+      "manifest_path": "benchmarks/manifest-v2.1.2.json",
+      "manifest_sha256": "sha256:792f6cfcf75ca8c736a48cedaf7c68bfb46c42ca7c3b3eb276e1c4c47a6ebce4",
+      "scorer_path": "benchmarks/score-v2.1.2.py",
+      "scorer_sha256": "sha256:304ecc719aeafa2b131cba890c3459a85bf30a0eb930e3a66d81c52d38d8aca4"
+    }
+  ],
+  "results": [
+    {
+      "path": "benchmarks/results/v0.2.7.json",
+      "result_sha256": "sha256:245195e6c8d330ada7a000305b7d45e8a2aa773feb121a24edb52734edc5e842",
+      "result_schema_version": "2.0.0",
+      "skill_release": "0.2.7",
+      "benchmark_protocol_version": "2.0.0",
+      "manifest_sha256": "sha256:38169dcc0ba0c6c24906a4eb6bf5248e58378347179ff96bddf98d1a2a0f8109"
+    },
+    {
+      "path": "benchmarks/results/v0.2.8.json",
+      "result_sha256": "sha256:1d334d4273be58c5767b1f9a93499376414d798d21e2e7f03fd8d6be78c207e4",
+      "result_schema_version": "2.1.0",
+      "skill_release": "0.2.8",
+      "benchmark_protocol_version": "2.1.0",
+      "manifest_sha256": "sha256:76063b3f8f6155938a01a7810951ca3beaac84f5cc1f2d34b22aca90c31f2e96"
+    }
+  ],
+  "legacy_unbound_results": [
+    "benchmarks/results/v0.2.6.json"
+  ],
+  "executions": [
+    {
+      "execution_manifest_id": "scientific-autoresearch-shakedown-v2.1.1-20260722",
+      "execution_purpose": "execution_shakedown",
+      "benchmark_protocol_version": "2.1.1",
+      "manifest_path": "benchmarks/execution-manifest-shakedown-v2.1.1.json",
+      "manifest_sha256": "sha256:7edd65ffd0d5351b3bfc4e25c729e9f04358364f081c6b4be62564ba53839951",
+      "protocol_template_path": null,
+      "protocol_template_sha256": null,
+      "protocol_projection_sha256": null,
+      "scorer_path": "benchmarks/score-v2.1.1.py",
+      "scorer_sha256": "sha256:801e17a84bc04c00cb0ec1757bdaf2b5c6da6ee3b51def90b715824c3c7c889f",
+      "harness_path": "benchmarks/shakedown-harness.py",
+      "harness_sha256": "sha256:3abacf79911b14c9ee9be5d5350552a9fae0eaa2493f1d3e2449d6784fa6f115",
+      "records_path": "benchmarks/executions/shakedown-v2.1.1/records.jsonl",
+      "records_sha256": "sha256:228909085a740fe62ede7706950bf2c144c26b77bff3336cd99c004c861f6ed8",
+      "evidence_root": "benchmarks/executions/shakedown-v2.1.1/evidence",
+      "evidence_tree_sha256": "sha256:3237ee172a9335ffb90eb2682cf896a38a2587fa27646bbff110683648fdf663",
+      "result_path": "benchmarks/executions/shakedown-v2.1.1/result.json",
+      "result_sha256": "sha256:6b00547600fbe33595353fb7c751a7764c5b5310b53aefa8ef6f79cd0cec4303",
+      "receipt_path": "benchmarks/executions/shakedown-v2.1.1/execution-receipt.json",
+      "receipt_sha256": "sha256:00345d7b8dde3c462b4a30660cad3aa98e08aee437ebbf76cc85bbca37eb3faa",
+      "evidence_status": "not_evaluated"
+    },
+    {
+      "execution_manifest_id": "scientific-autoresearch-shakedown-v2.1.2-20260722",
+      "execution_purpose": "execution_shakedown",
+      "benchmark_protocol_version": "2.1.2",
+      "manifest_path": "benchmarks/execution-manifest-shakedown-v2.1.2.json",
+      "manifest_sha256": "sha256:7abd6dcff28b7f6f6dc5f0f9850d9f0f5926605ec5c26169af4867b425fcb96f",
+      "protocol_template_path": "benchmarks/manifest-shakedown-v2.1.2.json",
+      "protocol_template_sha256": "sha256:8e491f40b22782b4a996510151278972d1094794ecc5252f6f514f0a65f4a4d2",
+      "protocol_projection_sha256": "sha256:7df75f437dc7fc273d8fb78faddb735da57b88d718679ac2e532078a1159e368",
+      "scorer_path": "benchmarks/score-v2.1.2.py",
+      "scorer_sha256": "sha256:304ecc719aeafa2b131cba890c3459a85bf30a0eb930e3a66d81c52d38d8aca4",
+      "harness_path": "benchmarks/shakedown-harness-v2.1.2.py",
+      "harness_sha256": "sha256:74d166aa8086cac77b073fb8e88773513d4d0e38160a25cc33f1698fd42d7af6",
+      "records_path": "benchmarks/executions/shakedown-v2.1.2/records.jsonl",
+      "records_sha256": "sha256:3c1894aa4d2707c26d5101fe9ee21707852b929ff510472e400e8e58e1407282",
+      "evidence_root": "benchmarks/executions/shakedown-v2.1.2/evidence",
+      "evidence_tree_sha256": "sha256:edf4945ea2db925296df4fd9bed027835231ba813c6de01d64f5c89c0bcf2f6a",
+      "result_path": "benchmarks/executions/shakedown-v2.1.2/result.json",
+      "result_sha256": "sha256:2efbea7021e917941f3cfd23ab998fc5a70bc7e0fe33945f5f52c23fd9f8434e",
+      "receipt_path": "benchmarks/executions/shakedown-v2.1.2/execution-receipt.json",
+      "receipt_sha256": "sha256:5147014f7a7aa4b0b9ef580183d2fd2dce62ffc3a000dbd1759bb6253ad91b50",
+      "evidence_status": "not_evaluated"
+    }
+  ]
+}

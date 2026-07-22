@@ -1,0 +1,27 @@
+{
+  "execution_config_schema_version": "1.1.0",
+  "redactions": [],
+  "shared_execution_config": {
+    "context_policy": "load exactly one package artifact per skill condition; load none for no-skill",
+    "generation_parameters": {
+      "fixture_mode": "deterministic",
+      "temperature": 0
+    },
+    "harness_identity": {
+      "assurance": {
+        "artifact": {
+          "format": "single-file-sha256-v1",
+          "path": "benchmarks/shakedown-harness-v2.1.2.py",
+          "sha256": "sha256:74d166aa8086cac77b073fb8e88773513d4d0e38160a25cc33f1698fd42d7af6"
+        },
+        "attestation_artifact": null,
+        "mode": "artifact_verified"
+      },
+      "id": "scientific-autoresearch-shakedown-harness",
+      "version": "2.1.2"
+    },
+    "isolated_sessions": true,
+    "timeout_seconds": 60,
+    "tool_policy": "no external tools; local artifact reads and writes only"
+  }
+}

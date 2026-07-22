@@ -1,0 +1,22 @@
+{
+  "attempt": 1,
+  "case_id": "canary-trigger-on-beta",
+  "comparison_block_id": "shakedown-trigger-block-v2.1.1",
+  "condition_id": "skill-v0.2.6",
+  "execution_purpose": "execution_shakedown",
+  "failure": null,
+  "fixture_evidence_schema_version": "1.0.0",
+  "fixture_response": {
+    "predicted_trigger": true
+  },
+  "package_load_receipt": {
+    "artifact_sha256": "sha256:368c215f36fb4b9f66bd760726a686118e3de8a23ff883de58cf9987b31e442c",
+    "behavior_package_sha256": "sha256:d7dc173bd510eff7384f59d807600e8f1a6de7f5d9ff52ef3800dac77d16e547",
+    "load_status": "loaded_from_verified_artifact",
+    "skill_md_sha256": "sha256:3c7d3e9dfa6c96acc6442120f5cd153b63617bb868e2f23f9bbace0f6e09b7c9",
+    "skill_release": "0.2.6"
+  },
+  "replicate": 1,
+  "run_status": "completed",
+  "suite_id": "shakedown-trigger-routing"
+}

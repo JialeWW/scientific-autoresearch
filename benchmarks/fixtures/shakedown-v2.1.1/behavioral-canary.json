@@ -1,0 +1,34 @@
+{
+  "evals": [
+    {
+      "id": "canary-behavior-alpha",
+      "prompt": "CANARY_BEHAVIOR_ALPHA",
+      "assertions": [
+        "The fixture response is structurally scoreable.",
+        "The fixture response preserves the non-evaluation boundary."
+      ],
+      "assertion_ids": [
+        "a01",
+        "a02"
+      ],
+      "critical_assertion_ids": [
+        "a02"
+      ]
+    },
+    {
+      "id": "canary-behavior-beta",
+      "prompt": "CANARY_BEHAVIOR_BETA",
+      "assertions": [
+        "The fixture response binds the expected assertion IDs.",
+        "The fixture response is emitted from an isolated attempt."
+      ],
+      "assertion_ids": [
+        "a01",
+        "a02"
+      ],
+      "critical_assertion_ids": [
+        "a02"
+      ]
+    }
+  ]
+}

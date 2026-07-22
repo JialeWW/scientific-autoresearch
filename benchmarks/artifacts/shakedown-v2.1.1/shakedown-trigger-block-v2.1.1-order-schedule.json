@@ -1,0 +1,48 @@
+{
+  "assignments": [
+    {
+      "case_id": "canary-trigger-off-alpha",
+      "condition_order": [
+        "skill-v0.2.8",
+        "no-skill",
+        "skill-v0.2.7",
+        "skill-v0.2.6"
+      ],
+      "replicate": 1
+    },
+    {
+      "case_id": "canary-trigger-off-beta",
+      "condition_order": [
+        "no-skill",
+        "skill-v0.2.7",
+        "skill-v0.2.6",
+        "skill-v0.2.8"
+      ],
+      "replicate": 1
+    },
+    {
+      "case_id": "canary-trigger-on-alpha",
+      "condition_order": [
+        "skill-v0.2.7",
+        "skill-v0.2.6",
+        "skill-v0.2.8",
+        "no-skill"
+      ],
+      "replicate": 1
+    },
+    {
+      "case_id": "canary-trigger-on-beta",
+      "condition_order": [
+        "skill-v0.2.6",
+        "skill-v0.2.8",
+        "no-skill",
+        "skill-v0.2.7"
+      ],
+      "replicate": 1
+    }
+  ],
+  "comparison_block_id": "shakedown-trigger-block-v2.1.1",
+  "generation_method": "seeded_balanced_rotation_v1",
+  "order_generation_seed": 2111,
+  "order_schedule_schema_version": "1.0.0"
+}

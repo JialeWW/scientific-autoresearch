@@ -1,0 +1,18 @@
+{
+  "adjudication_policy": "single deterministic fixture judgment; no adjudication",
+  "blinding": "condition labels are not used by the deterministic fixture judge",
+  "independent_judgments_per_output": 1,
+  "judge_identity": {
+    "id": "canary-assertion-map-judge",
+    "kind": "deterministic",
+    "panel_size": 1,
+    "version": "1"
+  },
+  "judge_protocol_id": "deterministic-canary-judge-v1",
+  "judge_protocol_schema_version": "1.0.0",
+  "prompt_artifact": {
+    "path": "benchmarks/fixtures/shakedown-v2.1.1/judge-prompt.txt",
+    "sha256": "sha256:42ac4692381cde8513eb5fc2e078aaaed730af5e0a92b2b50fdf2299bc2b8e55"
+  },
+  "rubric_version": "canary-structure-v1"
+}

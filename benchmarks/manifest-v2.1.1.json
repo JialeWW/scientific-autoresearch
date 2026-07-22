@@ -1,0 +1,191 @@
+{
+  "benchmark_schema_version": "2.1.1",
+  "benchmark_protocol_version": "2.1.1",
+  "protocol_id": "scientific-autoresearch-benchmark-v2.1.1",
+  "release_under_test": "0.2.8",
+  "benchmark_status": "protocol_2_1_1_defined_not_evaluated",
+  "manifest_kind": "protocol_template",
+  "execution_manifest_id": null,
+  "execution_purpose": null,
+  "frozen_at": null,
+  "record_schema_version": "2.1.0",
+  "scorer_sha256": "801e17a84bc04c00cb0ec1757bdaf2b5c6da6ee3b51def90b715824c3c7c889f",
+  "evaluation_state_vocabulary": [
+    "not_evaluated",
+    "development_suite_evaluated",
+    "sealed_suite_baseline_established",
+    "prospective_release_gate_evaluated",
+    "empirical_method_evaluated"
+  ],
+  "suites": [
+    {
+      "suite_id": "trigger-routing",
+      "protocol_status": "awaiting_execution_freeze",
+      "record_type": "trigger",
+      "scoring_backend": "score.py",
+      "evidence_type": "behavioral_conformance",
+      "target": "skill activation and adjacent-task nonactivation",
+      "case_source": {
+        "path": "scientific-autoresearch/evals/eval_queries.json",
+        "sha256": "sha256:0fe6d9302df069f207ef121ce71ad91afe035c43c138014a5b8f0058cfe369ba",
+        "collection_key": null,
+        "case_id_field": "id",
+        "prompt_field": "query",
+        "role": "development"
+      },
+      "conditions": [
+        {"condition_id": "skill-v0.2.8", "skill_release": "0.2.8", "skill_package_sha256": "sha256:ea5a9e5d33720ab3b6cc2bb094f2cdf52da1c8a2031786a0091901aee2719412", "package_assurance": {"mode": "artifact_verified", "artifact": {"path": "benchmarks/artifacts/packages/scientific-autoresearch-v0.2.8.zip", "sha256": "sha256:4bfdf765018e8026d7ecd8f7dbe9bc423ffc237827b8ad5b9d901e23d7becbb9", "format": "scientific-autoresearch-behavior-package-zip-v1"}, "attestation_artifact": null}},
+        {"condition_id": "skill-v0.2.7", "skill_release": "0.2.7", "skill_package_sha256": "sha256:20b2fe538932919c54863277e8cc677e1b375d79d379577272727a0553e72fa9", "package_assurance": {"mode": "artifact_verified", "artifact": {"path": "benchmarks/artifacts/packages/scientific-autoresearch-v0.2.7.zip", "sha256": "sha256:d24c3f166682f755043b10debd1dc5f4c98e7e7028b46e1a38c14ee0a0606d7b", "format": "scientific-autoresearch-behavior-package-zip-v1"}, "attestation_artifact": null}},
+        {"condition_id": "skill-v0.2.6", "skill_release": "0.2.6", "skill_package_sha256": "sha256:d7dc173bd510eff7384f59d807600e8f1a6de7f5d9ff52ef3800dac77d16e547", "package_assurance": {"mode": "artifact_verified", "artifact": {"path": "benchmarks/artifacts/packages/scientific-autoresearch-v0.2.6.zip", "sha256": "sha256:368c215f36fb4b9f66bd760726a686118e3de8a23ff883de58cf9987b31e442c", "format": "scientific-autoresearch-behavior-package-zip-v1"}, "attestation_artifact": null}},
+        {"condition_id": "no-skill", "skill_release": null, "skill_package_sha256": null, "package_assurance": {"mode": "not_applicable", "artifact": null, "attestation_artifact": null}}
+      ],
+      "evaluation_unit": "one case in one isolated execution attempt",
+      "repetitions": 5,
+      "primary_estimands": ["trigger_balanced_accuracy_delta"],
+      "secondary_estimands": ["case_level_win_loss_tie", "absolute_condition_scores"],
+      "diagnostic_estimands": ["completed_output_confusion", "agent_failure_rate", "infrastructure_retry_count"],
+      "aggregation_method_id": "trigger_paired_truth_stratified_case_macro_v1",
+      "aggregation_rule": "Compute paired case-by-replicate credit differences, average replicates within case, then form a truth-stratified case macro difference.",
+      "interval_rule": {
+        "method": "paired_stratified_case_cluster_bootstrap",
+        "bootstrap_unit": "case",
+        "draws": 2000,
+        "seed": 20260722,
+        "confidence": 0.95
+      },
+      "tie_rule": {"unit": "case_mean", "absolute_delta_threshold": 0.0},
+      "missing_run_policy": "comparison_incomplete_no_paired_delta",
+      "failure_retry_policy": {
+        "maximum_infrastructure_retries": 1,
+        "retry_eligible_statuses": ["harness_error", "provider_error", "cancelled_before_execution"],
+        "retain_all_attempts": true,
+        "scoring_attempt_selection_rule": "first_non_retry_eligible_attempt",
+        "agent_failure_scoring": "zero_credit"
+      },
+      "uncertainty_design": {
+        "case_variation": "case_cluster_bootstrap",
+        "execution_stochasticity": "within_case_paired_replicates_when_available",
+        "judge_uncertainty": "not_applicable"
+      },
+      "interpretation_scope_id": "development_only_no_generalization_v1",
+      "interpretation_rule": "Development evidence only; do not infer a release gate or deployment generalization.",
+      "comparison_blocks": []
+    },
+    {
+      "suite_id": "behavioral-profile-routing",
+      "protocol_status": "awaiting_execution_freeze",
+      "record_type": "behavioral",
+      "scoring_backend": "score.py",
+      "evidence_type": "behavioral_conformance",
+      "target": "profile selection and safeguard behavior",
+      "case_source": {
+        "path": "scientific-autoresearch/evals/evals.json",
+        "sha256": "sha256:6da70bcdf3e7a94d8d7faac05830bcbe37ad16161ba0af6b4919c710732c7d92",
+        "collection_key": "evals",
+        "case_id_field": "id",
+        "prompt_field": "prompt",
+        "role": "development"
+      },
+      "conditions": [
+        {"condition_id": "skill-v0.2.8", "skill_release": "0.2.8", "skill_package_sha256": "sha256:ea5a9e5d33720ab3b6cc2bb094f2cdf52da1c8a2031786a0091901aee2719412", "package_assurance": {"mode": "artifact_verified", "artifact": {"path": "benchmarks/artifacts/packages/scientific-autoresearch-v0.2.8.zip", "sha256": "sha256:4bfdf765018e8026d7ecd8f7dbe9bc423ffc237827b8ad5b9d901e23d7becbb9", "format": "scientific-autoresearch-behavior-package-zip-v1"}, "attestation_artifact": null}},
+        {"condition_id": "skill-v0.2.7", "skill_release": "0.2.7", "skill_package_sha256": "sha256:20b2fe538932919c54863277e8cc677e1b375d79d379577272727a0553e72fa9", "package_assurance": {"mode": "artifact_verified", "artifact": {"path": "benchmarks/artifacts/packages/scientific-autoresearch-v0.2.7.zip", "sha256": "sha256:d24c3f166682f755043b10debd1dc5f4c98e7e7028b46e1a38c14ee0a0606d7b", "format": "scientific-autoresearch-behavior-package-zip-v1"}, "attestation_artifact": null}},
+        {"condition_id": "skill-v0.2.6", "skill_release": "0.2.6", "skill_package_sha256": "sha256:d7dc173bd510eff7384f59d807600e8f1a6de7f5d9ff52ef3800dac77d16e547", "package_assurance": {"mode": "artifact_verified", "artifact": {"path": "benchmarks/artifacts/packages/scientific-autoresearch-v0.2.6.zip", "sha256": "sha256:368c215f36fb4b9f66bd760726a686118e3de8a23ff883de58cf9987b31e442c", "format": "scientific-autoresearch-behavior-package-zip-v1"}, "attestation_artifact": null}},
+        {"condition_id": "no-skill", "skill_release": null, "skill_package_sha256": null, "package_assurance": {"mode": "not_applicable", "artifact": null, "attestation_artifact": null}}
+      ],
+      "evaluation_unit": "one case in one isolated execution attempt",
+      "repetitions": 5,
+      "primary_estimands": ["behavioral_case_macro_delta", "critical_violation_risk_difference"],
+      "secondary_estimands": ["case_all_pass_rate_delta", "case_level_win_loss_tie", "critical_violation_discordance", "absolute_condition_scores"],
+      "diagnostic_estimands": ["assertion_micro_pass_rate", "agent_failure_rate", "infrastructure_retry_count"],
+      "aggregation_method_id": "behavioral_paired_case_macro_v1",
+      "aggregation_rule": "Compute paired case-by-replicate differences, average replicates within case, then weight cases equally.",
+      "interval_rule": {
+        "method": "paired_case_cluster_bootstrap",
+        "bootstrap_unit": "case",
+        "draws": 2000,
+        "seed": 20260722,
+        "confidence": 0.95
+      },
+      "tie_rule": {"unit": "case_mean", "absolute_delta_threshold": 0.0},
+      "missing_run_policy": "comparison_incomplete_no_paired_delta",
+      "failure_retry_policy": {
+        "maximum_infrastructure_retries": 1,
+        "retry_eligible_statuses": ["harness_error", "provider_error", "cancelled_before_execution"],
+        "retain_all_attempts": true,
+        "scoring_attempt_selection_rule": "first_non_retry_eligible_attempt",
+        "agent_failure_scoring": "zero_credit"
+      },
+      "uncertainty_design": {
+        "case_variation": "case_cluster_bootstrap",
+        "execution_stochasticity": "within_case_paired_replicates_when_available",
+        "judge_uncertainty": "not_estimable_without_repeated_independent_judgments"
+      },
+      "interpretation_scope_id": "development_only_no_generalization_v1",
+      "interpretation_rule": "Development evidence only; do not infer a release gate or deployment generalization.",
+      "comparison_blocks": []
+    },
+    {
+      "suite_id": "empirical-operating-characteristics",
+      "protocol_status": "draft",
+      "record_type": "empirical",
+      "scoring_backend": "external",
+      "evidence_type": "empirical_method_validation",
+      "target": "end-to-end behavior under known or defensible truth",
+      "case_source": null,
+      "conditions": [
+        {"condition_id": "skill-v0.2.8", "skill_release": "0.2.8", "skill_package_sha256": "sha256:ea5a9e5d33720ab3b6cc2bb094f2cdf52da1c8a2031786a0091901aee2719412", "package_assurance": {"mode": "artifact_verified", "artifact": {"path": "benchmarks/artifacts/packages/scientific-autoresearch-v0.2.8.zip", "sha256": "sha256:4bfdf765018e8026d7ecd8f7dbe9bc423ffc237827b8ad5b9d901e23d7becbb9", "format": "scientific-autoresearch-behavior-package-zip-v1"}, "attestation_artifact": null}},
+        {"condition_id": "skill-v0.2.7", "skill_release": "0.2.7", "skill_package_sha256": "sha256:20b2fe538932919c54863277e8cc677e1b375d79d379577272727a0553e72fa9", "package_assurance": {"mode": "artifact_verified", "artifact": {"path": "benchmarks/artifacts/packages/scientific-autoresearch-v0.2.7.zip", "sha256": "sha256:d24c3f166682f755043b10debd1dc5f4c98e7e7028b46e1a38c14ee0a0606d7b", "format": "scientific-autoresearch-behavior-package-zip-v1"}, "attestation_artifact": null}},
+        {"condition_id": "no-skill", "skill_release": null, "skill_package_sha256": null, "package_assurance": {"mode": "not_applicable", "artifact": null, "attestation_artifact": null}},
+        {"condition_id": "component-ablations", "skill_release": "0.2.8", "skill_package_sha256": "sha256:ea5a9e5d33720ab3b6cc2bb094f2cdf52da1c8a2031786a0091901aee2719412", "package_assurance": {"mode": "artifact_verified", "artifact": {"path": "benchmarks/artifacts/packages/scientific-autoresearch-v0.2.8.zip", "sha256": "sha256:4bfdf765018e8026d7ecd8f7dbe9bc423ffc237827b8ad5b9d901e23d7becbb9", "format": "scientific-autoresearch-behavior-package-zip-v1"}, "attestation_artifact": null}}
+      ],
+      "evaluation_unit": "to be frozen with the known-truth scenario family",
+      "repetitions": null,
+      "primary_estimands": ["false_promotion_rate", "detection_power", "interval_coverage", "false_completion_rate"],
+      "secondary_estimands": ["run_reproducibility", "record_completeness"],
+      "diagnostic_estimands": [],
+      "aggregation_rule": null,
+      "interval_rule": null,
+      "tie_rule": null,
+      "missing_run_policy": null,
+      "failure_retry_policy": null,
+      "uncertainty_design": null,
+      "interpretation_rule": null,
+      "comparison_blocks": []
+    }
+  ],
+  "result_policy": {
+    "development_and_sealed_cases_separate": true,
+    "raw_outputs_and_all_attempts_required": true,
+    "complete_cross_condition_pairing_required_for_deltas": true,
+    "condition_is_the_only_allowed_scientific_treatment_difference": true,
+    "hash_verified_config_schedule_and_judge_artifacts_required": true,
+    "uncertainty_reported_only_for_observed_replication_levels": true,
+    "scope_claims_to_tested_blocks": true,
+    "comparison_blocks_never_pooled": true,
+    "structural_checks_do_not_establish_behavioral_or_empirical_validity": true
+  },
+  "sealed_suite_policy": {
+    "status": "not_established",
+    "required_commitment_fields": [
+      "sealed_suite_id",
+      "case_count",
+      "stratum_counts",
+      "case_bundle_commitment_sha256",
+      "rubric_bundle_commitment_sha256",
+      "frozen_at",
+      "custodian",
+      "access_policy",
+      "retirement_policy"
+    ],
+    "first_use_status": "sealed_suite_baseline_established",
+    "prospective_gate_must_be_frozen_before_target_release": true,
+    "leaked_or_tuning_exposed_suite_becomes_development": true,
+    "rotation_policy_required_before_reuse": true
+  },
+  "protocol_invalidation_policy": {
+    "comparison_validity_defect_invalidates_entire_affected_block": true,
+    "partial_result_repair_forbidden": true,
+    "repair_requires_new_protocol_or_scorer_patch_version": true,
+    "superseded_batches_retain_original_attempts_and_invalidation_reason": true
+  }
+}

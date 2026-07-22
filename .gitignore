@@ -11,6 +11,9 @@ build/
 *.egg-info/
 *.tar.gz
 *.zip
+!benchmarks/artifacts/packages/scientific-autoresearch-v0.2.6.zip
+!benchmarks/artifacts/packages/scientific-autoresearch-v0.2.7.zip
+!benchmarks/artifacts/packages/scientific-autoresearch-v0.2.8.zip
 *.log
 *.tmp
 *-workspace/

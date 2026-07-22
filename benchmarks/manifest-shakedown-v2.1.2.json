@@ -1,0 +1,347 @@
+{
+  "benchmark_protocol_version": "2.1.2",
+  "benchmark_schema_version": "2.1.2",
+  "benchmark_status": "shakedown_protocol_2_1_2_defined_not_evaluated",
+  "evaluation_state_vocabulary": [
+    "not_evaluated",
+    "development_suite_evaluated",
+    "sealed_suite_baseline_established",
+    "prospective_release_gate_evaluated",
+    "empirical_method_evaluated"
+  ],
+  "execution_manifest_id": null,
+  "execution_purpose": null,
+  "frozen_at": null,
+  "manifest_kind": "protocol_template",
+  "protocol_id": "scientific-autoresearch-shakedown-benchmark-v2.1.2",
+  "protocol_invalidation_policy": {
+    "assignable_evidence_or_judgment_defect_is_block_local": true,
+    "comparison_validity_defect_invalidates_entire_affected_block": true,
+    "partial_result_repair_forbidden": true,
+    "repair_requires_new_protocol_or_scorer_patch_version": true,
+    "superseded_batches_retain_original_attempts_and_invalidation_reason": true,
+    "unassignable_orphan_or_unsafe_evidence_is_submission_invalid": true
+  },
+  "protocol_projection_profile": "scientific-autoresearch-immutable-protocol-v1",
+  "protocol_projection_sha256": "sha256:7df75f437dc7fc273d8fb78faddb735da57b88d718679ac2e532078a1159e368",
+  "protocol_scope": "execution_shakedown",
+  "protocol_template_artifact": null,
+  "record_schema_version": "2.1.0",
+  "release_under_test": "0.2.8",
+  "result_policy": {
+    "comparison_blocks_never_pooled": true,
+    "complete_cross_condition_pairing_required_for_deltas": true,
+    "condition_is_the_only_allowed_scientific_treatment_difference": true,
+    "development_and_sealed_cases_separate": true,
+    "execution_manifest_must_match_parent_protocol_projection": true,
+    "hash_verified_config_schedule_and_judge_artifacts_required": true,
+    "raw_outputs_and_all_attempts_required": true,
+    "scope_claims_to_tested_blocks": true,
+    "structural_checks_do_not_establish_behavioral_or_empirical_validity": true,
+    "uncertainty_reported_only_for_observed_replication_levels": true
+  },
+  "scorer_sha256": "304ecc719aeafa2b131cba890c3459a85bf30a0eb930e3a66d81c52d38d8aca4",
+  "sealed_suite_policy": {
+    "first_use_status": "sealed_suite_baseline_established",
+    "leaked_or_tuning_exposed_suite_becomes_development": true,
+    "prospective_gate_must_be_frozen_before_target_release": true,
+    "required_commitment_fields": [
+      "sealed_suite_id",
+      "case_count",
+      "stratum_counts",
+      "case_bundle_commitment_sha256",
+      "rubric_bundle_commitment_sha256",
+      "frozen_at",
+      "custodian",
+      "access_policy",
+      "retirement_policy"
+    ],
+    "rotation_policy_required_before_reuse": true,
+    "status": "not_established"
+  },
+  "suites": [
+    {
+      "aggregation_method_id": "trigger_paired_truth_stratified_case_macro_v1",
+      "aggregation_rule": "Compute paired case-by-replicate credit differences, average replicates within case, then form a truth-stratified case macro difference.",
+      "case_source": {
+        "case_id_field": "id",
+        "collection_key": null,
+        "path": "benchmarks/fixtures/shakedown-v2.1.2/trigger-canary.json",
+        "prompt_field": "query",
+        "role": "shakedown",
+        "sha256": "sha256:fcee039a5ca993aef2d1ebb899bbcb4bb342046248330e8a23414b056f0a7a1c"
+      },
+      "comparison_blocks": [],
+      "conditions": [
+        {
+          "condition_id": "skill-v0.2.8",
+          "package_assurance": {
+            "artifact": {
+              "format": "scientific-autoresearch-behavior-package-zip-v1",
+              "path": "benchmarks/artifacts/packages/scientific-autoresearch-v0.2.8.zip",
+              "sha256": "sha256:4bfdf765018e8026d7ecd8f7dbe9bc423ffc237827b8ad5b9d901e23d7becbb9"
+            },
+            "attestation_artifact": null,
+            "mode": "artifact_verified"
+          },
+          "skill_package_sha256": "sha256:ea5a9e5d33720ab3b6cc2bb094f2cdf52da1c8a2031786a0091901aee2719412",
+          "skill_release": "0.2.8"
+        },
+        {
+          "condition_id": "skill-v0.2.7",
+          "package_assurance": {
+            "artifact": {
+              "format": "scientific-autoresearch-behavior-package-zip-v1",
+              "path": "benchmarks/artifacts/packages/scientific-autoresearch-v0.2.7.zip",
+              "sha256": "sha256:d24c3f166682f755043b10debd1dc5f4c98e7e7028b46e1a38c14ee0a0606d7b"
+            },
+            "attestation_artifact": null,
+            "mode": "artifact_verified"
+          },
+          "skill_package_sha256": "sha256:20b2fe538932919c54863277e8cc677e1b375d79d379577272727a0553e72fa9",
+          "skill_release": "0.2.7"
+        },
+        {
+          "condition_id": "skill-v0.2.6",
+          "package_assurance": {
+            "artifact": {
+              "format": "scientific-autoresearch-behavior-package-zip-v1",
+              "path": "benchmarks/artifacts/packages/scientific-autoresearch-v0.2.6.zip",
+              "sha256": "sha256:368c215f36fb4b9f66bd760726a686118e3de8a23ff883de58cf9987b31e442c"
+            },
+            "attestation_artifact": null,
+            "mode": "artifact_verified"
+          },
+          "skill_package_sha256": "sha256:d7dc173bd510eff7384f59d807600e8f1a6de7f5d9ff52ef3800dac77d16e547",
+          "skill_release": "0.2.6"
+        },
+        {
+          "condition_id": "no-skill",
+          "package_assurance": {
+            "artifact": null,
+            "attestation_artifact": null,
+            "mode": "not_applicable"
+          },
+          "skill_package_sha256": null,
+          "skill_release": null
+        }
+      ],
+      "diagnostic_estimands": [
+        "completed_output_confusion",
+        "agent_failure_rate",
+        "infrastructure_retry_count"
+      ],
+      "evaluation_unit": "one case in one isolated execution attempt",
+      "evidence_type": "behavioral_conformance",
+      "failure_retry_policy": {
+        "agent_failure_scoring": "zero_credit",
+        "maximum_infrastructure_retries": 1,
+        "retain_all_attempts": true,
+        "retry_eligible_statuses": [
+          "harness_error",
+          "provider_error",
+          "cancelled_before_execution"
+        ],
+        "scoring_attempt_selection_rule": "first_non_retry_eligible_attempt"
+      },
+      "interpretation_rule": "Execution shakedown only; suppress behavioral metrics and retain evidence_status=not_evaluated.",
+      "interpretation_scope_id": "execution_shakedown_no_behavioral_inference_v1",
+      "interval_rule": {
+        "bootstrap_unit": "case",
+        "confidence": 0.95,
+        "draws": 40,
+        "method": "paired_stratified_case_cluster_bootstrap",
+        "seed": 211101
+      },
+      "missing_run_policy": "comparison_incomplete_no_paired_delta",
+      "primary_estimands": [
+        "trigger_balanced_accuracy_delta"
+      ],
+      "protocol_status": "awaiting_execution_freeze",
+      "record_type": "trigger",
+      "repetitions": 1,
+      "required_condition_ids": [
+        "skill-v0.2.8",
+        "skill-v0.2.7",
+        "skill-v0.2.6",
+        "no-skill"
+      ],
+      "required_contrasts": [
+        {
+          "contrast_id": "skill-v0.2.8-minus-skill-v0.2.7",
+          "reference_condition_id": "skill-v0.2.7",
+          "target_condition_id": "skill-v0.2.8"
+        },
+        {
+          "contrast_id": "skill-v0.2.8-minus-skill-v0.2.6",
+          "reference_condition_id": "skill-v0.2.6",
+          "target_condition_id": "skill-v0.2.8"
+        },
+        {
+          "contrast_id": "skill-v0.2.8-minus-no-skill",
+          "reference_condition_id": "no-skill",
+          "target_condition_id": "skill-v0.2.8"
+        }
+      ],
+      "scoring_backend": "score.py",
+      "secondary_estimands": [
+        "case_level_win_loss_tie",
+        "absolute_condition_scores"
+      ],
+      "suite_id": "shakedown-trigger-routing",
+      "target": "non-development fixture coverage of the execution and scoring boundary",
+      "tie_rule": {
+        "absolute_delta_threshold": 0.0,
+        "unit": "case_mean"
+      },
+      "uncertainty_design": {
+        "case_variation": "case_cluster_bootstrap",
+        "execution_stochasticity": "within_case_paired_replicates_when_available",
+        "judge_uncertainty": "not_applicable"
+      }
+    },
+    {
+      "aggregation_method_id": "behavioral_paired_case_macro_v1",
+      "aggregation_rule": "Compute paired case-by-replicate differences, average replicates within case, then weight cases equally.",
+      "case_source": {
+        "case_id_field": "id",
+        "collection_key": "evals",
+        "path": "benchmarks/fixtures/shakedown-v2.1.2/behavioral-canary.json",
+        "prompt_field": "prompt",
+        "role": "shakedown",
+        "sha256": "sha256:196988c97cafaa15c80b8573132f506f168d509467b264356f367004447bdea1"
+      },
+      "comparison_blocks": [],
+      "conditions": [
+        {
+          "condition_id": "skill-v0.2.8",
+          "package_assurance": {
+            "artifact": {
+              "format": "scientific-autoresearch-behavior-package-zip-v1",
+              "path": "benchmarks/artifacts/packages/scientific-autoresearch-v0.2.8.zip",
+              "sha256": "sha256:4bfdf765018e8026d7ecd8f7dbe9bc423ffc237827b8ad5b9d901e23d7becbb9"
+            },
+            "attestation_artifact": null,
+            "mode": "artifact_verified"
+          },
+          "skill_package_sha256": "sha256:ea5a9e5d33720ab3b6cc2bb094f2cdf52da1c8a2031786a0091901aee2719412",
+          "skill_release": "0.2.8"
+        },
+        {
+          "condition_id": "skill-v0.2.7",
+          "package_assurance": {
+            "artifact": {
+              "format": "scientific-autoresearch-behavior-package-zip-v1",
+              "path": "benchmarks/artifacts/packages/scientific-autoresearch-v0.2.7.zip",
+              "sha256": "sha256:d24c3f166682f755043b10debd1dc5f4c98e7e7028b46e1a38c14ee0a0606d7b"
+            },
+            "attestation_artifact": null,
+            "mode": "artifact_verified"
+          },
+          "skill_package_sha256": "sha256:20b2fe538932919c54863277e8cc677e1b375d79d379577272727a0553e72fa9",
+          "skill_release": "0.2.7"
+        },
+        {
+          "condition_id": "skill-v0.2.6",
+          "package_assurance": {
+            "artifact": {
+              "format": "scientific-autoresearch-behavior-package-zip-v1",
+              "path": "benchmarks/artifacts/packages/scientific-autoresearch-v0.2.6.zip",
+              "sha256": "sha256:368c215f36fb4b9f66bd760726a686118e3de8a23ff883de58cf9987b31e442c"
+            },
+            "attestation_artifact": null,
+            "mode": "artifact_verified"
+          },
+          "skill_package_sha256": "sha256:d7dc173bd510eff7384f59d807600e8f1a6de7f5d9ff52ef3800dac77d16e547",
+          "skill_release": "0.2.6"
+        },
+        {
+          "condition_id": "no-skill",
+          "package_assurance": {
+            "artifact": null,
+            "attestation_artifact": null,
+            "mode": "not_applicable"
+          },
+          "skill_package_sha256": null,
+          "skill_release": null
+        }
+      ],
+      "diagnostic_estimands": [
+        "assertion_micro_pass_rate",
+        "agent_failure_rate",
+        "infrastructure_retry_count"
+      ],
+      "evaluation_unit": "one case in one isolated execution attempt",
+      "evidence_type": "behavioral_conformance",
+      "failure_retry_policy": {
+        "agent_failure_scoring": "zero_credit",
+        "maximum_infrastructure_retries": 1,
+        "retain_all_attempts": true,
+        "retry_eligible_statuses": [
+          "harness_error",
+          "provider_error",
+          "cancelled_before_execution"
+        ],
+        "scoring_attempt_selection_rule": "first_non_retry_eligible_attempt"
+      },
+      "interpretation_rule": "Execution shakedown only; suppress behavioral metrics and retain evidence_status=not_evaluated.",
+      "interpretation_scope_id": "execution_shakedown_no_behavioral_inference_v1",
+      "interval_rule": {
+        "bootstrap_unit": "case",
+        "confidence": 0.95,
+        "draws": 40,
+        "method": "paired_case_cluster_bootstrap",
+        "seed": 211102
+      },
+      "missing_run_policy": "comparison_incomplete_no_paired_delta",
+      "primary_estimands": [
+        "behavioral_case_macro_delta",
+        "critical_violation_risk_difference"
+      ],
+      "protocol_status": "awaiting_execution_freeze",
+      "record_type": "behavioral",
+      "repetitions": 2,
+      "required_condition_ids": [
+        "skill-v0.2.8",
+        "skill-v0.2.7",
+        "skill-v0.2.6",
+        "no-skill"
+      ],
+      "required_contrasts": [
+        {
+          "contrast_id": "skill-v0.2.8-minus-skill-v0.2.7",
+          "reference_condition_id": "skill-v0.2.7",
+          "target_condition_id": "skill-v0.2.8"
+        },
+        {
+          "contrast_id": "skill-v0.2.8-minus-skill-v0.2.6",
+          "reference_condition_id": "skill-v0.2.6",
+          "target_condition_id": "skill-v0.2.8"
+        },
+        {
+          "contrast_id": "skill-v0.2.8-minus-no-skill",
+          "reference_condition_id": "no-skill",
+          "target_condition_id": "skill-v0.2.8"
+        }
+      ],
+      "scoring_backend": "score.py",
+      "secondary_estimands": [
+        "case_all_pass_rate_delta",
+        "case_level_win_loss_tie",
+        "critical_violation_discordance",
+        "absolute_condition_scores"
+      ],
+      "suite_id": "shakedown-behavioral-routing",
+      "target": "non-development fixture coverage of the execution and scoring boundary",
+      "tie_rule": {
+        "absolute_delta_threshold": 0.0,
+        "unit": "case_mean"
+      },
+      "uncertainty_design": {
+        "case_variation": "case_cluster_bootstrap",
+        "execution_stochasticity": "within_case_paired_replicates_when_available",
+        "judge_uncertainty": "not_estimable_without_repeated_independent_judgments"
+      }
+    }
+  ]
+}

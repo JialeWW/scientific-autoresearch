@@ -1,0 +1,27 @@
+{
+  "assignments": [
+    {
+      "case_id": "canary-trigger-off-alpha",
+      "generation_seed": 2110001,
+      "replicate": 1
+    },
+    {
+      "case_id": "canary-trigger-off-beta",
+      "generation_seed": 2110002,
+      "replicate": 1
+    },
+    {
+      "case_id": "canary-trigger-on-alpha",
+      "generation_seed": 2110003,
+      "replicate": 1
+    },
+    {
+      "case_id": "canary-trigger-on-beta",
+      "generation_seed": 2110004,
+      "replicate": 1
+    }
+  ],
+  "comparison_block_id": "shakedown-trigger-block-v2.1.2",
+  "seed_control_status": "enforced",
+  "seed_schedule_schema_version": "1.0.0"
+}

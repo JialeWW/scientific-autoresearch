@@ -1,0 +1,127 @@
+{
+  "benchmark_protocol_version": "2.1.1",
+  "block_results": [
+    {
+      "attempted_cells": 16,
+      "comparison_block_id": "shakedown-trigger-block-v2.1.1",
+      "evaluation_metrics_suppressed_reason": "execution_shakedown",
+      "evidence_status": "not_evaluated",
+      "execution_artifact_assurance": {
+        "aggregation": "minimum_across_harness_and_non_null_packages",
+        "components": [
+          {
+            "assurance": "artifact_verified",
+            "kind": "harness",
+            "subject_id": "scientific-autoresearch-shakedown-harness"
+          },
+          {
+            "assurance": "artifact_verified",
+            "condition_id": "skill-v0.2.8",
+            "kind": "package"
+          },
+          {
+            "assurance": "artifact_verified",
+            "condition_id": "skill-v0.2.7",
+            "kind": "package"
+          },
+          {
+            "assurance": "artifact_verified",
+            "condition_id": "skill-v0.2.6",
+            "kind": "package"
+          },
+          {
+            "assurance": "not_applicable",
+            "condition_id": "no-skill",
+            "kind": "package"
+          }
+        ],
+        "level": "artifact_verified",
+        "runtime_use_assurance": "unreported"
+      },
+      "execution_purpose": "execution_shakedown",
+      "expected_cells": 16,
+      "invalid_attempt_records": [],
+      "missing_attempt_cells": [],
+      "paired_deltas_reported": false,
+      "protocol_deviation_errors": [],
+      "run_batch_id": "batch-shakedown-trigger-block-v2.1.1",
+      "selected_cells": 16,
+      "status": "complete",
+      "suite_id": "shakedown-trigger-routing",
+      "unresolved_infrastructure_cells": []
+    },
+    {
+      "attempted_cells": 16,
+      "comparison_block_id": "shakedown-behavioral-block-v2.1.1",
+      "evaluation_metrics_suppressed_reason": "execution_shakedown",
+      "evidence_status": "not_evaluated",
+      "execution_artifact_assurance": {
+        "aggregation": "minimum_across_harness_and_non_null_packages",
+        "components": [
+          {
+            "assurance": "artifact_verified",
+            "kind": "harness",
+            "subject_id": "scientific-autoresearch-shakedown-harness"
+          },
+          {
+            "assurance": "artifact_verified",
+            "condition_id": "skill-v0.2.8",
+            "kind": "package"
+          },
+          {
+            "assurance": "artifact_verified",
+            "condition_id": "skill-v0.2.7",
+            "kind": "package"
+          },
+          {
+            "assurance": "artifact_verified",
+            "condition_id": "skill-v0.2.6",
+            "kind": "package"
+          },
+          {
+            "assurance": "not_applicable",
+            "condition_id": "no-skill",
+            "kind": "package"
+          }
+        ],
+        "level": "artifact_verified",
+        "runtime_use_assurance": "unreported"
+      },
+      "execution_purpose": "execution_shakedown",
+      "expected_cells": 16,
+      "invalid_attempt_records": [],
+      "missing_attempt_cells": [],
+      "paired_deltas_reported": false,
+      "protocol_deviation_errors": [],
+      "run_batch_id": "batch-shakedown-behavioral-block-v2.1.1",
+      "selected_cells": 16,
+      "status": "complete",
+      "suite_id": "shakedown-behavioral-routing",
+      "unresolved_infrastructure_cells": []
+    }
+  ],
+  "condition_summaries": [],
+  "errors": [],
+  "evidence_index_sha256": "sha256:c00a983a3602ac623c2edfa23ca35c13bf2250a3567738d4cb1568b9c251b3ae",
+  "evidence_status": "not_evaluated",
+  "evidence_status_scope": "uniform_across_completed_blocks",
+  "evidence_statuses": [
+    "not_evaluated"
+  ],
+  "evidence_tree_sha256": "sha256:3237ee172a9335ffb90eb2682cf896a38a2587fa27646bbff110683648fdf663",
+  "execution_artifact_assurance": {
+    "aggregation": "minimum_across_frozen_blocks",
+    "level": "artifact_verified",
+    "runtime_use_assurance": "unreported"
+  },
+  "execution_manifest_id": "scientific-autoresearch-shakedown-v2.1.1-20260722",
+  "execution_purpose": "execution_shakedown",
+  "manifest_sha256": "sha256:7edd65ffd0d5351b3bfc4e25c729e9f04358364f081c6b4be62564ba53839951",
+  "paired_comparisons": [],
+  "pooling_policy": "comparison blocks are reported separately and never pooled",
+  "records_sha256": "sha256:228909085a740fe62ede7706950bf2c144c26b77bff3336cd99c004c861f6ed8",
+  "score_schema_version": "2.1.1",
+  "scorer_version": "2.1.1",
+  "scoring_status": "complete",
+  "valid": true
+}

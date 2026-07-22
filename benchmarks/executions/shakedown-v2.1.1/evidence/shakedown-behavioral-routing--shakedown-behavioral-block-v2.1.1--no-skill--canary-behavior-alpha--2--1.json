@@ -1,0 +1,25 @@
+{
+  "attempt": 1,
+  "case_id": "canary-behavior-alpha",
+  "comparison_block_id": "shakedown-behavioral-block-v2.1.1",
+  "condition_id": "no-skill",
+  "execution_purpose": "execution_shakedown",
+  "failure": null,
+  "fixture_evidence_schema_version": "1.0.0",
+  "fixture_response": {
+    "assertion_scores": {
+      "a01": true,
+      "a02": true
+    }
+  },
+  "package_load_receipt": {
+    "artifact_sha256": null,
+    "behavior_package_sha256": null,
+    "load_status": "not_applicable",
+    "skill_md_sha256": null,
+    "skill_release": null
+  },
+  "replicate": 2,
+  "run_status": "completed",
+  "suite_id": "shakedown-behavioral-routing"
+}

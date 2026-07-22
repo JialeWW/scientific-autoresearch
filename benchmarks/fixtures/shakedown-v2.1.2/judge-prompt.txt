@@ -1,0 +1,1 @@
+Read the deterministic canary response and bind its Boolean assertion map. This fixture prompt is not a behavioral evaluation rubric.

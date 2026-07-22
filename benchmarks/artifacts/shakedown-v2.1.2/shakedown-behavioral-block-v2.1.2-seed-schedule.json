@@ -1,0 +1,27 @@
+{
+  "assignments": [
+    {
+      "case_id": "canary-behavior-alpha",
+      "generation_seed": 2110001,
+      "replicate": 1
+    },
+    {
+      "case_id": "canary-behavior-alpha",
+      "generation_seed": 2110002,
+      "replicate": 2
+    },
+    {
+      "case_id": "canary-behavior-beta",
+      "generation_seed": 2110003,
+      "replicate": 1
+    },
+    {
+      "case_id": "canary-behavior-beta",
+      "generation_seed": 2110004,
+      "replicate": 2
+    }
+  ],
+  "comparison_block_id": "shakedown-behavioral-block-v2.1.2",
+  "seed_control_status": "enforced",
+  "seed_schedule_schema_version": "1.0.0"
+}

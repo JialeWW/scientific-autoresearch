@@ -18,5 +18,27 @@ jobs:
         run: python scientific-autoresearch/scripts/validate_run.py --self-test
       - name: Benchmark-scorer smoke fixture
         run: python benchmarks/score.py --self-test
+      - name: Historical protocol-2.0.0 scorer smoke fixture
+        run: python benchmarks/score-v2.0.0.py --self-test
+      - name: Protocol-2.1.1 scorer smoke fixture
+        run: python benchmarks/score-v2.1.1.py --self-test
+      - name: Protocol-2.1.2 scorer and frozen-chain replay
+        run: python benchmarks/score-v2.1.2.py --self-test
+      - name: Protocol-2.1.1 end-to-end shakedown replay
+        run: |
+          output_root="$(mktemp -d)/shakedown"
+          python benchmarks/shakedown-harness.py --output-root "$output_root"
+          cmp benchmarks/executions/shakedown-v2.1.1/records.jsonl "$output_root/records.jsonl"
+          cmp benchmarks/executions/shakedown-v2.1.1/result.json "$output_root/result.json"
+          cmp benchmarks/executions/shakedown-v2.1.1/execution-receipt.json "$output_root/execution-receipt.json"
+          diff -qr benchmarks/executions/shakedown-v2.1.1/evidence "$output_root/evidence"
+      - name: Protocol-2.1.2 end-to-end shakedown replay
+        run: |
+          output_root="$(mktemp -d)/shakedown"
+          python benchmarks/shakedown-harness-v2.1.2.py --output-root "$output_root"
+          cmp benchmarks/executions/shakedown-v2.1.2/records.jsonl "$output_root/records.jsonl"
+          cmp benchmarks/executions/shakedown-v2.1.2/result.json "$output_root/result.json"
+          cmp benchmarks/executions/shakedown-v2.1.2/execution-receipt.json "$output_root/execution-receipt.json"
+          diff -qr benchmarks/executions/shakedown-v2.1.2/evidence "$output_root/evidence"
       - name: Independent benchmark-scorer tests
         run: python -m unittest discover -s benchmarks/tests -v

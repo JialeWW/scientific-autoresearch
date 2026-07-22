@@ -1,0 +1,22 @@
+{
+  "attempt": 1,
+  "case_id": "canary-trigger-on-beta",
+  "comparison_block_id": "shakedown-trigger-block-v2.1.2",
+  "condition_id": "no-skill",
+  "execution_purpose": "execution_shakedown",
+  "failure": null,
+  "fixture_evidence_schema_version": "1.0.0",
+  "fixture_response": {
+    "predicted_trigger": true
+  },
+  "package_load_receipt": {
+    "artifact_sha256": null,
+    "behavior_package_sha256": null,
+    "load_status": "not_applicable",
+    "skill_md_sha256": null,
+    "skill_release": null
+  },
+  "replicate": 1,
+  "run_status": "completed",
+  "suite_id": "shakedown-trigger-routing"
+}

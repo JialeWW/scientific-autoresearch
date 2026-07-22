@@ -1,0 +1,22 @@
+[
+  {
+    "id": "canary-trigger-on-alpha",
+    "query": "CANARY_ROUTE_ON_ALPHA",
+    "should_trigger": true
+  },
+  {
+    "id": "canary-trigger-on-beta",
+    "query": "CANARY_ROUTE_ON_BETA",
+    "should_trigger": true
+  },
+  {
+    "id": "canary-trigger-off-alpha",
+    "query": "CANARY_ROUTE_OFF_ALPHA",
+    "should_trigger": false
+  },
+  {
+    "id": "canary-trigger-off-beta",
+    "query": "CANARY_ROUTE_OFF_BETA",
+    "should_trigger": false
+  }
+]

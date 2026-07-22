@@ -1,0 +1,19 @@
+{
+  "assertion_scores": {
+    "a01": true,
+    "a02": true
+  },
+  "case_spec_sha256": "sha256:4d40f6f41dba1078db4bf5e8defb7f690bb778f867770ece6d9725b62e20a449",
+  "evidence_sha256": "sha256:8c07728c36520158485226451871421b6d2bd51f976cad353e33200e4134a865",
+  "execution_identity_sha256": "sha256:5729e39ef1eaa613b8c933e14dfd2fa38b17db4f0b95aac5609e081d3558869c",
+  "judge": {
+    "id": "canary-assertion-map-judge",
+    "kind": "deterministic",
+    "panel_size": 1,
+    "version": "1"
+  },
+  "judge_protocol_id": "deterministic-canary-judge-v1",
+  "judge_protocol_sha256": "sha256:7735942f4070c424c85c45a72ab628aba348ef0d8b11bba972821b00a2363cf2",
+  "rubric_sha256": "sha256:27a55fb6bd96c2d341ccaed1291bdc14b984d5aade3e9f682a428730f455ab39",
+  "scored_at": "2026-07-22T12:00:42+00:00"
+}

@@ -1,0 +1,19 @@
+{
+  "assurance": "runner_attested",
+  "attempt_count": 33,
+  "clock_mode": "deterministic_fixture",
+  "evidence_tree_sha256": "sha256:edf4945ea2db925296df4fd9bed027835231ba813c6de01d64f5c89c0bcf2f6a",
+  "execution_manifest_id": "scientific-autoresearch-shakedown-v2.1.2-20260722",
+  "execution_purpose": "execution_shakedown",
+  "execution_receipt_schema_version": "1.0.0",
+  "harness_sha256": "sha256:74d166aa8086cac77b073fb8e88773513d4d0e38160a25cc33f1698fd42d7af6",
+  "injected_failure_classes": [
+    "infrastructure_retry",
+    "agent_failure"
+  ],
+  "manifest_sha256": "sha256:7abd6dcff28b7f6f6dc5f0f9850d9f0f5926605ec5c26169af4867b425fcb96f",
+  "records_sha256": "sha256:3c1894aa4d2707c26d5101fe9ee21707852b929ff510472e400e8e58e1407282",
+  "result_sha256": "sha256:2efbea7021e917941f3cfd23ab998fc5a70bc7e0fe33945f5f52c23fd9f8434e",
+  "scorer_sha256": "sha256:304ecc719aeafa2b131cba890c3459a85bf30a0eb930e3a66d81c52d38d8aca4",
+  "statement": "This receipt attests to the local fixture execution; it is not independent or cryptographic assurance and is not behavioral evidence."
+}

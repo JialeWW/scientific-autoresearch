@@ -36,6 +36,10 @@ Select the profile according to the requested action and outcome adaptivity. Use
 - Upgrades repository-only benchmark infrastructure to protocol 2.1 with complete cross-condition pairing, frozen estimands and uncertainty levels, evidence-bound configuration and routing/judge protocols, balanced execution schedules, explicit failure/retry semantics, and block-local invalidation.
 - Keeps the release `not_evaluated`: compute-specific comparison blocks, sealed evaluation, and empirical operating-characteristic studies have not been run.
 
+## Benchmark Protocol Status
+
+The repository-maintenance benchmark line is now protocol/scorer **2.1.2**. It adds exact governance semantics, parent-template projection binding, full-family execution checks, and genuinely block-local evidence invalidation. This is a benchmark-only patch over the unchanged installable Skill 0.2.8; the superseded 2.1.1 no-go snapshot remains immutable, and no development benchmark has been run.
+
 ## Choose the Smallest Valid Profile
 
 - `design_only`: prospectively construct a question, claim card, inventory, or analysis design without inspecting completed outcomes or executing analysis.
@@ -83,9 +87,18 @@ Inventory saturation requires both a candidate-forward audit and a data-product-
 ├── benchmarks/
 │   ├── README.md
 │   ├── manifest.json
+│   ├── manifest-v2.1.1.json
+│   ├── manifest-v2.1.2.json
+│   ├── manifest-shakedown-v2.1.2.json
 │   ├── score.py
+│   ├── score-v2.1.1.py
+│   ├── score-v2.1.2.py
+│   ├── execution-manifest-shakedown-v2.1.2.json
+│   ├── protocol-index.json
 │   ├── tests/
-│   │   └── test_score.py
+│   │   ├── test_score.py
+│   │   ├── test_score_v2_1_1.py
+│   │   └── test_score_v2_1_2.py
 │   └── results/
 │       ├── v0.2.6.json
 │       ├── v0.2.7.json
@@ -255,7 +268,7 @@ These checks cannot detect choices that were never recorded and do not establish
 
 The bundled behavioral cases specify expected routing and safeguard behavior across all five profiles. They are evaluation specifications, not scored benchmark results. The trigger-query file contains positive and adjacent-task negative examples for use with an external evaluation harness; the cases themselves must not be described as passed or validated.
 
-The repository does not currently report empirical error control, detection power, component effects, cross-agent or cross-model performance, or run-to-run reproducibility. Protocol 2.1 freezes comparison estimands and estimable uncertainty levels and requires complete `condition × case × replicate` blocks, shared configuration, scheduled seeds and balanced execution order, attempt retention, and a frozen routing or judge protocol before condition deltas are computed. The current manifest contains no compute-specific frozen block, so v0.2.8 remains `not_evaluated`; deterministic package and scorer checks are separate evidence.
+The repository does not currently report empirical error control, detection power, component effects, cross-agent or cross-model performance, or run-to-run reproducibility. Protocol 2.1.2 freezes comparison estimands and estimable uncertainty levels, binds each execution to an immutable purpose-specific template, and requires the complete `condition × case × replicate` family, shared configuration, scheduled seeds and balanced execution order, attempt retention, and a frozen routing or judge protocol before condition deltas are computed. The committed execution is a non-development shakedown with `evidence_status=not_evaluated`; no development case has run, so Skill 0.2.8 remains `not_evaluated`.
 
 ## Scientific Interpretation Standard
 

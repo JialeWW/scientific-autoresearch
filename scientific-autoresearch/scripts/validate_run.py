@@ -35,12 +35,13 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 
-VALIDATOR_VERSION = "1.5.3"
-ARTIFACT_SCHEMA_VERSION = "1.5.3"
+VALIDATOR_VERSION = "1.5.4"
+ARTIFACT_SCHEMA_VERSION = "1.5.4"
 PROFILE_SCHEMA_VERSION = "1.5.0"
 FIXED_FAMILY_SCHEMA_VERSION = "1.5.1"
 SKILL_PROVENANCE_SCHEMA_VERSION = "1.5.2"
 DOMAIN_ADAPTER_SCHEMA_VERSION = "1.5.3"
+EXECUTABLE_PREFLIGHT_SCHEMA_VERSION = "1.5.4"
 STRICT_BASELINE_SCHEMA_VERSION = "1.4.0"
 REPORT_SCHEMA_VERSION = "1.2"
 REQUIRED_SENTINEL = "__REQUIRED__"
@@ -272,6 +273,9 @@ DATA_CONTRACT_CHECK_TYPES = {
 }
 PREFLIGHT_STATUSES = {"not_required", "planned", "passed", "failed", "inconclusive"}
 PREFLIGHT_CHECK_STATUSES = {"passed", "failed", "inconclusive", "not_run"}
+PREFLIGHT_EVIDENCE_MODES = {"automated", "manual", "semantic_review", "declarative"}
+PREFLIGHT_EXECUTION_STATUSES = {"not_run", "completed", "failed", "cancelled"}
+PREFLIGHT_EXIT_STATUSES = {"not_available", "success", "failure"}
 SEMANTIC_REVIEW_STATUSES = {
     "not_required",
     "pending",
@@ -1295,6 +1299,7 @@ class RunValidator:
         self.schema_1_5_1 = False
         self.skill_provenance_schema = False
         self.domain_adapter_schema = False
+        self.executable_preflight_schema = False
         self.research_profile = ""
         self.generic_inventory_schema = False
         self.active_version = ""
@@ -1709,6 +1714,9 @@ class RunValidator:
         )
         self.domain_adapter_schema = _schema_at_least(
             schema_value, DOMAIN_ADAPTER_SCHEMA_VERSION
+        )
+        self.executable_preflight_schema = _schema_at_least(
+            schema_value, EXECUTABLE_PREFLIGHT_SCHEMA_VERSION
         )
         supported_schema = _parse_schema_version(ARTIFACT_SCHEMA_VERSION)
         if not _blank(schema_value) and parsed_schema is None:
@@ -3612,6 +3620,213 @@ class RunValidator:
                 elif len(matches) > 1:
                     self.error("ambiguous_data_version", location_row, f"Multiple versions exist for {product!r}; coverage cell must pin data_version_id.")
 
+    @staticmethod
+    def _normalized_immutable_binding(value: Any) -> str:
+        text = str(value or "").strip()
+        if text.lower().startswith("sha256:"):
+            digest = text[7:]
+            return digest.lower() if re.fullmatch(r"[0-9A-Fa-f]{64}", digest) else text
+        if re.fullmatch(r"[0-9A-Fa-f]{64}", text):
+            return text.lower()
+        return text
+
+    def _input_binding_map(
+        self,
+        value: Any,
+        location: str,
+        field_name: str,
+    ) -> dict[str, str]:
+        if not isinstance(value, list) or not value:
+            self.error(
+                "invalid_preflight_input_bindings",
+                location,
+                f"{field_name} must be a nonempty list.",
+            )
+            return {}
+        bindings: dict[str, str] = {}
+        for index, item in enumerate(value, start=1):
+            item_location = f"{location}.{field_name}[{index}]"
+            if not isinstance(item, Mapping):
+                self.error(
+                    "invalid_preflight_input_binding",
+                    item_location,
+                    "Each input binding must be an object.",
+                )
+                continue
+            self._required(
+                item,
+                item_location,
+                {"data_version_id", "sha256_or_immutable_version"},
+            )
+            version_id = str(item.get("data_version_id", "")).strip()
+            binding = self._normalized_immutable_binding(
+                item.get("sha256_or_immutable_version")
+            )
+            if not version_id or not binding:
+                continue
+            if version_id in bindings:
+                self.error(
+                    "duplicate_preflight_input_binding",
+                    item_location,
+                    f"Duplicate data_version_id {version_id!r}.",
+                )
+            bindings[version_id] = binding
+        return bindings
+
+    def _validate_automated_preflight_binding(
+        self,
+        preflight: Mapping[str, Any],
+        report: Mapping[str, Any],
+        input_versions: Sequence[str],
+        preflight_location: str,
+        report_location: str,
+    ) -> None:
+        required_fields = {
+            "procedure_artifact",
+            "input_bindings",
+            "execution_status",
+            "exit_status",
+        }
+        self._required(preflight, preflight_location, required_fields)
+        self._required(
+            report,
+            report_location,
+            {
+                "procedure_artifact",
+                "execution_status",
+                "exit_status",
+                "evidence_mode",
+                "decision_bearing",
+                "checked_input_bindings",
+            },
+        )
+
+        procedure = preflight.get("procedure_artifact")
+        if not isinstance(procedure, Mapping):
+            self.error(
+                "invalid_preflight_procedure_artifact",
+                preflight_location,
+                "procedure_artifact must be an object with path and sha256.",
+            )
+            procedure = {}
+        else:
+            self._required(
+                procedure,
+                f"{preflight_location}.procedure_artifact",
+                {"path", "sha256"},
+            )
+            self._safe_internal_file(
+                procedure.get("path"),
+                f"{preflight_location}.procedure_artifact",
+                expected_sha256=procedure.get("sha256"),
+                kind="automated preflight procedure",
+            )
+
+        report_procedure = report.get("procedure_artifact")
+        if not isinstance(report_procedure, Mapping):
+            self.error(
+                "invalid_preflight_procedure_artifact",
+                report_location,
+                "The report must repeat the bound procedure_artifact.",
+            )
+            report_procedure = {}
+        if report_procedure != procedure:
+            self.error(
+                "preflight_procedure_binding_mismatch",
+                report_location,
+                "The report procedure binding differs from the frozen preflight binding.",
+            )
+
+        frozen_bindings = self._input_binding_map(
+            preflight.get("input_bindings"),
+            preflight_location,
+            "input_bindings",
+        )
+        checked_bindings = self._input_binding_map(
+            report.get("checked_input_bindings"),
+            report_location,
+            "checked_input_bindings",
+        )
+        expected_ids = set(input_versions)
+        if set(frozen_bindings) != expected_ids:
+            self.error(
+                "preflight_input_binding_scope_mismatch",
+                preflight_location,
+                "Automated preflight bindings must cover exactly the contract input-version set.",
+            )
+        if checked_bindings != frozen_bindings:
+            self.error(
+                "preflight_checked_input_binding_mismatch",
+                report_location,
+                "Checked input bindings differ from the frozen preflight bindings.",
+            )
+
+        registered: dict[str, list[str]] = defaultdict(list)
+        for item in self.data_versions:
+            version_id = str(
+                _first(item, "data_version_id", "version_id", default="")
+            ).strip()
+            binding = self._normalized_immutable_binding(
+                _first(
+                    item,
+                    "sha256_or_immutable_version",
+                    "sha256",
+                    "content_sha256",
+                    "immutable_version",
+                    default="",
+                )
+            )
+            if version_id and binding:
+                registered[version_id].append(binding)
+        for version_id, binding in frozen_bindings.items():
+            if version_id not in registered:
+                self.error(
+                    "unbound_preflight_data_version",
+                    preflight_location,
+                    f"Data version {version_id!r} lacks a digest or immutable version in data_versions.json.",
+                )
+            elif len(registered[version_id]) != 1:
+                # The contract-level check reports the ambiguous identifier.  Do
+                # not silently select one registry row here.
+                continue
+            elif registered[version_id][0] != binding:
+                self.error(
+                    "preflight_data_version_binding_mismatch",
+                    preflight_location,
+                    f"Input binding for {version_id!r} differs from data_versions.json.",
+                )
+
+        execution_status = self._status(
+            preflight.get("execution_status"),
+            PREFLIGHT_EXECUTION_STATUSES,
+            preflight_location,
+            "preflight_execution_status",
+        )
+        exit_status = self._status(
+            preflight.get("exit_status"),
+            PREFLIGHT_EXIT_STATUSES,
+            preflight_location,
+            "preflight_exit_status",
+        )
+        if execution_status != "completed" or exit_status != "success":
+            self.error(
+                "false_automated_preflight_pass",
+                preflight_location,
+                "A passed automated decision-bearing preflight requires completed execution and a successful exit status.",
+            )
+        for field, expected in (
+            ("evidence_mode", "automated"),
+            ("decision_bearing", True),
+            ("execution_status", execution_status),
+            ("exit_status", exit_status),
+        ):
+            if report.get(field) != expected or preflight.get(field) != expected:
+                self.error(
+                    "preflight_execution_binding_mismatch",
+                    report_location,
+                    f"The report and preflight must agree on {field}={expected!r}.",
+                )
+
     def _validate_domain_adapter(self) -> None:
         if not self.domain_adapter_schema:
             return
@@ -3700,10 +3915,14 @@ class RunValidator:
                         "preflight",
                     },
                 )
-                registered_versions = {
-                    str(_first(item, "data_version_id", "version_id", default=""))
-                    for item in self.data_versions
-                }
+                registered_version_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
+                for item in self.data_versions:
+                    version_id = str(
+                        _first(item, "data_version_id", "version_id", default="")
+                    ).strip()
+                    if version_id:
+                        registered_version_rows[version_id].append(item)
+                registered_versions = set(registered_version_rows)
                 input_versions = _ids(contract.get("input_data_version_ids"))
                 if not input_versions:
                     self.error(
@@ -3717,6 +3936,12 @@ class RunValidator:
                             "unknown_data_contract_version",
                             contract_location,
                             f"Project data contract references unknown data version {version_id!r}.",
+                        )
+                    elif len(registered_version_rows[version_id]) != 1:
+                        self.error(
+                            "ambiguous_data_contract_version_id",
+                            contract_location,
+                            f"Project data contract version {version_id!r} matches multiple data products; referenced data_version_id values must resolve uniquely.",
                         )
                 rules = contract.get("rules")
                 rule_ids: set[str] = set()
@@ -3766,8 +3991,51 @@ class RunValidator:
                         preflight_location,
                         "preflight_status",
                     )
+                    evidence_mode = ""
+                    decision_bearing: bool | None = None
+                    if self.executable_preflight_schema:
+                        self._required(
+                            preflight,
+                            preflight_location,
+                            {"evidence_mode", "decision_bearing"},
+                        )
+                        evidence_mode = self._status(
+                            preflight.get("evidence_mode"),
+                            PREFLIGHT_EVIDENCE_MODES,
+                            preflight_location,
+                            "preflight_evidence_mode",
+                        )
+                        decision_bearing = _bool(preflight.get("decision_bearing"))
+                        if decision_bearing is None:
+                            self.error(
+                                "invalid_boolean",
+                                preflight_location,
+                                "decision_bearing must be a JSON boolean.",
+                            )
+                    elif status == "passed":
+                        self.warn(
+                            "legacy_preflight_evidence_binding_not_asserted",
+                            preflight_location,
+                            "Schema 1.5.3 accepts this preflight under its original rules; automated procedure and input evidence binding are not asserted.",
+                        )
                     if (
-                        self.manifest.get("stage_status") in {"in_progress", "completed_as_scoped"}
+                        self.executable_preflight_schema
+                        and status == "passed"
+                        and decision_bearing is not True
+                    ):
+                        self.error(
+                            "preflight_decision_bearing_mismatch",
+                            preflight_location,
+                            "A passed applicable preflight is the gate for later outcome-bearing work and must declare decision_bearing=true.",
+                        )
+                    automated_binding_required = (
+                        status == "passed"
+                        and evidence_mode == "automated"
+                        and self.executable_preflight_schema
+                    )
+                    if (
+                        self.manifest.get("stage_status")
+                        in {"in_progress", "completed_as_scoped"}
                         and status != "passed"
                     ):
                         self.error(
@@ -3826,6 +4094,14 @@ class RunValidator:
                                         report_location,
                                         "Preflight report status differs from the adapter contract.",
                                     )
+                                if automated_binding_required:
+                                    self._validate_automated_preflight_binding(
+                                        preflight,
+                                        report,
+                                        input_versions,
+                                        preflight_location,
+                                        report_location,
+                                    )
                                 checks = report.get("checks")
                                 report_ids: set[str] = set()
                                 failed_checks = False
@@ -3862,6 +4138,21 @@ class RunValidator:
                                         check_location,
                                         "check_status",
                                     )
+                                    if self.executable_preflight_schema:
+                                        evidence_ref = check.get(
+                                            "evidence_path_or_locator"
+                                        )
+                                        evidence_binding = check.get(
+                                            "evidence_sha256_or_immutable_version"
+                                        )
+                                        if _blank(evidence_ref) != _blank(
+                                            evidence_binding
+                                        ):
+                                            self.error(
+                                                "incomplete_preflight_check_evidence_binding",
+                                                check_location,
+                                                "A separate check-evidence locator and its digest or immutable version must be recorded together.",
+                                            )
                                     if check_id in rule_types and check_type != rule_types[check_id]:
                                         self.error(
                                             "data_preflight_check_type_mismatch",
@@ -8408,11 +8699,39 @@ def _run_hardening_self_tests(temp_root: Path) -> dict[str, bool]:
         signoff_status: str = "not_required",
     ) -> tuple[Path, Path]:
         _build_adaptive_profile_fixture(root)
+        input_binding = "sha256:" + "d" * 64
+        data_versions_path = root / "data_versions.json"
+        data_versions = json.loads(data_versions_path.read_text(encoding="utf-8"))
+        data_versions["data_versions"][0][
+            "sha256_or_immutable_version"
+        ] = input_binding
+        _write_json(data_versions_path, data_versions)
+        procedure_path = root / "synthetic_preflight_procedure.txt"
+        procedure_path.write_text(
+            "frozen synthetic preflight procedure\n", encoding="utf-8"
+        )
+        procedure_artifact = {
+            "path": procedure_path.name,
+            "sha256": hashlib.sha256(procedure_path.read_bytes()).hexdigest(),
+        }
+        input_bindings = [
+            {
+                "data_version_id": "DV001",
+                "sha256_or_immutable_version": input_binding,
+            }
+        ]
         preflight_path = root / "data_preflight_report.json"
         preflight = {
             "contract_version": "data-contract-v001",
             "checked_data_version_ids": ["DV001"],
             "overall_status": "passed",
+            "evidence_mode": "automated",
+            "decision_bearing": True,
+            "procedure_artifact": procedure_artifact,
+            "input_bindings": input_bindings,
+            "checked_input_bindings": input_bindings,
+            "execution_status": "completed",
+            "exit_status": "success",
             "checks": [
                 {
                     "check_id": "unit-count",
@@ -8472,6 +8791,12 @@ def _run_hardening_self_tests(temp_root: Path) -> dict[str, bool]:
                     "status": "passed",
                     "adapter_or_procedure": "synthetic preflight",
                     "failure_action": "block affected outcome",
+                    "evidence_mode": "automated",
+                    "decision_bearing": True,
+                    "procedure_artifact": procedure_artifact,
+                    "input_bindings": input_bindings,
+                    "execution_status": "completed",
+                    "exit_status": "success",
                     "report_path": preflight_path.name,
                     "report_sha256": hashlib.sha256(preflight_path.read_bytes()).hexdigest(),
                 },
@@ -8504,6 +8829,247 @@ def _run_hardening_self_tests(temp_root: Path) -> dict[str, bool]:
         adapter_positive_report["valid"]
         and adapter_positive_report["artifact_versions"].get("domain_adapter_version")
         == "adapter-v001"
+    )
+
+    def refresh_required_adapter_bindings(root: Path) -> None:
+        report_path = root / "data_preflight_report.json"
+        adapter_path = root / "domain_adapter.json"
+        adapter = json.loads(adapter_path.read_text(encoding="utf-8"))
+        adapter["project_data_contract"]["preflight"][
+            "report_sha256"
+        ] = hashlib.sha256(report_path.read_bytes()).hexdigest()
+        _write_json(adapter_path, adapter)
+        manifest_path = root / "run_manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["domain_adapter_ref"]["sha256"] = hashlib.sha256(
+            adapter_path.read_bytes()
+        ).hexdigest()
+        _write_json(manifest_path, manifest)
+
+    missing_procedure_hash_root = temp_root / "automated-preflight-missing-procedure-hash-run"
+    missing_procedure_adapter_path, _ = build_required_adapter_fixture(
+        missing_procedure_hash_root
+    )
+    missing_procedure_adapter = json.loads(
+        missing_procedure_adapter_path.read_text(encoding="utf-8")
+    )
+    missing_procedure_adapter["project_data_contract"]["preflight"][
+        "procedure_artifact"
+    ].pop("sha256")
+    _write_json(missing_procedure_adapter_path, missing_procedure_adapter)
+    refresh_required_adapter_bindings(missing_procedure_hash_root)
+    missing_procedure_hash_report = validate_run(missing_procedure_hash_root)
+    results["automated_preflight_requires_procedure_hash"] = any(
+        item["code"] == "missing_required_field"
+        and "procedure_artifact" in item["location"]
+        for item in missing_procedure_hash_report["errors"]
+    )
+
+    input_scope_root = temp_root / "automated-preflight-input-scope-run"
+    input_scope_adapter_path, _ = build_required_adapter_fixture(input_scope_root)
+    input_scope_adapter = json.loads(
+        input_scope_adapter_path.read_text(encoding="utf-8")
+    )
+    input_scope_adapter["project_data_contract"]["preflight"]["input_bindings"][
+        0
+    ]["data_version_id"] = "DV999"
+    _write_json(input_scope_adapter_path, input_scope_adapter)
+    refresh_required_adapter_bindings(input_scope_root)
+    input_scope_report = validate_run(input_scope_root)
+    results["automated_preflight_input_scope_binding"] = any(
+        item["code"] == "preflight_input_binding_scope_mismatch"
+        for item in input_scope_report["errors"]
+    )
+
+    checked_binding_root = temp_root / "automated-preflight-checked-binding-run"
+    build_required_adapter_fixture(checked_binding_root)
+    checked_binding_report_path = checked_binding_root / "data_preflight_report.json"
+    checked_binding_report = json.loads(
+        checked_binding_report_path.read_text(encoding="utf-8")
+    )
+    checked_binding_report["checked_input_bindings"][0][
+        "sha256_or_immutable_version"
+    ] = "sha256:" + "e" * 64
+    _write_json(checked_binding_report_path, checked_binding_report)
+    refresh_required_adapter_bindings(checked_binding_root)
+    checked_binding_validation = validate_run(checked_binding_root)
+    results["automated_preflight_checked_input_binding"] = any(
+        item["code"] == "preflight_checked_input_binding_mismatch"
+        for item in checked_binding_validation["errors"]
+    )
+
+    false_pass_root = temp_root / "automated-preflight-false-pass-run"
+    false_pass_adapter_path, _ = build_required_adapter_fixture(false_pass_root)
+    false_pass_report_path = false_pass_root / "data_preflight_report.json"
+    false_pass_adapter = json.loads(
+        false_pass_adapter_path.read_text(encoding="utf-8")
+    )
+    false_pass_report = json.loads(false_pass_report_path.read_text(encoding="utf-8"))
+    false_pass_adapter["project_data_contract"]["preflight"][
+        "execution_status"
+    ] = "failed"
+    false_pass_report["execution_status"] = "failed"
+    _write_json(false_pass_adapter_path, false_pass_adapter)
+    _write_json(false_pass_report_path, false_pass_report)
+    refresh_required_adapter_bindings(false_pass_root)
+    false_pass_validation = validate_run(false_pass_root)
+    results["automated_preflight_false_pass_rejected"] = any(
+        item["code"] == "false_automated_preflight_pass"
+        for item in false_pass_validation["errors"]
+    )
+
+    false_flag_root = temp_root / "automated-preflight-false-decision-flag-run"
+    false_flag_adapter_path, _ = build_required_adapter_fixture(false_flag_root)
+    false_flag_report_path = false_flag_root / "data_preflight_report.json"
+    false_flag_adapter = json.loads(false_flag_adapter_path.read_text(encoding="utf-8"))
+    false_flag_report = json.loads(false_flag_report_path.read_text(encoding="utf-8"))
+    false_flag_preflight = false_flag_adapter["project_data_contract"]["preflight"]
+    false_flag_preflight["decision_bearing"] = False
+    false_flag_report["decision_bearing"] = False
+    for field in ("procedure_artifact", "input_bindings", "execution_status", "exit_status"):
+        false_flag_preflight.pop(field, None)
+    for field in (
+        "procedure_artifact",
+        "input_bindings",
+        "checked_input_bindings",
+        "execution_status",
+        "exit_status",
+    ):
+        false_flag_report.pop(field, None)
+    _write_json(false_flag_adapter_path, false_flag_adapter)
+    _write_json(false_flag_report_path, false_flag_report)
+    refresh_required_adapter_bindings(false_flag_root)
+    false_flag_validation = validate_run(false_flag_root)
+    false_flag_codes = {item["code"] for item in false_flag_validation["errors"]}
+    results["outcome_stage_rejects_false_decision_bearing_flag"] = (
+        "preflight_decision_bearing_mismatch" in false_flag_codes
+        and "missing_required_field" in false_flag_codes
+    )
+
+    planned_false_flag_root = temp_root / "planned-manifest-false-decision-flag-run"
+    planned_adapter_path, planned_manifest_path = build_required_adapter_fixture(
+        planned_false_flag_root
+    )
+    planned_report_path = planned_false_flag_root / "data_preflight_report.json"
+    planned_adapter = json.loads(planned_adapter_path.read_text(encoding="utf-8"))
+    planned_report = json.loads(planned_report_path.read_text(encoding="utf-8"))
+    planned_preflight = planned_adapter["project_data_contract"]["preflight"]
+    planned_preflight["decision_bearing"] = False
+    planned_report["decision_bearing"] = False
+    for field in ("procedure_artifact", "input_bindings", "execution_status", "exit_status"):
+        planned_preflight.pop(field, None)
+    for field in (
+        "procedure_artifact",
+        "input_bindings",
+        "checked_input_bindings",
+        "execution_status",
+        "exit_status",
+    ):
+        planned_report.pop(field, None)
+    _write_json(planned_adapter_path, planned_adapter)
+    _write_json(planned_report_path, planned_report)
+    refresh_required_adapter_bindings(planned_false_flag_root)
+    planned_manifest = json.loads(planned_manifest_path.read_text(encoding="utf-8"))
+    planned_manifest["stage_status"] = "planned"
+    _write_json(planned_manifest_path, planned_manifest)
+    planned_false_flag_validation = validate_run(planned_false_flag_root)
+    planned_false_flag_codes = {
+        item["code"] for item in planned_false_flag_validation["errors"]
+    }
+    results["planned_manifest_cannot_bypass_passed_preflight_binding"] = (
+        "preflight_decision_bearing_mismatch" in planned_false_flag_codes
+        and "missing_required_field" in planned_false_flag_codes
+    )
+
+    ambiguous_version_root = temp_root / "ambiguous-data-contract-version-run"
+    ambiguous_adapter_path, _ = build_required_adapter_fixture(ambiguous_version_root)
+    ambiguous_registry_path = ambiguous_version_root / "data_versions.json"
+    ambiguous_registry = json.loads(
+        ambiguous_registry_path.read_text(encoding="utf-8")
+    )
+    duplicate_version = dict(ambiguous_registry["data_versions"][0])
+    duplicate_version["data_product_id"] = "DP002"
+    ambiguous_registry["data_versions"].append(duplicate_version)
+    _write_json(ambiguous_registry_path, ambiguous_registry)
+    refresh_required_adapter_bindings(ambiguous_version_root)
+    ambiguous_version_validation = validate_run(ambiguous_version_root)
+    results["data_contract_version_ids_resolve_uniquely"] = any(
+        item["code"] == "ambiguous_data_contract_version_id"
+        for item in ambiguous_version_validation["errors"]
+    )
+
+    paired_check_evidence_root = temp_root / "preflight-check-evidence-pair-run"
+    build_required_adapter_fixture(paired_check_evidence_root)
+    paired_check_report_path = paired_check_evidence_root / "data_preflight_report.json"
+    paired_check_report = json.loads(
+        paired_check_report_path.read_text(encoding="utf-8")
+    )
+    paired_check_report["checks"][0]["evidence_path_or_locator"] = "evidence.json"
+    _write_json(paired_check_report_path, paired_check_report)
+    refresh_required_adapter_bindings(paired_check_evidence_root)
+    paired_check_validation = validate_run(paired_check_evidence_root)
+    results["preflight_check_evidence_binding_pair"] = any(
+        item["code"] == "incomplete_preflight_check_evidence_binding"
+        for item in paired_check_validation["errors"]
+    )
+
+    manual_preflight_root = temp_root / "manual-preflight-no-executable-binding-run"
+    manual_adapter_path, _ = build_required_adapter_fixture(manual_preflight_root)
+    manual_report_path = manual_preflight_root / "data_preflight_report.json"
+    manual_adapter = json.loads(manual_adapter_path.read_text(encoding="utf-8"))
+    manual_report = json.loads(manual_report_path.read_text(encoding="utf-8"))
+    manual_preflight = manual_adapter["project_data_contract"]["preflight"]
+    manual_preflight["evidence_mode"] = "manual"
+    manual_report["evidence_mode"] = "manual"
+    for field in (
+        "procedure_artifact",
+        "input_bindings",
+        "execution_status",
+        "exit_status",
+    ):
+        manual_preflight.pop(field, None)
+        manual_report.pop(field, None)
+    manual_report.pop("checked_input_bindings", None)
+    _write_json(manual_adapter_path, manual_adapter)
+    _write_json(manual_report_path, manual_report)
+    refresh_required_adapter_bindings(manual_preflight_root)
+    manual_validation = validate_run(manual_preflight_root)
+    results["manual_preflight_does_not_fake_executable_evidence"] = manual_validation[
+        "valid"
+    ]
+
+    legacy_adapter_root = temp_root / "schema-1-5-3-adapter-compatibility-run"
+    legacy_adapter_path, legacy_manifest_path = build_required_adapter_fixture(
+        legacy_adapter_root
+    )
+    legacy_report_path = legacy_adapter_root / "data_preflight_report.json"
+    legacy_adapter = json.loads(legacy_adapter_path.read_text(encoding="utf-8"))
+    legacy_report = json.loads(legacy_report_path.read_text(encoding="utf-8"))
+    legacy_preflight = legacy_adapter["project_data_contract"]["preflight"]
+    for field in (
+        "evidence_mode",
+        "decision_bearing",
+        "procedure_artifact",
+        "input_bindings",
+        "execution_status",
+        "exit_status",
+    ):
+        legacy_preflight.pop(field, None)
+        legacy_report.pop(field, None)
+    legacy_report.pop("checked_input_bindings", None)
+    _write_json(legacy_adapter_path, legacy_adapter)
+    _write_json(legacy_report_path, legacy_report)
+    refresh_required_adapter_bindings(legacy_adapter_root)
+    legacy_manifest = json.loads(legacy_manifest_path.read_text(encoding="utf-8"))
+    legacy_manifest["artifact_schema_version"] = "1.5.3"
+    _write_json(legacy_manifest_path, legacy_manifest)
+    legacy_adapter_validation = validate_run(legacy_adapter_root)
+    results["schema_1_5_3_domain_adapter_compatibility"] = (
+        legacy_adapter_validation["valid"]
+        and any(
+            item["code"] == "legacy_preflight_evidence_binding_not_asserted"
+            for item in legacy_adapter_validation["warnings"]
+        )
     )
 
     adapter_hash_root = temp_root / "required-domain-adapter-missing-hash-run"
@@ -10855,7 +11421,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--init",
         metavar="RUN_DIR",
         type=Path,
-        help="Create a non-overwriting schema-1.5.3 profile-aware Round-0 draft skeleton.",
+        help="Create a non-overwriting schema-1.5.4 profile-aware Round-0 draft skeleton.",
     )
     modes.add_argument(
         "--record-skill-provenance",
@@ -10888,7 +11454,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.run_dir is not None or args.output is not None or args.to_profile is not None:
             parser.error("--init cannot be combined with run_dir, --output, or --to-profile")
         if args.profile is None:
-            parser.error("--profile is required with --init for schema 1.5.3")
+            parser.error("--profile is required with --init for schema 1.5.4")
         report = initialize_run(args.init, args.profile)
         _emit(report, None)
         return 0 if report.get("init") == "created" else 1

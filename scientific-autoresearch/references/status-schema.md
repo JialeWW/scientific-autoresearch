@@ -1,6 +1,6 @@
 # Canonical Status Schema
 
-This is an audit and validator-diagnosis reference, not default Agent context. For schema `1.5.3`, the initializer and `scripts/validate_run.py` are authoritative for fields, enums, and transition checks. Do not copy this page into every run.
+This is an audit and validator-diagnosis reference, not default Agent context. For schema `1.5.4`, the initializer and `scripts/validate_run.py` are authoritative for fields, enums, and transition checks. Do not copy this page into every run.
 
 ## Profile and Stage
 
@@ -15,6 +15,8 @@ Profiles are ordered `fixed_test < adaptive_search < coverage_search`. A frozen 
 Schema 1.5.2 `skill_provenance` is an ordered history automatically seeded by initialization. Before authorized execution or resume, use `scripts/validate_run.py --record-skill-provenance RUN_DIR`; unchanged identity is a no-op and changed identity appends a new entry. Read-only validation never edits it. Each entry records the skill name, release version, deterministic behavior-package SHA-256, offset-aware capture time, and an optional source revision. The digest binds `SKILL.md`, bundled references, scripts, and evaluation specifications while excluding run outputs; symbolic links on that surface are invalid. It identifies content but does not prove compliance or independent timing.
 
 Schema 1.5.3 adds a one-time domain-adapter assessment, unit and dependence fields in claim or decision records, an optional hash-bound adapter and project data-preflight interface, auditable equivalence closure, and a basis-specific coverage summary. Keep `domain_adapter_required=false` for tasks whose relevant semantics fit directly in the frozen claim or Decision Contract, but assess rather than assume this state before outcome-bearing execution.
+
+Schema 1.5.4 conditionally binds a passed automated, decision-bearing data preflight to a preserved procedure artifact, the complete input-version set and immutable bindings, its execution outcome, and the hash-bound report. Other evidence modes do not require executable fields. Schema 1.5.3 remains valid as a legacy assurance level; relabeling it does not assert that executable evidence existed.
 
 Use `stage_status` independently of scientific completion:
 
@@ -130,4 +132,4 @@ A completed round, promoted candidate, stage report, exhausted resource envelope
 - Preserve weak, null, invalid, failed, abandoned, blocked, and unfavorable branches.
 - Use the validator before resume and before any stage, pause, or completion report. Metadata consistency and numerical reproduction are separate claims.
 
-Schema `<=1.4` remains readable under its legacy full-run behavior. Schema `1.5.0` profile runs remain readable, with a missing fixed-test `analysis_scope` interpreted as `single_test`; schema `1.5.0` and `1.5.1` may omit skill provenance, and schemas through `1.5.2` may omit the domain-adapter and equivalence additions. Do not relabel a legacy run; initialize or migrate profile metadata and artifacts explicitly.
+Schema `<=1.4` remains readable under its legacy full-run behavior. Schema `1.5.0` profile runs remain readable, with a missing fixed-test `analysis_scope` interpreted as `single_test`; schema `1.5.0` and `1.5.1` may omit skill provenance, schemas through `1.5.2` may omit the domain-adapter and equivalence additions, and schema `1.5.3` may omit executable-preflight evidence binding. Do not relabel a legacy run; initialize or migrate profile metadata and artifacts explicitly.

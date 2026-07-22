@@ -3,7 +3,7 @@ name: scientific-autoresearch
 description: "Use this skill when scientific work requires formal audit or provenance, when outcome-informed choices generate, modify, screen, compare, rank, or promote data-supported candidates, or when systematic coverage of a finite data-supported candidate space is requested. It provides proportionate profiles for research design, read-only audit, frozen analyses, adaptive search, and coverage search, with safeguards requiring inference to account for the actual selection path."
 license: MIT
 metadata:
-  version: "0.2.7"
+  version: "0.2.8"
 ---
 
 # Scientific Autoresearch

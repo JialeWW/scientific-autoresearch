@@ -62,6 +62,8 @@ Distinguish structural conformance, behavioral conformance, empirical operating 
 
 Before evaluation outcomes, freeze the benchmark task family, comparison conditions, evaluation unit, primary metrics, repetition count or Monte Carlo precision, stopping rule, and pass or interpretation rule. Separate development cases from sealed evaluation cases. If sealed outcomes motivate a method change, treat that split as development evidence and evaluate the changed method on a new sealed split.
 
+When a claim attributes an observed difference to a treatment, method, system, or condition, define comparable blocks before outcomes. Hold fixed or explicitly model every material factor other than the target condition, including the case or sample definition, execution environment, configuration, repetition schedule, and evaluation procedure. Report incompatible blocks in parallel rather than subtracting their summaries. Treat case, execution, or evaluator uncertainty as estimated only when the design contains the corresponding replication.
+
 Support claims about false-positive or false-promotion rates, power, interval coverage, or generalization across executors only with end-to-end known-truth evaluations that reproduce the relevant selection path. Scope conclusions to the tested tasks, conditions, executors, and method version.
 
 ## Anomaly Discovery

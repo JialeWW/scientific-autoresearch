@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Score hash-bound benchmark records against a frozen manifest and case registry."""
+"""Score hash-bound, paired benchmark attempts against protocol 2.1."""
 
 from __future__ import annotations
 
@@ -11,30 +11,200 @@ import random
 import re
 import sys
 import tempfile
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Iterable, Mapping, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
 
-SCORER_VERSION = "2.0.0"
-RECORD_SCHEMA_VERSION = "2.0.0"
-HASH_RE = re.compile(r"sha256:[0-9a-f]{64}")
+SCORER_VERSION = "2.1.0"
+BENCHMARK_SCHEMA_VERSION = "2.1.0"
+RECORD_SCHEMA_VERSION = "2.1.0"
+SCORE_SCHEMA_VERSION = "2.1.0"
+HASH_RE = re.compile(r"(?:sha256:)?([0-9a-f]{64})")
+
+RUN_STATUSES = {
+    "completed",
+    "agent_timeout",
+    "agent_error",
+    "policy_refusal",
+    "harness_error",
+    "provider_error",
+    "invalid_output",
+    "cancelled_before_execution",
+}
+AGENT_FAILURE_STATUSES = {
+    "agent_timeout",
+    "agent_error",
+    "policy_refusal",
+    "invalid_output",
+}
+INFRASTRUCTURE_FAILURE_STATUSES = {
+    "harness_error",
+    "provider_error",
+    "cancelled_before_execution",
+}
+SEED_CONTROL_STATUSES = {
+    "enforced",
+    "requested_not_guaranteed",
+    "unavailable",
+}
+EVIDENCE_STATUSES = {
+    "not_evaluated",
+    "development_suite_evaluated",
+    "sealed_suite_baseline_established",
+    "prospective_release_gate_evaluated",
+    "empirical_method_evaluated",
+}
+EVIDENCE_STATUS_ORDER = {
+    "not_evaluated": 0,
+    "development_suite_evaluated": 1,
+    "sealed_suite_baseline_established": 2,
+    "prospective_release_gate_evaluated": 3,
+    "empirical_method_evaluated": 4,
+}
+
+ESTIMAND_SPEC_BY_RECORD_TYPE = {
+    "trigger": {
+        "primary_estimands": ["trigger_balanced_accuracy_delta"],
+        "secondary_estimands": [
+            "case_level_win_loss_tie",
+            "absolute_condition_scores",
+        ],
+        "diagnostic_estimands": [
+            "completed_output_confusion",
+            "agent_failure_rate",
+            "infrastructure_retry_count",
+        ],
+        "aggregation_method_id": "trigger_paired_truth_stratified_case_macro_v1",
+        "aggregation_rule": "Compute paired case-by-replicate credit differences, average replicates within case, then form a truth-stratified case macro difference.",
+        "uncertainty_design": {
+            "case_variation": "case_cluster_bootstrap",
+            "execution_stochasticity": "within_case_paired_replicates_when_available",
+            "judge_uncertainty": "not_applicable",
+        },
+        "interpretation_scope_id": "development_only_no_generalization_v1",
+        "interpretation_rule": "Development evidence only; do not infer a release gate or deployment generalization.",
+    },
+    "behavioral": {
+        "primary_estimands": [
+            "behavioral_case_macro_delta",
+            "critical_violation_risk_difference",
+        ],
+        "secondary_estimands": [
+            "case_all_pass_rate_delta",
+            "case_level_win_loss_tie",
+            "critical_violation_discordance",
+            "absolute_condition_scores",
+        ],
+        "diagnostic_estimands": [
+            "assertion_micro_pass_rate",
+            "agent_failure_rate",
+            "infrastructure_retry_count",
+        ],
+        "aggregation_method_id": "behavioral_paired_case_macro_v1",
+        "aggregation_rule": "Compute paired case-by-replicate differences, average replicates within case, then weight cases equally.",
+        "uncertainty_design": {
+            "case_variation": "case_cluster_bootstrap",
+            "execution_stochasticity": "within_case_paired_replicates_when_available",
+            "judge_uncertainty": "not_estimable_without_repeated_independent_judgments",
+        },
+        "interpretation_scope_id": "development_only_no_generalization_v1",
+        "interpretation_rule": "Development evidence only; do not infer a release gate or deployment generalization.",
+    },
+}
+
+BUILTIN_SUITE_FIELDS = {
+    "suite_id",
+    "protocol_status",
+    "record_type",
+    "scoring_backend",
+    "evidence_type",
+    "target",
+    "case_source",
+    "conditions",
+    "evaluation_unit",
+    "repetitions",
+    "primary_estimands",
+    "secondary_estimands",
+    "diagnostic_estimands",
+    "aggregation_method_id",
+    "aggregation_rule",
+    "interval_rule",
+    "tie_rule",
+    "missing_run_policy",
+    "failure_retry_policy",
+    "uncertainty_design",
+    "interpretation_scope_id",
+    "interpretation_rule",
+    "comparison_blocks",
+}
+EXTERNAL_SUITE_FIELDS = BUILTIN_SUITE_FIELDS - {
+    "aggregation_method_id",
+    "interpretation_scope_id",
+}
+CONDITION_FIELDS = {
+    "condition_id",
+    "skill_release",
+    "skill_package_sha256",
+}
+COMPARISON_BLOCK_FIELDS = {
+    "comparison_block_id",
+    "run_batch_id",
+    "protocol_status",
+    "condition_ids",
+    "contrasts",
+    "executor_identity",
+    "execution_config_artifact",
+    "seed_control_status",
+    "seed_schedule_artifact",
+    "order_schedule_artifact",
+    "routing_protocol_artifact",
+    "judge_protocol_artifact",
+    "isolation_policy",
+    "max_pair_window_seconds",
+    "evidence_status_on_complete",
+}
+MANIFEST_FIELDS = {
+    "benchmark_schema_version",
+    "benchmark_protocol_version",
+    "protocol_id",
+    "release_under_test",
+    "benchmark_status",
+    "record_schema_version",
+    "scorer_sha256",
+    "evaluation_state_vocabulary",
+    "suites",
+    "result_policy",
+    "sealed_suite_policy",
+    "protocol_invalidation_policy",
+}
+
 COMMON_RECORD_FIELDS = {
     "record_schema_version",
     "manifest_sha256",
     "suite_id",
+    "comparison_block_id",
+    "run_batch_id",
     "condition_id",
     "skill_release",
     "skill_package_sha256",
     "case_id",
     "replicate",
+    "attempt",
     "agent",
     "model",
     "runtime",
+    "execution_config_path",
+    "execution_config_schema_version",
     "execution_config_sha256",
     "generation_seed",
     "seed_control_status",
+    "run_status",
+    "run_order_index",
+    "started_at",
+    "completed_at",
+    "session_identity_sha256",
     "execution_identity_sha256",
     "record_type",
     "case_spec_sha256",
@@ -42,21 +212,48 @@ COMMON_RECORD_FIELDS = {
     "evidence_path",
     "evidence_sha256",
 }
-SEED_CONTROL_STATUSES = {"controlled", "uncontrolled", "not_applicable"}
+TRIGGER_OUTCOME_FIELDS = {
+    "predicted_trigger",
+    "routing_protocol_id",
+    "routing_protocol_sha256",
+    "routing_extractor",
+    "scored_at",
+    "judgment_path",
+    "judgment_sha256",
+}
+BEHAVIORAL_OUTCOME_FIELDS = {
+    "assertion_scores",
+    "rubric_sha256",
+    "judge_protocol_id",
+    "judge_protocol_sha256",
+    "judge",
+    "scored_at",
+    "judgment_path",
+    "judgment_sha256",
+}
+
 EXECUTION_IDENTITY_FIELDS = (
     "manifest_sha256",
     "suite_id",
+    "comparison_block_id",
+    "run_batch_id",
     "condition_id",
     "skill_release",
     "skill_package_sha256",
     "case_id",
     "replicate",
+    "attempt",
     "agent",
     "model",
     "runtime",
     "execution_config_sha256",
     "generation_seed",
     "seed_control_status",
+    "run_status",
+    "run_order_index",
+    "started_at",
+    "completed_at",
+    "session_identity_sha256",
     "record_type",
 )
 
@@ -83,12 +280,21 @@ def _canonical_hash(value: Any) -> str:
 
 
 def _execution_identity_hash(record: Mapping[str, Any]) -> str:
-    return _canonical_hash({field: record.get(field) for field in EXECUTION_IDENTITY_FIELDS})
+    return _canonical_hash(
+        {field: record.get(field) for field in EXECUTION_IDENTITY_FIELDS}
+    )
 
 
 def _mean(values: Iterable[float]) -> float | None:
     items = list(values)
     return sum(items) / len(items) if items else None
+
+
+def _variance(values: Sequence[float]) -> float | None:
+    if len(values) < 2:
+        return None
+    center = sum(values) / len(values)
+    return sum((value - center) ** 2 for value in values) / (len(values) - 1)
 
 
 def _ratio(numerator: int | float, denominator: int | float) -> float | None:
@@ -117,10 +323,17 @@ def _interval(values: Sequence[float], confidence: float) -> list[float] | None:
     return [low, high] if low is not None and high is not None else None
 
 
+def _reject_nonfinite_json_constant(value: str) -> None:
+    raise ValueError(f"non-finite JSON number {value!r} is not permitted")
+
+
 def _load_json(path: Path) -> Any:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+        return json.loads(
+            path.read_text(encoding="utf-8"),
+            parse_constant=_reject_nonfinite_json_constant,
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
         raise ValueError(f"cannot read JSON {path}: {exc}") from exc
 
 
@@ -132,9 +345,14 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
                 if not line.strip():
                     continue
                 try:
-                    value = json.loads(line)
-                except json.JSONDecodeError as exc:
-                    raise ValueError(f"line {line_number}: invalid JSON: {exc}") from exc
+                    value = json.loads(
+                        line,
+                        parse_constant=_reject_nonfinite_json_constant,
+                    )
+                except (json.JSONDecodeError, ValueError) as exc:
+                    raise ValueError(
+                        f"line {line_number}: invalid JSON: {exc}"
+                    ) from exc
                 if not isinstance(value, dict):
                     raise ValueError(f"line {line_number}: record must be an object")
                 records.append(value)
@@ -166,199 +384,38 @@ def _safe_relative_file(root: Path, value: Any, label: str) -> Path:
 
 def _hash_field(value: Any, label: str) -> str:
     text = str(value or "").strip().lower()
-    if not HASH_RE.fullmatch(text):
-        raise ValueError(f"{label} must use sha256:<64 lowercase hex>")
-    return text
+    match = HASH_RE.fullmatch(text)
+    if not match:
+        raise ValueError(f"{label} must use SHA-256")
+    return "sha256:" + match.group(1)
 
 
-def _load_protocol(manifest_path: Path) -> dict[str, Any]:
-    manifest_path = manifest_path.resolve()
-    raw = _load_json(manifest_path)
-    if not isinstance(raw, dict):
-        raise ValueError("benchmark manifest must be an object")
-    if raw.get("benchmark_schema_version") != "2.0.0":
-        raise ValueError("score.py requires benchmark_schema_version=2.0.0")
-    if raw.get("record_schema_version") != RECORD_SCHEMA_VERSION:
-        raise ValueError("manifest record_schema_version does not match scorer")
-    expected_scorer_hash = str(raw.get("scorer_sha256", "")).strip().lower()
-    if not re.fullmatch(r"[0-9a-f]{64}", expected_scorer_hash):
-        raise ValueError("manifest scorer_sha256 must be a raw 64-hex SHA-256")
-    actual_scorer_hash = hashlib.sha256(Path(__file__).resolve().read_bytes()).hexdigest()
-    if actual_scorer_hash != expected_scorer_hash:
-        raise ValueError("score.py SHA-256 does not match the frozen manifest")
-    suites_raw = raw.get("suites")
-    if not isinstance(suites_raw, list) or not suites_raw:
-        raise ValueError("benchmark manifest must define suites")
-
-    repository_root = manifest_path.parent.parent.resolve()
-    suites: dict[str, dict[str, Any]] = {}
-    for suite_index, suite_raw in enumerate(suites_raw, start=1):
-        if not isinstance(suite_raw, dict):
-            raise ValueError(f"suite {suite_index} must be an object")
-        suite_id = str(suite_raw.get("suite_id", "")).strip()
-        if not suite_id or suite_id in suites:
-            raise ValueError(f"suite {suite_index} has a missing or duplicate suite_id")
-        suite = dict(suite_raw)
-        conditions_raw = suite.get("conditions")
-        if not isinstance(conditions_raw, list) or not conditions_raw:
-            raise ValueError(f"suite {suite_id} must define conditions")
-        conditions: dict[str, dict[str, Any]] = {}
-        for condition in conditions_raw:
-            if not isinstance(condition, dict):
-                raise ValueError(f"suite {suite_id} has a non-object condition")
-            condition_id = str(condition.get("condition_id", "")).strip()
-            if not condition_id or condition_id in conditions:
-                raise ValueError(f"suite {suite_id} has a missing or duplicate condition_id")
-            release = condition.get("skill_release")
-            package_hash = condition.get("skill_package_sha256")
-            if release is None:
-                if package_hash is not None:
-                    raise ValueError(f"suite {suite_id} no-skill condition must use a null package hash")
-            else:
-                _hash_field(package_hash, f"suite {suite_id} condition {condition_id} package hash")
-            conditions[condition_id] = dict(condition)
-        suite["conditions_by_id"] = conditions
-        suite["cases_by_id"] = {}
-
-        if suite.get("scoring_backend") == "score.py":
-            if suite.get("protocol_status") != "frozen":
-                raise ValueError(f"suite {suite_id} must be frozen before score.py can score it")
-            repetitions = suite.get("repetitions")
-            if not isinstance(repetitions, int) or isinstance(repetitions, bool) or repetitions < 1:
-                raise ValueError(f"suite {suite_id} needs positive integer repetitions")
-            interval_rule = suite.get("interval_rule")
-            if not isinstance(interval_rule, dict):
-                raise ValueError(f"suite {suite_id} needs an interval_rule object")
-            expected_method = (
-                "stratified_case_cluster_bootstrap"
-                if suite.get("record_type") == "trigger"
-                else "case_cluster_bootstrap"
-            )
-            if interval_rule.get("method") != expected_method:
-                raise ValueError(
-                    f"suite {suite_id} interval method must be {expected_method}"
-                )
-            draws = interval_rule.get("draws")
-            seed = interval_rule.get("seed")
-            confidence = interval_rule.get("confidence")
-            if not isinstance(draws, int) or isinstance(draws, bool) or draws < 1:
-                raise ValueError(f"suite {suite_id} interval draws must be a positive integer")
-            if not isinstance(seed, int) or isinstance(seed, bool):
-                raise ValueError(f"suite {suite_id} interval seed must be an integer")
-            if (
-                not isinstance(confidence, (int, float))
-                or isinstance(confidence, bool)
-                or not 0 < float(confidence) < 1
-            ):
-                raise ValueError(f"suite {suite_id} interval confidence must be in (0,1)")
-            source = suite.get("case_source")
-            if not isinstance(source, dict):
-                raise ValueError(f"suite {suite_id} needs a case_source object")
-            source_path = _safe_relative_file(
-                repository_root,
-                source.get("path"),
-                f"suite {suite_id} case_source.path",
-            )
-            expected_source_hash = str(source.get("sha256", "")).strip().lower()
-            if not re.fullmatch(r"[0-9a-f]{64}", expected_source_hash):
-                raise ValueError(f"suite {suite_id} case source needs a raw 64-hex SHA-256")
-            if hashlib.sha256(source_path.read_bytes()).hexdigest() != expected_source_hash:
-                raise ValueError(f"suite {suite_id} case source SHA-256 mismatch")
-            source_data = _load_json(source_path)
-            collection_key = source.get("collection_key")
-            cases_raw = source_data.get(collection_key) if collection_key else source_data
-            if not isinstance(cases_raw, list) or not cases_raw:
-                raise ValueError(f"suite {suite_id} case source must resolve to a nonempty list")
-            id_field = str(source.get("case_id_field", "id"))
-            prompt_field = str(source.get("prompt_field", "prompt"))
-            for case_index, case_raw in enumerate(cases_raw, start=1):
-                if not isinstance(case_raw, dict):
-                    raise ValueError(f"suite {suite_id} case {case_index} must be an object")
-                case_id = str(case_raw.get(id_field, "")).strip()
-                if not case_id or case_id in suite["cases_by_id"]:
-                    raise ValueError(f"suite {suite_id} has a missing or duplicate case ID")
-                prompt = case_raw.get(prompt_field)
-                if not isinstance(prompt, str) or not prompt.strip():
-                    raise ValueError(f"suite {suite_id} case {case_id} has no prompt")
-                case = dict(case_raw)
-                case["case_id"] = case_id
-                case["case_spec_sha256"] = _canonical_hash(case_raw)
-                case["prompt_sha256"] = _sha256_bytes(prompt.encode("utf-8"))
-                if suite.get("record_type") == "trigger":
-                    if not isinstance(case_raw.get("should_trigger"), bool):
-                        raise ValueError(f"trigger case {case_id} has no Boolean should_trigger")
-                elif suite.get("record_type") == "behavioral":
-                    assertions = case_raw.get("assertions")
-                    assertion_ids = case_raw.get("assertion_ids")
-                    critical_ids = case_raw.get("critical_assertion_ids")
-                    if not isinstance(assertions, list) or not assertions:
-                        raise ValueError(f"behavioral case {case_id} has no assertions")
-                    if (
-                        not isinstance(assertion_ids, list)
-                        or len(assertion_ids) != len(assertions)
-                        or len({str(item) for item in assertion_ids}) != len(assertion_ids)
-                    ):
-                        raise ValueError(f"behavioral case {case_id} needs one unique assertion ID per assertion")
-                    if not isinstance(critical_ids, list) or not set(critical_ids) <= set(assertion_ids):
-                        raise ValueError(f"behavioral case {case_id} has invalid critical assertion IDs")
-                    case["rubric_sha256"] = _canonical_hash(
-                        {
-                            "assertions": assertions,
-                            "assertion_ids": assertion_ids,
-                            "critical_assertion_ids": critical_ids,
-                        }
-                    )
-                else:
-                    raise ValueError(f"suite {suite_id} uses unsupported score.py record_type")
-                suite["cases_by_id"][case_id] = case
-            if suite.get("record_type") == "trigger":
-                labels = {
-                    bool(case.get("should_trigger"))
-                    for case in suite["cases_by_id"].values()
-                }
-                if labels != {False, True}:
-                    raise ValueError(
-                        f"trigger suite {suite_id} needs both positive and negative frozen cases; balanced_accuracy is undefined otherwise"
-                    )
-        suites[suite_id] = suite
-    release_hashes: dict[str, set[str]] = defaultdict(set)
-    for suite in suites.values():
-        for condition in suite["conditions_by_id"].values():
-            release = condition.get("skill_release")
-            package_hash = condition.get("skill_package_sha256")
-            if release is not None and isinstance(package_hash, str):
-                release_hashes[str(release)].add(package_hash.lower())
-    inconsistent_releases = sorted(
-        release for release, hashes in release_hashes.items() if len(hashes) > 1
+def _finite_number(value: Any) -> bool:
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(float(value))
     )
-    if inconsistent_releases:
-        raise ValueError(
-            f"skill releases use inconsistent package hashes across suites: {inconsistent_releases}"
-        )
-
-    return {
-        "manifest": raw,
-        "manifest_sha256": _sha256_file(manifest_path),
-        "repository_root": repository_root,
-        "suites": suites,
-    }
 
 
-def _verify_evidence(
-    evidence_root: Path,
-    path_value: Any,
-    hash_value: Any,
+def _require_exact_keys(
+    value: Mapping[str, Any],
+    expected: set[str],
     label: str,
-) -> tuple[Path, str]:
-    path = _safe_relative_file(evidence_root.resolve(), path_value, label)
-    expected = _hash_field(hash_value, f"{label} hash")
-    actual = _sha256_file(path)
+) -> None:
+    actual = set(value)
     if actual != expected:
-        raise ValueError(f"{label} SHA-256 mismatch")
-    return path, actual
+        missing = sorted(expected - actual)
+        unknown = sorted(str(item) for item in actual - expected)
+        details = []
+        if missing:
+            details.append(f"missing={missing}")
+        if unknown:
+            details.append(f"unknown={unknown}")
+        raise ValueError(f"{label} must use the closed schema ({', '.join(details)})")
 
 
-def _validate_timestamp(value: Any, label: str) -> None:
+def _parse_timestamp(value: Any, label: str) -> datetime:
     text = str(value or "").strip()
     if not text:
         raise ValueError(f"{label} is missing")
@@ -369,6 +426,966 @@ def _validate_timestamp(value: Any, label: str) -> None:
         raise ValueError(f"{label} must be ISO-8601") from exc
     if parsed.tzinfo is None:
         raise ValueError(f"{label} must include a UTC offset")
+    return parsed
+
+
+def _balanced_condition_orders(
+    condition_ids: Sequence[str],
+    expected_pairs: Iterable[tuple[str, int]],
+    seed: int,
+) -> dict[tuple[str, int], list[str]]:
+    base = list(condition_ids)
+    random.Random(seed).shuffle(base)
+    return {
+        pair: base[index % len(base) :] + base[: index % len(base)]
+        for index, pair in enumerate(sorted(expected_pairs))
+    }
+
+
+def _verify_evidence(
+    root: Path,
+    path_value: Any,
+    hash_value: Any,
+    label: str,
+) -> tuple[Path, str]:
+    path = _safe_relative_file(root.resolve(), path_value, label)
+    expected = _hash_field(hash_value, f"{label} hash")
+    actual = _sha256_file(path)
+    if actual != expected:
+        raise ValueError(f"{label} SHA-256 mismatch")
+    return path, actual
+
+
+def _load_bound_json_artifact(
+    repository_root: Path,
+    reference: Any,
+    label: str,
+    schema_field: str,
+) -> tuple[dict[str, Any], dict[str, str]]:
+    if not isinstance(reference, Mapping):
+        raise ValueError(f"{label} reference must be an object")
+    _require_exact_keys(
+        reference,
+        {"path", "sha256", "schema_version"},
+        f"{label} reference",
+    )
+    for field in ("path", "sha256", "schema_version"):
+        if reference.get(field) in (None, ""):
+            raise ValueError(f"{label} reference is missing {field}")
+    path = _safe_relative_file(repository_root, reference.get("path"), f"{label}.path")
+    expected = _hash_field(reference.get("sha256"), f"{label}.sha256")
+    actual = _sha256_file(path)
+    if actual != expected:
+        raise ValueError(f"{label} SHA-256 mismatch")
+    value = _load_json(path)
+    if not isinstance(value, dict):
+        raise ValueError(f"{label} must be a JSON object")
+    schema_version = str(reference.get("schema_version"))
+    if value.get(schema_field) != schema_version:
+        raise ValueError(f"{label} schema version mismatch")
+    return value, {
+        "path": str(reference.get("path")),
+        "sha256": expected,
+        "schema_version": schema_version,
+    }
+
+
+def _validate_interval_rule(suite: Mapping[str, Any], suite_id: str) -> None:
+    rule = suite.get("interval_rule")
+    if not isinstance(rule, Mapping):
+        raise ValueError(f"suite {suite_id} needs interval_rule")
+    _require_exact_keys(
+        rule,
+        {"method", "bootstrap_unit", "draws", "seed", "confidence"},
+        f"suite {suite_id} interval_rule",
+    )
+    expected = (
+        "paired_stratified_case_cluster_bootstrap"
+        if suite.get("record_type") == "trigger"
+        else "paired_case_cluster_bootstrap"
+    )
+    if rule.get("method") != expected:
+        raise ValueError(f"suite {suite_id} interval method must be {expected}")
+    draws = rule.get("draws")
+    seed = rule.get("seed")
+    confidence = rule.get("confidence")
+    if not isinstance(draws, int) or isinstance(draws, bool) or draws < 1:
+        raise ValueError(f"suite {suite_id} interval draws must be positive")
+    if not isinstance(seed, int) or isinstance(seed, bool):
+        raise ValueError(f"suite {suite_id} interval seed must be an integer")
+    if not _finite_number(confidence) or not 0 < float(confidence) < 1:
+        raise ValueError(f"suite {suite_id} interval confidence must be in (0,1)")
+    if rule.get("bootstrap_unit") != "case":
+        raise ValueError(f"suite {suite_id} bootstrap_unit must be case")
+
+
+def _validate_failure_policy(suite: Mapping[str, Any], suite_id: str) -> None:
+    policy = suite.get("failure_retry_policy")
+    if not isinstance(policy, Mapping):
+        raise ValueError(f"suite {suite_id} needs failure_retry_policy")
+    _require_exact_keys(
+        policy,
+        {
+            "maximum_infrastructure_retries",
+            "retry_eligible_statuses",
+            "retain_all_attempts",
+            "scoring_attempt_selection_rule",
+            "agent_failure_scoring",
+        },
+        f"suite {suite_id} failure_retry_policy",
+    )
+    retries = policy.get("maximum_infrastructure_retries")
+    if not isinstance(retries, int) or isinstance(retries, bool) or retries < 0:
+        raise ValueError(f"suite {suite_id} has invalid retry limit")
+    retry_statuses = policy.get("retry_eligible_statuses")
+    if (
+        not isinstance(retry_statuses, list)
+        or any(not isinstance(item, str) for item in retry_statuses)
+        or len(retry_statuses) != len(set(retry_statuses))
+        or not set(retry_statuses) <= INFRASTRUCTURE_FAILURE_STATUSES
+    ):
+        raise ValueError(f"suite {suite_id} has invalid retry statuses")
+    if policy.get("retain_all_attempts") is not True:
+        raise ValueError(f"suite {suite_id} must retain all attempts")
+    if policy.get("scoring_attempt_selection_rule") != "first_non_retry_eligible_attempt":
+        raise ValueError(f"suite {suite_id} has unsupported attempt selection")
+    if policy.get("agent_failure_scoring") != "zero_credit":
+        raise ValueError(f"suite {suite_id} must score Agent failures as zero credit")
+    if suite.get("missing_run_policy") != "comparison_incomplete_no_paired_delta":
+        raise ValueError(f"suite {suite_id} has unsupported missing-run policy")
+
+
+def _load_case_registry(
+    repository_root: Path,
+    suite: dict[str, Any],
+    suite_id: str,
+) -> None:
+    source = suite.get("case_source")
+    if not isinstance(source, Mapping):
+        raise ValueError(f"suite {suite_id} needs case_source")
+    _require_exact_keys(
+        source,
+        {
+            "path",
+            "sha256",
+            "collection_key",
+            "case_id_field",
+            "prompt_field",
+            "role",
+        },
+        f"suite {suite_id} case_source",
+    )
+    if source.get("collection_key") is not None and (
+        not isinstance(source.get("collection_key"), str)
+        or not source["collection_key"].strip()
+    ):
+        raise ValueError(f"suite {suite_id} has invalid collection_key")
+    for field in ("case_id_field", "prompt_field"):
+        if not isinstance(source.get(field), str) or not source[field].strip():
+            raise ValueError(f"suite {suite_id} has invalid {field}")
+    source_path = _safe_relative_file(
+        repository_root, source.get("path"), f"suite {suite_id} case source"
+    )
+    expected_hash = _hash_field(source.get("sha256"), f"suite {suite_id} case hash")
+    if _sha256_file(source_path) != expected_hash:
+        raise ValueError(f"suite {suite_id} case source SHA-256 mismatch")
+    source_data = _load_json(source_path)
+    collection_key = source.get("collection_key")
+    role = source.get("role")
+    if role not in {"development", "sealed"}:
+        raise ValueError(f"suite {suite_id} case source has invalid role")
+    if role == "sealed":
+        raise ValueError(
+            f"suite {suite_id} uses sealed cases, which require a successor scorer with an implemented commitment schema"
+        )
+    if collection_key:
+        if not isinstance(source_data, Mapping):
+            raise ValueError(
+                f"suite {suite_id} case source must be an object when collection_key is set"
+            )
+        cases_raw = source_data.get(collection_key)
+    else:
+        cases_raw = source_data
+    if not isinstance(cases_raw, list) or not cases_raw:
+        raise ValueError(f"suite {suite_id} case source must resolve to a list")
+    id_field = str(source.get("case_id_field", "id"))
+    prompt_field = str(source.get("prompt_field", "prompt"))
+    cases: dict[str, dict[str, Any]] = {}
+    for case_index, case_raw in enumerate(cases_raw, start=1):
+        if not isinstance(case_raw, dict):
+            raise ValueError(f"suite {suite_id} case {case_index} must be an object")
+        case_id = str(case_raw.get(id_field, "")).strip()
+        if not case_id or case_id in cases:
+            raise ValueError(f"suite {suite_id} has a missing or duplicate case ID")
+        prompt = case_raw.get(prompt_field)
+        if not isinstance(prompt, str) or not prompt.strip():
+            raise ValueError(f"suite {suite_id} case {case_id} has no prompt")
+        case = dict(case_raw)
+        case["case_id"] = case_id
+        case["case_spec_sha256"] = _canonical_hash(case_raw)
+        case["prompt_sha256"] = _sha256_bytes(prompt.encode("utf-8"))
+        if suite.get("record_type") == "trigger":
+            if not isinstance(case_raw.get("should_trigger"), bool):
+                raise ValueError(f"trigger case {case_id} lacks Boolean truth")
+        elif suite.get("record_type") == "behavioral":
+            assertions = case_raw.get("assertions")
+            assertion_ids = case_raw.get("assertion_ids")
+            critical_ids = case_raw.get("critical_assertion_ids")
+            if (
+                not isinstance(assertions, list)
+                or not assertions
+                or any(not isinstance(item, str) or not item.strip() for item in assertions)
+            ):
+                raise ValueError(f"behavioral case {case_id} has no assertions")
+            if (
+                not isinstance(assertion_ids, list)
+                or any(
+                    not isinstance(item, str) or not item.strip()
+                    for item in assertion_ids
+                )
+                or len(assertion_ids) != len(assertions)
+                or len(set(assertion_ids)) != len(assertion_ids)
+            ):
+                raise ValueError(f"behavioral case {case_id} has invalid assertion IDs")
+            if (
+                not isinstance(critical_ids, list)
+                or any(
+                    not isinstance(item, str) or not item.strip()
+                    for item in critical_ids
+                )
+                or len(set(critical_ids)) != len(critical_ids)
+                or not set(critical_ids) <= set(assertion_ids)
+            ):
+                raise ValueError(f"behavioral case {case_id} has invalid critical IDs")
+            case["rubric_sha256"] = _canonical_hash(
+                {
+                    "assertions": assertions,
+                    "assertion_ids": assertion_ids,
+                    "critical_assertion_ids": critical_ids,
+                }
+            )
+        else:
+            raise ValueError(f"suite {suite_id} has unsupported record_type")
+        cases[case_id] = case
+    if suite.get("record_type") == "trigger":
+        label_counts = Counter(
+            bool(case["should_trigger"]) for case in cases.values()
+        )
+        if set(label_counts) != {False, True} or any(
+            label_counts[label] < 2 for label in (False, True)
+        ):
+            raise ValueError(
+                f"trigger suite {suite_id} needs at least two cases in each truth class for stratified case-cluster uncertainty"
+            )
+    elif len(cases) < 2:
+        raise ValueError(
+            f"behavioral suite {suite_id} needs at least two cases for case-cluster uncertainty"
+        )
+    suite["cases_by_id"] = cases
+
+
+def _validate_comparison_block(
+    suite: Mapping[str, Any],
+    raw: Any,
+    repository_root: Path,
+) -> dict[str, Any]:
+    suite_id = str(suite["suite_id"])
+    if not isinstance(raw, Mapping):
+        raise ValueError(f"suite {suite_id} comparison block must be an object")
+    _require_exact_keys(
+        raw,
+        COMPARISON_BLOCK_FIELDS,
+        f"suite {suite_id} comparison block",
+    )
+    block = dict(raw)
+    block_id = str(block.get("comparison_block_id", "")).strip()
+    if not block_id:
+        raise ValueError(f"suite {suite_id} comparison block lacks an ID")
+    if block.get("protocol_status") != "frozen":
+        raise ValueError(f"comparison block {block_id} must be frozen")
+    run_batch_id = str(block.get("run_batch_id", "")).strip()
+    if not run_batch_id:
+        raise ValueError(f"comparison block {block_id} lacks run_batch_id")
+    condition_ids = block.get("condition_ids")
+    known_conditions = set(suite["conditions_by_id"])
+    if (
+        not isinstance(condition_ids, list)
+        or any(not isinstance(item, str) or not item.strip() for item in condition_ids)
+        or len(condition_ids) < 2
+        or len(condition_ids) != len(set(condition_ids))
+        or not set(condition_ids) <= known_conditions
+    ):
+        raise ValueError(f"comparison block {block_id} has invalid condition_ids")
+    contrasts_raw = block.get("contrasts")
+    if not isinstance(contrasts_raw, list) or not contrasts_raw:
+        raise ValueError(f"comparison block {block_id} needs contrasts")
+    contrasts: list[dict[str, str]] = []
+    contrast_ids: set[str] = set()
+    for item in contrasts_raw:
+        if not isinstance(item, Mapping):
+            raise ValueError(f"comparison block {block_id} has invalid contrast")
+        _require_exact_keys(
+            item,
+            {"contrast_id", "target_condition_id", "reference_condition_id"},
+            f"comparison block {block_id} contrast",
+        )
+        if any(
+            not isinstance(item.get(field), str) or not item[field].strip()
+            for field in (
+                "contrast_id",
+                "target_condition_id",
+                "reference_condition_id",
+            )
+        ):
+            raise ValueError(f"comparison block {block_id} has invalid contrast")
+        contrast_id = str(item.get("contrast_id", "")).strip()
+        target = str(item.get("target_condition_id", "")).strip()
+        reference = str(item.get("reference_condition_id", "")).strip()
+        if (
+            not contrast_id
+            or contrast_id in contrast_ids
+            or target == reference
+            or target not in condition_ids
+            or reference not in condition_ids
+        ):
+            raise ValueError(f"comparison block {block_id} has invalid contrast")
+        contrast_ids.add(contrast_id)
+        contrasts.append(
+            {
+                "contrast_id": contrast_id,
+                "target_condition_id": target,
+                "reference_condition_id": reference,
+            }
+        )
+    executor = block.get("executor_identity")
+    if not isinstance(executor, Mapping):
+        raise ValueError(f"comparison block {block_id} has invalid executor_identity")
+    _require_exact_keys(
+        executor,
+        {"agent", "model", "runtime"},
+        f"comparison block {block_id} executor_identity",
+    )
+    if any(
+        not isinstance(executor.get(field), str) or not executor[field].strip()
+        for field in ("agent", "model", "runtime")
+    ):
+        raise ValueError(f"comparison block {block_id} has invalid executor_identity")
+
+    config, config_ref = _load_bound_json_artifact(
+        repository_root,
+        block.get("execution_config_artifact"),
+        f"comparison block {block_id} execution config",
+        "execution_config_schema_version",
+    )
+    allowed_config_fields = {
+        "execution_config_schema_version",
+        "shared_execution_config",
+        "redactions",
+    }
+    if set(config) - allowed_config_fields:
+        raise ValueError(
+            f"comparison block {block_id} execution config contains condition-specific or unknown top-level fields"
+        )
+    shared = config.get("shared_execution_config")
+    if not isinstance(shared, Mapping):
+        raise ValueError(f"comparison block {block_id} lacks shared execution config")
+    required_shared_fields = {
+        "harness_identity",
+        "generation_parameters",
+        "tool_policy",
+        "context_policy",
+        "timeout_seconds",
+        "isolated_sessions",
+    }
+    if set(shared) != required_shared_fields:
+        raise ValueError(
+            f"comparison block {block_id} shared execution config must use the closed schema"
+        )
+    for field in required_shared_fields:
+        if shared.get(field) in (None, "", {}):
+            raise ValueError(f"comparison block {block_id} shared config lacks {field}")
+    harness_identity = shared.get("harness_identity")
+    if (
+        not isinstance(harness_identity, Mapping)
+        or set(harness_identity)
+        != {
+            "id",
+            "version",
+            "sha256_or_immutable_version",
+            "attestation_mode",
+        }
+        or any(
+            not isinstance(harness_identity.get(field), str)
+            or not harness_identity[field].strip()
+            for field in ("id", "version")
+        )
+    ):
+        raise ValueError(f"comparison block {block_id} has invalid harness identity")
+    if harness_identity.get("attestation_mode") not in {
+        "artifact_digest",
+        "immutable_version",
+        "runner_attestation",
+    }:
+        raise ValueError(f"comparison block {block_id} has invalid harness attestation mode")
+    harness_binding = harness_identity.get("sha256_or_immutable_version")
+    if not isinstance(harness_binding, str) or not harness_binding.strip():
+        raise ValueError(f"comparison block {block_id} lacks a harness binding")
+    if harness_identity.get("attestation_mode") == "artifact_digest":
+        _hash_field(harness_binding, f"comparison block {block_id} harness artifact")
+    if not _finite_number(shared.get("timeout_seconds")) or float(
+        shared["timeout_seconds"]
+    ) <= 0:
+        raise ValueError(f"comparison block {block_id} has invalid timeout_seconds")
+
+    forbidden_config_keys = {
+        "condition",
+        "conditions",
+        "condition_id",
+        "condition_ids",
+        "condition_override",
+        "condition_overrides",
+        "per_condition",
+        "skill_package",
+        "skill_package_sha256",
+        "skill_release",
+    }
+    normalized_condition_ids = {
+        re.sub(r"[^a-z0-9]+", "_", str(item).lower()).strip("_")
+        for item in condition_ids
+    }
+
+    def condition_specific_config_path(value: Any, path: str) -> str | None:
+        if isinstance(value, Mapping):
+            for key, nested in value.items():
+                normalized_key = re.sub(
+                    r"[^a-z0-9]+", "_", str(key).lower()
+                ).strip("_")
+                if (
+                    normalized_key in forbidden_config_keys
+                    or normalized_key in normalized_condition_ids
+                    or normalized_key.startswith("condition_")
+                    or normalized_key.endswith("_by_condition")
+                    or normalized_key.startswith("per_condition")
+                ):
+                    return f"{path}.{key}"
+                found = condition_specific_config_path(nested, f"{path}.{key}")
+                if found:
+                    return found
+        elif isinstance(value, list):
+            for index, nested in enumerate(value):
+                found = condition_specific_config_path(nested, f"{path}[{index}]")
+                if found:
+                    return found
+        elif isinstance(value, str) and value in condition_ids:
+            return path
+        return None
+
+    redactions = config.get("redactions", [])
+    if (
+        not isinstance(redactions, list)
+        or any(not isinstance(item, str) or not item.strip() for item in redactions)
+        or len(redactions) != len(set(redactions))
+    ):
+        raise ValueError(
+            f"comparison block {block_id} redactions must be a unique list of annotation strings"
+        )
+    forbidden_path = condition_specific_config_path(shared, "shared_execution_config")
+    if not forbidden_path:
+        forbidden_path = condition_specific_config_path(redactions, "redactions")
+    if forbidden_path:
+        raise ValueError(
+            f"comparison block {block_id} execution config contains a condition-specific branch at {forbidden_path}"
+        )
+    if shared.get("isolated_sessions") is not True:
+        raise ValueError(f"comparison block {block_id} must use isolated sessions")
+    if block.get("isolation_policy") != "fresh_context_per_attempt":
+        raise ValueError(f"comparison block {block_id} has invalid isolation policy")
+
+    seed_schedule, seed_ref = _load_bound_json_artifact(
+        repository_root,
+        block.get("seed_schedule_artifact"),
+        f"comparison block {block_id} seed schedule",
+        "seed_schedule_schema_version",
+    )
+    seed_status = str(block.get("seed_control_status", ""))
+    if seed_status not in SEED_CONTROL_STATUSES:
+        raise ValueError(f"comparison block {block_id} has invalid seed status")
+    if (
+        seed_schedule.get("comparison_block_id") != block_id
+        or seed_schedule.get("seed_control_status") != seed_status
+    ):
+        raise ValueError(f"comparison block {block_id} seed schedule binding mismatch")
+    _require_exact_keys(
+        seed_schedule,
+        {
+            "seed_schedule_schema_version",
+            "comparison_block_id",
+            "seed_control_status",
+            "assignments",
+        },
+        f"comparison block {block_id} seed schedule",
+    )
+
+    order_schedule, order_ref = _load_bound_json_artifact(
+        repository_root,
+        block.get("order_schedule_artifact"),
+        f"comparison block {block_id} order schedule",
+        "order_schedule_schema_version",
+    )
+    if order_schedule.get("comparison_block_id") != block_id:
+        raise ValueError(f"comparison block {block_id} order schedule binding mismatch")
+    _require_exact_keys(
+        order_schedule,
+        {
+            "order_schedule_schema_version",
+            "comparison_block_id",
+            "generation_method",
+            "order_generation_seed",
+            "assignments",
+        },
+        f"comparison block {block_id} order schedule",
+    )
+    if order_schedule.get("generation_method") != "seeded_balanced_rotation_v1":
+        raise ValueError(f"comparison block {block_id} has unsupported order generation")
+    order_generation_seed = order_schedule.get("order_generation_seed")
+    if not isinstance(order_generation_seed, int) or isinstance(
+        order_generation_seed, bool
+    ):
+        raise ValueError(f"comparison block {block_id} needs an integer order seed")
+
+    repetitions = int(suite["repetitions"])
+    expected_pairs = {
+        (case_id, replicate)
+        for case_id in suite["cases_by_id"]
+        for replicate in range(1, repetitions + 1)
+    }
+    seed_by_pair: dict[tuple[str, int], int | None] = {}
+    assignments = seed_schedule.get("assignments")
+    if not isinstance(assignments, list):
+        raise ValueError(f"comparison block {block_id} seed assignments must be a list")
+    for item in assignments:
+        if not isinstance(item, Mapping):
+            raise ValueError(f"comparison block {block_id} has invalid seed assignment")
+        _require_exact_keys(
+            item,
+            {"case_id", "replicate", "generation_seed"},
+            f"comparison block {block_id} seed assignment",
+        )
+        case_id = item.get("case_id")
+        replicate = item.get("replicate")
+        if not isinstance(case_id, str) or not case_id.strip():
+            raise ValueError(f"comparison block {block_id} has invalid seed case_id")
+        if not isinstance(replicate, int) or isinstance(replicate, bool):
+            raise ValueError(
+                f"comparison block {block_id} seed assignment replicate must be an integer"
+            )
+        pair = (case_id, replicate)
+        if pair in seed_by_pair:
+            raise ValueError(f"comparison block {block_id} has duplicate seed assignment")
+        seed = item.get("generation_seed")
+        if seed_status in {"enforced", "requested_not_guaranteed"}:
+            if not isinstance(seed, int) or isinstance(seed, bool):
+                raise ValueError(f"comparison block {block_id} needs scheduled integer seeds")
+        elif seed is not None:
+            raise ValueError(f"comparison block {block_id} unavailable seeds must be null")
+        seed_by_pair[pair] = seed
+    if set(seed_by_pair) != expected_pairs:
+        raise ValueError(f"comparison block {block_id} seed schedule is incomplete")
+
+    order_by_pair: dict[tuple[str, int], list[str]] = {}
+    order_assignments = order_schedule.get("assignments")
+    if not isinstance(order_assignments, list):
+        raise ValueError(f"comparison block {block_id} order assignments must be a list")
+    for item in order_assignments:
+        if not isinstance(item, Mapping):
+            raise ValueError(f"comparison block {block_id} has invalid order assignment")
+        _require_exact_keys(
+            item,
+            {"case_id", "replicate", "condition_order"},
+            f"comparison block {block_id} order assignment",
+        )
+        case_id = item.get("case_id")
+        replicate = item.get("replicate")
+        if not isinstance(case_id, str) or not case_id.strip():
+            raise ValueError(f"comparison block {block_id} has invalid order case_id")
+        if not isinstance(replicate, int) or isinstance(replicate, bool):
+            raise ValueError(
+                f"comparison block {block_id} order assignment replicate must be an integer"
+            )
+        pair = (case_id, replicate)
+        order = item.get("condition_order")
+        if pair in order_by_pair:
+            raise ValueError(f"comparison block {block_id} has duplicate order assignment")
+        if (
+            not isinstance(order, list)
+            or any(not isinstance(value, str) or not value.strip() for value in order)
+            or len(order) != len(set(order))
+        ):
+            raise ValueError(f"comparison block {block_id} has invalid condition order")
+        if set(order) != set(condition_ids) or len(order) != len(condition_ids):
+            raise ValueError(f"comparison block {block_id} order omits a condition")
+        order_by_pair[pair] = [str(value) for value in order]
+    if set(order_by_pair) != expected_pairs:
+        raise ValueError(f"comparison block {block_id} order schedule is incomplete")
+    expected_orders = _balanced_condition_orders(
+        [str(value) for value in condition_ids],
+        expected_pairs,
+        order_generation_seed,
+    )
+    if order_by_pair != expected_orders:
+        raise ValueError(
+            f"comparison block {block_id} order assignments do not match the frozen balanced generator"
+        )
+
+    routing_protocol: dict[str, Any] | None = None
+    routing_ref: dict[str, str] | None = None
+    judge_protocol: dict[str, Any] | None = None
+    judge_ref: dict[str, str] | None = None
+    if suite.get("record_type") == "trigger":
+        routing_protocol, routing_ref = _load_bound_json_artifact(
+            repository_root,
+            block.get("routing_protocol_artifact"),
+            f"comparison block {block_id} routing protocol",
+            "routing_protocol_schema_version",
+        )
+        _require_exact_keys(
+            routing_protocol,
+            {
+                "routing_protocol_schema_version",
+                "routing_protocol_id",
+                "extractor_identity",
+                "decision_rule",
+            },
+            f"comparison block {block_id} routing protocol",
+        )
+        for field in (
+            "routing_protocol_id",
+            "extractor_identity",
+            "decision_rule",
+        ):
+            if routing_protocol.get(field) in (None, "", {}):
+                raise ValueError(
+                    f"comparison block {block_id} routing protocol lacks {field}"
+                )
+        if not isinstance(routing_protocol.get("routing_protocol_id"), str) or not routing_protocol[
+            "routing_protocol_id"
+        ].strip():
+            raise ValueError(
+                f"comparison block {block_id} has invalid routing_protocol_id"
+            )
+        if not isinstance(routing_protocol.get("decision_rule"), str) or not routing_protocol[
+            "decision_rule"
+        ].strip():
+            raise ValueError(f"comparison block {block_id} has invalid routing decision rule")
+        extractor = routing_protocol.get("extractor_identity")
+        if not isinstance(extractor, Mapping) or set(extractor) != {
+            "kind",
+            "id",
+            "version",
+        } or any(
+            not isinstance(extractor.get(field), str) or not extractor[field].strip()
+            for field in ("kind", "id", "version")
+        ):
+            raise ValueError(
+                f"comparison block {block_id} has invalid routing extractor identity"
+            )
+        if block.get("judge_protocol_artifact") not in (None, {}):
+            raise ValueError(f"trigger comparison block {block_id} cannot bind a judge")
+    elif suite.get("record_type") == "behavioral":
+        if block.get("routing_protocol_artifact") not in (None, {}):
+            raise ValueError(
+                f"behavioral comparison block {block_id} cannot bind a routing protocol"
+            )
+        judge_protocol, judge_ref = _load_bound_json_artifact(
+            repository_root,
+            block.get("judge_protocol_artifact"),
+            f"comparison block {block_id} judge protocol",
+            "judge_protocol_schema_version",
+        )
+        _require_exact_keys(
+            judge_protocol,
+            {
+                "judge_protocol_schema_version",
+                "judge_protocol_id",
+                "judge_identity",
+                "prompt_artifact",
+                "rubric_version",
+                "blinding",
+                "adjudication_policy",
+                "independent_judgments_per_output",
+            },
+            f"comparison block {block_id} judge protocol",
+        )
+        for field in (
+            "judge_protocol_id",
+            "judge_identity",
+            "prompt_artifact",
+            "rubric_version",
+            "blinding",
+            "adjudication_policy",
+            "independent_judgments_per_output",
+        ):
+            if judge_protocol.get(field) in (None, "", {}):
+                raise ValueError(f"comparison block {block_id} judge protocol lacks {field}")
+        for field in (
+            "judge_protocol_id",
+            "rubric_version",
+            "blinding",
+            "adjudication_policy",
+        ):
+            if not isinstance(judge_protocol.get(field), str) or not judge_protocol[
+                field
+            ].strip():
+                raise ValueError(
+                    f"comparison block {block_id} judge protocol has invalid {field}"
+                )
+        judge_identity = judge_protocol.get("judge_identity")
+        allowed_judge_identity_keys = {
+            frozenset({"kind", "id", "version"}),
+            frozenset({"kind", "id", "version", "panel_size"}),
+        }
+        if (
+            not isinstance(judge_identity, Mapping)
+            or frozenset(judge_identity) not in allowed_judge_identity_keys
+            or any(
+                not isinstance(judge_identity.get(field), str)
+                or not judge_identity[field].strip()
+                for field in ("kind", "id", "version")
+            )
+        ):
+            raise ValueError(f"comparison block {block_id} has invalid judge identity")
+        panel_size = judge_identity.get("panel_size", 1)
+        if not isinstance(panel_size, int) or isinstance(panel_size, bool) or panel_size < 1:
+            raise ValueError(f"comparison block {block_id} has invalid judge panel size")
+        repeats = judge_protocol.get("independent_judgments_per_output")
+        if repeats != 1 or isinstance(repeats, bool):
+            raise ValueError(
+                f"comparison block {block_id} record schema supports exactly one adjudicated judgment per output"
+            )
+        prompt_ref = judge_protocol.get("prompt_artifact")
+        if not isinstance(prompt_ref, Mapping):
+            raise ValueError(f"comparison block {block_id} has invalid judge prompt")
+        _require_exact_keys(
+            prompt_ref,
+            {"path", "sha256"},
+            f"comparison block {block_id} judge prompt",
+        )
+        prompt_path = _safe_relative_file(
+            repository_root, prompt_ref.get("path"), f"comparison block {block_id} judge prompt"
+        )
+        if _sha256_file(prompt_path) != _hash_field(
+            prompt_ref.get("sha256"), f"comparison block {block_id} judge prompt hash"
+        ):
+            raise ValueError(f"comparison block {block_id} judge prompt SHA-256 mismatch")
+
+    evidence_status = str(block.get("evidence_status_on_complete", ""))
+    if evidence_status not in EVIDENCE_STATUSES - {"not_evaluated", "empirical_method_evaluated"}:
+        raise ValueError(f"comparison block {block_id} has invalid evidence status")
+    role = str(suite.get("case_source", {}).get("role", ""))
+    if role == "development" and evidence_status != "development_suite_evaluated":
+        raise ValueError(f"comparison block {block_id} overstates development evidence")
+    if role == "sealed" and evidence_status == "development_suite_evaluated":
+        raise ValueError(f"comparison block {block_id} understates sealed case role")
+    max_window = block.get("max_pair_window_seconds")
+    if (
+        not _finite_number(max_window)
+        or float(max_window) <= 0
+    ):
+        raise ValueError(f"comparison block {block_id} needs max_pair_window_seconds")
+
+    block.update(
+        {
+            "comparison_block_id": block_id,
+            "run_batch_id": run_batch_id,
+            "condition_ids": [str(value) for value in condition_ids],
+            "contrasts": contrasts,
+            "executor_identity": dict(executor),
+            "execution_config": config,
+            "execution_config_ref": config_ref,
+            "seed_schedule_ref": seed_ref,
+            "seed_by_pair": seed_by_pair,
+            "order_schedule_ref": order_ref,
+            "order_by_pair": order_by_pair,
+            "routing_protocol": routing_protocol,
+            "routing_protocol_ref": routing_ref,
+            "judge_protocol": judge_protocol,
+            "judge_protocol_ref": judge_ref,
+            "expected_pairs": expected_pairs,
+            "max_pair_window_seconds": float(max_window),
+        }
+    )
+    return block
+
+
+def _load_protocol(manifest_path: Path) -> dict[str, Any]:
+    manifest_path = manifest_path.resolve()
+    raw = _load_json(manifest_path)
+    if not isinstance(raw, dict):
+        raise ValueError("benchmark manifest must be an object")
+    unknown_manifest_fields = set(raw) - MANIFEST_FIELDS
+    if unknown_manifest_fields:
+        raise ValueError(
+            "benchmark manifest must use the closed top-level schema "
+            f"(unknown={sorted(str(item) for item in unknown_manifest_fields)})"
+        )
+    if raw.get("benchmark_schema_version") != BENCHMARK_SCHEMA_VERSION:
+        raise ValueError(
+            f"score.py requires benchmark_schema_version={BENCHMARK_SCHEMA_VERSION}"
+        )
+    if raw.get("benchmark_protocol_version") != "2.1.0":
+        raise ValueError("manifest must bind benchmark_protocol_version=2.1.0")
+    if raw.get("record_schema_version") != RECORD_SCHEMA_VERSION:
+        raise ValueError("manifest record schema does not match scorer")
+    expected_scorer_hash = str(raw.get("scorer_sha256", "")).strip().lower()
+    if not re.fullmatch(r"[0-9a-f]{64}", expected_scorer_hash):
+        raise ValueError("manifest scorer_sha256 must be raw lowercase hex")
+    actual_scorer_hash = hashlib.sha256(Path(__file__).resolve().read_bytes()).hexdigest()
+    if expected_scorer_hash != actual_scorer_hash:
+        raise ValueError("score.py SHA-256 does not match the manifest")
+    suites_raw = raw.get("suites")
+    if not isinstance(suites_raw, list) or not suites_raw:
+        raise ValueError("benchmark manifest must define suites")
+    repository_root = manifest_path.parent.parent.resolve()
+    suites: dict[str, dict[str, Any]] = {}
+    global_block_ids: set[str] = set()
+    for index, suite_raw in enumerate(suites_raw, start=1):
+        if not isinstance(suite_raw, dict):
+            raise ValueError(f"suite {index} must be an object")
+        suite = dict(suite_raw)
+        suite_id = str(suite.get("suite_id", "")).strip()
+        if not suite_id or suite_id in suites:
+            raise ValueError("suite IDs must be present and unique")
+        backend = suite.get("scoring_backend")
+        if backend == "score.py":
+            _require_exact_keys(
+                suite,
+                BUILTIN_SUITE_FIELDS,
+                f"suite {suite_id}",
+            )
+        elif backend == "external":
+            _require_exact_keys(
+                suite,
+                EXTERNAL_SUITE_FIELDS,
+                f"external suite {suite_id}",
+            )
+        else:
+            raise ValueError(f"suite {suite_id} has invalid scoring backend")
+        suite["suite_id"] = suite_id
+        conditions_raw = suite.get("conditions")
+        if not isinstance(conditions_raw, list) or not conditions_raw:
+            raise ValueError(f"suite {suite_id} must define conditions")
+        conditions: dict[str, dict[str, Any]] = {}
+        for condition in conditions_raw:
+            if not isinstance(condition, dict):
+                raise ValueError(f"suite {suite_id} has an invalid condition")
+            _require_exact_keys(
+                condition,
+                CONDITION_FIELDS,
+                f"suite {suite_id} condition",
+            )
+            condition_id_raw = condition.get("condition_id")
+            if not isinstance(condition_id_raw, str):
+                raise ValueError(f"suite {suite_id} has an invalid condition ID")
+            condition_id = condition_id_raw.strip()
+            if not condition_id or condition_id in conditions:
+                raise ValueError(f"suite {suite_id} has duplicate condition IDs")
+            release = condition.get("skill_release")
+            package = condition.get("skill_package_sha256")
+            if release is None:
+                if package is not None:
+                    raise ValueError(f"suite {suite_id} no-skill condition needs null package")
+            else:
+                if not isinstance(release, str) or not release.strip():
+                    raise ValueError(f"suite {suite_id} condition has invalid release")
+                _hash_field(package, f"suite {suite_id} condition package")
+            conditions[condition_id] = dict(condition)
+        suite["conditions_by_id"] = conditions
+        status = suite.get("protocol_status")
+        if backend == "score.py":
+            if status not in {"awaiting_execution_freeze", "frozen"}:
+                raise ValueError(f"suite {suite_id} has invalid protocol status")
+            repetitions = suite.get("repetitions")
+            if not isinstance(repetitions, int) or isinstance(repetitions, bool) or repetitions < 1:
+                raise ValueError(f"suite {suite_id} needs positive repetitions")
+            for field in (
+                "primary_estimands",
+                "secondary_estimands",
+                "diagnostic_estimands",
+                "tie_rule",
+                "uncertainty_design",
+            ):
+                if suite.get(field) in (None, "", [], {}):
+                    raise ValueError(f"suite {suite_id} lacks {field}")
+            expected_spec = ESTIMAND_SPEC_BY_RECORD_TYPE.get(suite.get("record_type"))
+            if expected_spec is None:
+                raise ValueError(f"suite {suite_id} has unsupported record_type")
+            for field in (
+                "primary_estimands",
+                "secondary_estimands",
+                "diagnostic_estimands",
+                "aggregation_method_id",
+                "aggregation_rule",
+                "uncertainty_design",
+                "interpretation_scope_id",
+                "interpretation_rule",
+            ):
+                if suite.get(field) != expected_spec[field]:
+                    raise ValueError(
+                        f"suite {suite_id} {field} does not match the scorer"
+                    )
+            _validate_interval_rule(suite, suite_id)
+            _validate_failure_policy(suite, suite_id)
+            tie_rule = suite.get("tie_rule")
+            if (
+                not isinstance(tie_rule, Mapping)
+                or set(tie_rule) != {"unit", "absolute_delta_threshold"}
+                or tie_rule.get("unit") != "case_mean"
+                or not _finite_number(tie_rule.get("absolute_delta_threshold"))
+                or float(tie_rule.get("absolute_delta_threshold")) < 0
+            ):
+                raise ValueError(f"suite {suite_id} has invalid tie rule")
+            _load_case_registry(repository_root, suite, suite_id)
+            blocks_raw = suite.get("comparison_blocks")
+            if not isinstance(blocks_raw, list):
+                raise ValueError(f"suite {suite_id} comparison_blocks must be a list")
+            if status == "frozen" and not blocks_raw:
+                raise ValueError(f"frozen suite {suite_id} needs a comparison block")
+            if status == "awaiting_execution_freeze" and blocks_raw:
+                raise ValueError(f"unfrozen suite {suite_id} cannot contain frozen blocks")
+            blocks: dict[str, dict[str, Any]] = {}
+            for block_raw in blocks_raw:
+                block = _validate_comparison_block(suite, block_raw, repository_root)
+                block_id = block["comparison_block_id"]
+                if block_id in global_block_ids:
+                    raise ValueError(f"duplicate comparison_block_id {block_id}")
+                global_block_ids.add(block_id)
+                blocks[block_id] = block
+            suite["comparison_blocks_by_id"] = blocks
+        elif backend == "external":
+            if status != "draft":
+                raise ValueError(f"external suite {suite_id} must remain draft here")
+            suite["cases_by_id"] = {}
+            suite["comparison_blocks_by_id"] = {}
+        else:
+            raise ValueError(f"suite {suite_id} has invalid scoring backend")
+        suites[suite_id] = suite
+
+    release_hashes: dict[str, set[str]] = defaultdict(set)
+    for suite in suites.values():
+        for condition in suite["conditions_by_id"].values():
+            release = condition.get("skill_release")
+            package = condition.get("skill_package_sha256")
+            if release is not None and isinstance(package, str):
+                release_hashes[str(release)].add(_hash_field(package, "package"))
+    inconsistent = sorted(key for key, values in release_hashes.items() if len(values) > 1)
+    if inconsistent:
+        raise ValueError(f"skill releases use inconsistent package hashes: {inconsistent}")
+    return {
+        "manifest": raw,
+        "manifest_sha256": _sha256_file(manifest_path),
+        "repository_root": repository_root,
+        "suites": suites,
+    }
 
 
 def _validate_record(
@@ -379,7 +1396,6 @@ def _validate_record(
 ) -> tuple[list[str], dict[str, Any] | None]:
     errors: list[str] = []
     normalized = dict(record)
-
     missing = [
         field
         for field in sorted(COMMON_RECORD_FIELDS)
@@ -390,87 +1406,133 @@ def _validate_record(
         )
     ]
     if missing:
-        errors.append(f"record {index}: missing fields {missing}")
-        return errors, None
+        return [f"record {index}: missing fields {missing}"], None
+    allowed_record_fields = set(COMMON_RECORD_FIELDS)
+    if record.get("run_status") == "completed":
+        if record.get("record_type") == "trigger":
+            allowed_record_fields.update(TRIGGER_OUTCOME_FIELDS)
+        elif record.get("record_type") == "behavioral":
+            allowed_record_fields.update(BEHAVIORAL_OUTCOME_FIELDS)
+    unknown_record_fields = set(record) - allowed_record_fields
+    if unknown_record_fields:
+        errors.append(
+            f"record {index}: record does not use the closed schema "
+            f"(unknown={sorted(str(item) for item in unknown_record_fields)})"
+        )
     if record.get("record_schema_version") != RECORD_SCHEMA_VERSION:
         errors.append(f"record {index}: unsupported record_schema_version")
     if str(record.get("manifest_sha256", "")).lower() != protocol["manifest_sha256"]:
         errors.append(f"record {index}: manifest_sha256 mismatch")
-
     suite_id = str(record.get("suite_id", ""))
     suite = protocol["suites"].get(suite_id)
     if suite is None:
-        errors.append(f"record {index}: unknown suite_id {suite_id!r}")
-        return errors, None
+        return [f"record {index}: unknown suite_id {suite_id!r}"], None
     if suite.get("scoring_backend") != "score.py":
-        errors.append(f"record {index}: suite {suite_id!r} requires an external scorer")
-        return errors, None
+        return [f"record {index}: suite {suite_id!r} uses an external scorer"], None
+    block_id = str(record.get("comparison_block_id", ""))
+    block = suite["comparison_blocks_by_id"].get(block_id)
+    if block is None:
+        return [f"record {index}: unknown or unfrozen comparison_block_id {block_id!r}"], None
+    if record.get("run_batch_id") != block["run_batch_id"]:
+        errors.append(f"record {index}: run_batch_id mismatch")
     condition_id = str(record.get("condition_id", ""))
-    condition = suite["conditions_by_id"].get(condition_id)
-    if condition is None:
-        errors.append(f"record {index}: unknown condition_id {condition_id!r}")
-        return errors, None
+    if condition_id not in block["condition_ids"]:
+        return [f"record {index}: condition is not in the comparison block"], None
+    condition = suite["conditions_by_id"][condition_id]
     if record.get("skill_release") != condition.get("skill_release"):
-        errors.append(f"record {index}: skill_release does not match the frozen condition")
+        errors.append(f"record {index}: skill_release mismatch")
     expected_package = condition.get("skill_package_sha256")
     if expected_package is None:
         if record.get("skill_package_sha256") is not None:
-            errors.append(f"record {index}: skill_package_sha256 must be null for this condition")
+            errors.append(f"record {index}: no-skill package hash must be null")
     else:
         try:
-            package_hash = _hash_field(
-                record.get("skill_package_sha256"),
-                f"record {index} skill_package_sha256",
-            )
-            if package_hash != str(expected_package).lower():
-                errors.append(f"record {index}: skill_package_sha256 does not match the frozen condition")
+            if _hash_field(record.get("skill_package_sha256"), "package") != _hash_field(
+                expected_package, "frozen package"
+            ):
+                errors.append(f"record {index}: skill package hash mismatch")
         except ValueError as exc:
-            errors.append(str(exc))
-
+            errors.append(f"record {index}: {exc}")
     case_id = str(record.get("case_id", ""))
     case = suite["cases_by_id"].get(case_id)
     if case is None:
-        errors.append(f"record {index}: unknown case_id {case_id!r}")
-        return errors, None
-    if str(record.get("record_type", "")) != suite.get("record_type"):
-        errors.append(f"record {index}: record_type does not match suite")
-    replicate = record.get("replicate")
-    if (
-        not isinstance(replicate, int)
-        or isinstance(replicate, bool)
-        or replicate < 1
-        or replicate > suite["repetitions"]
-    ):
-        errors.append(f"record {index}: replicate is outside the frozen repetition range")
+        return [f"record {index}: unknown case_id {case_id!r}"], None
+    replicate_raw = record.get("replicate")
+    replicate_valid = isinstance(replicate_raw, int) and not isinstance(
+        replicate_raw, bool
+    )
+    if not replicate_valid:
+        errors.append(f"record {index}: replicate must be an integer")
+    replicate = replicate_raw if replicate_valid else None
+    pair = (case_id, replicate)
+    if pair not in block["expected_pairs"]:
+        errors.append(f"record {index}: replicate is outside the schedule")
+    attempt = record.get("attempt")
+    if not isinstance(attempt, int) or isinstance(attempt, bool) or attempt < 1:
+        errors.append(f"record {index}: attempt must be a positive integer")
+    if record.get("record_type") != suite.get("record_type"):
+        errors.append(f"record {index}: record_type mismatch")
     for field in ("agent", "model", "runtime"):
-        if not isinstance(record.get(field), str) or not record[field].strip():
-            errors.append(f"record {index}: {field} must be a nonempty string")
+        expected = block["executor_identity"][field]
+        if record.get(field) != expected:
+            errors.append(f"record {index}: {field} differs from the frozen block")
+    config_ref = block["execution_config_ref"]
+    if (
+        record.get("execution_config_path") != config_ref["path"]
+        or record.get("execution_config_schema_version") != config_ref["schema_version"]
+    ):
+        errors.append(f"record {index}: execution config reference mismatch")
     try:
-        normalized["execution_config_sha256"] = _hash_field(
-            record.get("execution_config_sha256"),
-            f"record {index} execution_config_sha256",
+        if _hash_field(record.get("execution_config_sha256"), "record config") != config_ref[
+            "sha256"
+        ]:
+            errors.append(f"record {index}: execution config hash mismatch")
+    except ValueError as exc:
+        errors.append(f"record {index}: {exc}")
+    seed_status = str(record.get("seed_control_status", ""))
+    if seed_status != block.get("seed_control_status"):
+        errors.append(f"record {index}: seed control status mismatch")
+    expected_seed = block["seed_by_pair"].get(pair)
+    if expected_seed is not None and (
+        not isinstance(record.get("generation_seed"), int)
+        or isinstance(record.get("generation_seed"), bool)
+    ):
+        errors.append(f"record {index}: generation_seed must be an integer")
+    if record.get("generation_seed") != expected_seed:
+        errors.append(f"record {index}: generation seed differs from the schedule")
+    order = block["order_by_pair"].get(pair, [])
+    expected_order = order.index(condition_id) + 1 if condition_id in order else None
+    if (
+        not isinstance(record.get("run_order_index"), int)
+        or isinstance(record.get("run_order_index"), bool)
+    ):
+        errors.append(f"record {index}: run_order_index must be an integer")
+    if record.get("run_order_index") != expected_order:
+        errors.append(f"record {index}: run_order_index differs from the schedule")
+    run_status = str(record.get("run_status", ""))
+    if run_status not in RUN_STATUSES:
+        errors.append(f"record {index}: invalid run_status")
+    try:
+        started = _parse_timestamp(record.get("started_at"), f"record {index} started_at")
+        completed = _parse_timestamp(
+            record.get("completed_at"), f"record {index} completed_at"
+        )
+        if completed < started:
+            errors.append(f"record {index}: completed_at precedes started_at")
+        normalized["__started_datetime__"] = started
+        normalized["__completed_datetime__"] = completed
+    except ValueError as exc:
+        errors.append(str(exc))
+    try:
+        normalized["session_identity_sha256"] = _hash_field(
+            record.get("session_identity_sha256"), f"record {index} session identity"
         )
     except ValueError as exc:
         errors.append(str(exc))
-    seed_status = str(record.get("seed_control_status", ""))
-    if seed_status not in SEED_CONTROL_STATUSES:
-        errors.append(f"record {index}: seed_control_status is invalid")
-    generation_seed = record.get("generation_seed")
-    if seed_status == "controlled" and generation_seed in (None, ""):
-        errors.append(f"record {index}: a controlled seed must be recorded")
-    if seed_status in {"uncontrolled", "not_applicable"} and generation_seed is not None:
-        errors.append(
-            f"record {index}: generation_seed must be null when seed control is {seed_status}"
-        )
-    computed_identity = _execution_identity_hash(record)
-    if str(record.get("execution_identity_sha256", "")).lower() != computed_identity:
-        errors.append(f"record {index}: execution_identity_sha256 mismatch")
-    normalized["execution_identity_sha256"] = computed_identity
     if str(record.get("case_spec_sha256", "")).lower() != case["case_spec_sha256"]:
         errors.append(f"record {index}: case_spec_sha256 mismatch")
     if str(record.get("prompt_sha256", "")).lower() != case["prompt_sha256"]:
         errors.append(f"record {index}: prompt_sha256 mismatch")
-
     try:
         evidence_path, evidence_hash = _verify_evidence(
             evidence_root,
@@ -483,45 +1545,125 @@ def _validate_record(
     except ValueError as exc:
         errors.append(str(exc))
 
-    if suite.get("record_type") == "trigger":
+    computed_identity = _execution_identity_hash(record)
+    if str(record.get("execution_identity_sha256", "")).lower() != computed_identity:
+        errors.append(f"record {index}: execution_identity_sha256 mismatch")
+    normalized["execution_identity_sha256"] = computed_identity
+
+    if run_status != "completed":
+        pass
+    elif suite.get("record_type") == "trigger":
         if "expected_trigger" in record:
-            errors.append(f"record {index}: expected truth must come from the case registry, not the record")
+            errors.append(f"record {index}: truth must come from the case registry")
         if not isinstance(record.get("predicted_trigger"), bool):
             errors.append(f"record {index}: predicted_trigger must be Boolean")
-        normalized["expected_trigger"] = case.get("should_trigger")
+        normalized["expected_trigger"] = bool(case["should_trigger"])
+        routing_protocol = block["routing_protocol"] or {}
+        routing_ref = block["routing_protocol_ref"] or {}
+        if record.get("routing_protocol_id") != routing_protocol.get(
+            "routing_protocol_id"
+        ):
+            errors.append(f"record {index}: routing_protocol_id mismatch")
+        try:
+            if _hash_field(
+                record.get("routing_protocol_sha256"), "routing protocol"
+            ) != routing_ref.get("sha256"):
+                errors.append(f"record {index}: routing protocol hash mismatch")
+        except ValueError as exc:
+            errors.append(f"record {index}: {exc}")
+        routing_extractor = record.get("routing_extractor")
+        if routing_extractor != routing_protocol.get("extractor_identity"):
+            errors.append(f"record {index}: routing extractor differs from the protocol")
+        try:
+            judgment_path, judgment_hash = _verify_evidence(
+                evidence_root,
+                record.get("judgment_path"),
+                record.get("judgment_sha256"),
+                f"record {index} routing judgment",
+            )
+            judgment = _load_json(judgment_path)
+            if not isinstance(judgment, dict):
+                raise ValueError(f"record {index} routing judgment must be an object")
+            bindings = {
+                "execution_identity_sha256": computed_identity,
+                "evidence_sha256": normalized.get("evidence_sha256"),
+                "case_spec_sha256": case.get("case_spec_sha256"),
+                "prompt_sha256": case.get("prompt_sha256"),
+                "routing_protocol_id": routing_protocol.get("routing_protocol_id"),
+                "routing_protocol_sha256": routing_ref.get("sha256"),
+                "routing_extractor": routing_extractor,
+                "predicted_trigger": record.get("predicted_trigger"),
+                "scored_at": record.get("scored_at"),
+            }
+            for field, expected in bindings.items():
+                if judgment.get(field) != expected:
+                    raise ValueError(
+                        f"record {index} routing judgment does not bind {field}"
+                    )
+            _parse_timestamp(record.get("scored_at"), f"record {index} scored_at")
+            normalized["judgment_sha256"] = judgment_hash
+            normalized["__judgment_absolute__"] = str(judgment_path)
+        except ValueError as exc:
+            errors.append(str(exc))
     else:
         scores = record.get("assertion_scores")
         expected_ids = [str(item) for item in case.get("assertion_ids", [])]
         if not isinstance(scores, dict):
-            errors.append(f"record {index}: assertion_scores must be an ID-to-Boolean object")
+            errors.append(f"record {index}: assertion_scores must be an object")
         else:
             if set(scores) != set(expected_ids):
-                errors.append(f"record {index}: assertion_scores IDs do not match the frozen rubric")
+                errors.append(f"record {index}: assertion IDs do not match the rubric")
             if any(not isinstance(value, bool) for value in scores.values()):
-                errors.append(f"record {index}: assertion_scores values must be Boolean")
+                errors.append(f"record {index}: assertion scores must be Boolean")
         if str(record.get("rubric_sha256", "")).lower() != case.get("rubric_sha256"):
             errors.append(f"record {index}: rubric_sha256 mismatch")
-        judge = record.get("judge")
-        if not isinstance(judge, dict):
-            errors.append(f"record {index}: judge must be an object")
-        else:
-            for field in ("kind", "id", "version"):
-                if not isinstance(judge.get(field), str) or not judge[field].strip():
-                    errors.append(f"record {index}: judge.{field} must be recorded")
-            panel_size = judge.get("panel_size", 1)
-            if not isinstance(panel_size, int) or isinstance(panel_size, bool) or panel_size < 1:
-                errors.append(f"record {index}: judge.panel_size must be a positive integer")
-            if panel_size > 1:
-                agreement = judge.get("agreement")
-                if not isinstance(agreement, (int, float)) or isinstance(agreement, bool) or not 0 <= agreement <= 1:
-                    errors.append(f"record {index}: a multi-reviewer judge requires agreement in [0,1]")
-                if not isinstance(judge.get("adjudication"), str) or not judge["adjudication"].strip():
-                    errors.append(f"record {index}: a multi-reviewer judge requires an adjudication record")
+        judge_protocol = block["judge_protocol"] or {}
+        judge_ref = block["judge_protocol_ref"] or {}
+        if record.get("judge_protocol_id") != judge_protocol.get("judge_protocol_id"):
+            errors.append(f"record {index}: judge_protocol_id mismatch")
         try:
-            judge_prompt_hash = _hash_field(
-                record.get("judge_prompt_sha256"),
-                f"record {index} judge_prompt_sha256",
+            if _hash_field(record.get("judge_protocol_sha256"), "judge protocol") != judge_ref.get(
+                "sha256"
+            ):
+                errors.append(f"record {index}: judge protocol hash mismatch")
+        except ValueError as exc:
+            errors.append(f"record {index}: {exc}")
+        judge = record.get("judge")
+        expected_judge = judge_protocol.get("judge_identity")
+        if not isinstance(judge, Mapping) or not isinstance(expected_judge, Mapping):
+            errors.append(f"record {index}: judge metadata is invalid")
+        else:
+            expected_panel_size = expected_judge.get("panel_size", 1)
+            expected_judge_fields = set(expected_judge)
+            allowed_judge_fields = set(expected_judge_fields)
+            if expected_panel_size > 1:
+                allowed_judge_fields.update({"agreement", "adjudication"})
+            if set(judge) != allowed_judge_fields:
+                errors.append(f"record {index}: judge metadata does not use the frozen schema")
+            for field in expected_judge_fields:
+                if judge.get(field) != expected_judge.get(field):
+                    errors.append(f"record {index}: judge.{field} differs from the protocol")
+            panel_size = judge.get("panel_size", 1)
+            panel_size_valid = (
+                isinstance(panel_size, int)
+                and not isinstance(panel_size, bool)
+                and panel_size >= 1
             )
+            if not panel_size_valid:
+                errors.append(f"record {index}: judge.panel_size must be a positive integer")
+            elif panel_size > 1:
+                agreement = judge.get("agreement")
+                if (
+                    not isinstance(agreement, (int, float))
+                    or isinstance(agreement, bool)
+                    or not 0 <= agreement <= 1
+                ):
+                    errors.append(f"record {index}: multi-reviewer agreement is invalid")
+                if not isinstance(judge.get("adjudication"), str) or not judge[
+                    "adjudication"
+                ].strip():
+                    errors.append(f"record {index}: multi-reviewer adjudication is missing")
+        try:
             judgment_path, judgment_hash = _verify_evidence(
                 evidence_root,
                 record.get("judgment_path"),
@@ -530,13 +1672,14 @@ def _validate_record(
             )
             judgment = _load_json(judgment_path)
             if not isinstance(judgment, dict):
-                raise ValueError(f"record {index} judgment must be a JSON object")
+                raise ValueError(f"record {index} judgment must be an object")
             bindings = {
                 "execution_identity_sha256": computed_identity,
                 "evidence_sha256": normalized.get("evidence_sha256"),
                 "case_spec_sha256": case.get("case_spec_sha256"),
                 "rubric_sha256": case.get("rubric_sha256"),
-                "judge_prompt_sha256": judge_prompt_hash,
+                "judge_protocol_id": judge_protocol.get("judge_protocol_id"),
+                "judge_protocol_sha256": judge_ref.get("sha256"),
                 "assertion_scores": scores,
                 "judge": judge,
                 "scored_at": record.get("scored_at"),
@@ -544,7 +1687,7 @@ def _validate_record(
             for field, expected in bindings.items():
                 if judgment.get(field) != expected:
                     raise ValueError(f"record {index} judgment does not bind {field}")
-            _validate_timestamp(record.get("scored_at"), f"record {index} scored_at")
+            _parse_timestamp(record.get("scored_at"), f"record {index} scored_at")
             normalized["judgment_sha256"] = judgment_hash
             normalized["__judgment_absolute__"] = str(judgment_path)
         except ValueError as exc:
@@ -552,15 +1695,102 @@ def _validate_record(
     return errors, normalized if not errors else None
 
 
-def _trigger_metrics(records: Sequence[Mapping[str, Any]]) -> dict[str, float | int | None]:
-    tp = sum(item["expected_trigger"] and item["predicted_trigger"] for item in records)
-    tn = sum(not item["expected_trigger"] and not item["predicted_trigger"] for item in records)
-    fp = sum(not item["expected_trigger"] and item["predicted_trigger"] for item in records)
-    fn = sum(item["expected_trigger"] and not item["predicted_trigger"] for item in records)
+def _resolve_attempts(
+    records: Sequence[dict[str, Any]],
+    protocol: Mapping[str, Any],
+) -> tuple[
+    dict[tuple[str, str], list[str]],
+    dict[tuple[str, str, str, str, int], dict[str, Any]],
+    dict[tuple[str, str, str, str, int], str],
+]:
+    errors: dict[tuple[str, str], list[str]] = defaultdict(list)
+    selected: dict[tuple[str, str, str, str, int], dict[str, Any]] = {}
+    unresolved: dict[tuple[str, str, str, str, int], str] = {}
+    grouped: dict[tuple[str, str, str, str, int], list[dict[str, Any]]] = defaultdict(list)
+    for row in records:
+        key = (
+            row["suite_id"],
+            row["comparison_block_id"],
+            row["condition_id"],
+            row["case_id"],
+            row["replicate"],
+        )
+        grouped[key].append(row)
+    for key, attempts in grouped.items():
+        suite = protocol["suites"][key[0]]
+        policy = suite["failure_retry_policy"]
+        retry_statuses = set(policy["retry_eligible_statuses"])
+        ordered = sorted(attempts, key=lambda item: item["attempt"])
+        numbers = [item["attempt"] for item in ordered]
+        block_key = (key[0], key[1])
+        if numbers != list(range(1, len(numbers) + 1)):
+            errors[block_key].append(
+                f"cell {key} has duplicate or noncontiguous attempt numbers"
+            )
+            continue
+        if len(ordered) > 1 + int(policy["maximum_infrastructure_retries"]):
+            errors[block_key].append(
+                f"cell {key} exceeds the frozen infrastructure retry limit"
+            )
+        for position, row in enumerate(ordered):
+            has_later = position < len(ordered) - 1
+            if has_later and row["run_status"] not in retry_statuses:
+                errors[block_key].append(
+                    f"cell {key} was retried after a non-retry-eligible outcome"
+                )
+            if has_later:
+                later = ordered[position + 1]
+                if later["__started_datetime__"] < row["__completed_datetime__"]:
+                    errors[block_key].append(
+                        f"cell {key} retry attempt {later['attempt']} started before attempt {row['attempt']} completed"
+                    )
+        terminal = ordered[-1]
+        if terminal["run_status"] in INFRASTRUCTURE_FAILURE_STATUSES:
+            unresolved[key] = "infrastructure_retries_exhausted_or_pending"
+        else:
+            selected[key] = terminal
+    return errors, selected, unresolved
+
+
+def _scored_row(
+    row: Mapping[str, Any],
+    suite: Mapping[str, Any],
+) -> dict[str, Any]:
+    result = dict(row)
+    case = suite["cases_by_id"][row["case_id"]]
+    if suite["record_type"] == "trigger":
+        truth = bool(case["should_trigger"])
+        prediction = row.get("predicted_trigger") if row["run_status"] == "completed" else None
+        result["__truth__"] = truth
+        result["__prediction__"] = prediction
+        result["__credit__"] = float(prediction == truth) if prediction is not None else 0.0
+    else:
+        assertion_ids = [str(value) for value in case["assertion_ids"]]
+        scores = (
+            dict(row["assertion_scores"])
+            if row["run_status"] == "completed"
+            else {item: False for item in assertion_ids}
+        )
+        critical_ids = set(case.get("critical_assertion_ids", []))
+        result["__scores__"] = scores
+        result["__assertion_mean__"] = sum(scores.values()) / len(scores)
+        result["__all_pass__"] = float(all(scores.values()))
+        result["__critical_violation__"] = float(
+            any(not scores[item] for item in critical_ids)
+        )
+    return result
+
+
+def _trigger_completed_confusion(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    completed = [row for row in rows if row["__prediction__"] is not None]
+    tp = sum(row["__truth__"] and row["__prediction__"] for row in completed)
+    tn = sum(not row["__truth__"] and not row["__prediction__"] for row in completed)
+    fp = sum(not row["__truth__"] and row["__prediction__"] for row in completed)
+    fn = sum(row["__truth__"] and not row["__prediction__"] for row in completed)
     recall = _ratio(tp, tp + fn)
     specificity = _ratio(tn, tn + fp)
-    balanced = (recall + specificity) / 2 if recall is not None and specificity is not None else None
     return {
+        "n_completed_predictions": len(completed),
         "tp": tp,
         "tn": tn,
         "fp": fp,
@@ -568,58 +1798,334 @@ def _trigger_metrics(records: Sequence[Mapping[str, Any]]) -> dict[str, float | 
         "precision": _ratio(tp, tp + fp),
         "recall": recall,
         "specificity": specificity,
-        "balanced_accuracy": balanced,
+        "balanced_accuracy": (
+            (recall + specificity) / 2
+            if recall is not None and specificity is not None
+            else None
+        ),
     }
 
 
-def _bootstrap_trigger(
-    records_by_case: Mapping[str, Sequence[Mapping[str, Any]]],
+def _case_bootstrap_interval(
+    values_by_case: Mapping[str, float],
     draws: int,
     seed: int,
     confidence: float,
-) -> dict[str, list[float] | None]:
-    positive = [key for key, rows in records_by_case.items() if rows[0]["expected_trigger"]]
-    negative = [key for key, rows in records_by_case.items() if not rows[0]["expected_trigger"]]
-    if not positive or not negative:
-        return {name: None for name in ("precision", "recall", "specificity", "balanced_accuracy")}
+    *,
+    positive_cases: Sequence[str] | None = None,
+    negative_cases: Sequence[str] | None = None,
+) -> list[float] | None:
     generator = random.Random(seed)
-    samples: dict[str, list[float]] = defaultdict(list)
-    for _ in range(draws):
-        selected = generator.choices(positive, k=len(positive)) + generator.choices(negative, k=len(negative))
-        metrics = _trigger_metrics([record for key in selected for record in records_by_case[key]])
-        for name in ("precision", "recall", "specificity", "balanced_accuracy"):
-            value = metrics[name]
-            if isinstance(value, float):
-                samples[name].append(value)
-    metric_names = {"precision", "recall", "specificity", "balanced_accuracy"}
-    return {name: _interval(samples[name], confidence) for name in metric_names}
+    samples: list[float] = []
+    if positive_cases is not None and negative_cases is not None:
+        if not positive_cases or not negative_cases:
+            return None
+        for _ in range(draws):
+            positive = generator.choices(list(positive_cases), k=len(positive_cases))
+            negative = generator.choices(list(negative_cases), k=len(negative_cases))
+            samples.append(
+                (
+                    sum(values_by_case[item] for item in positive) / len(positive)
+                    + sum(values_by_case[item] for item in negative) / len(negative)
+                )
+                / 2
+            )
+    else:
+        cases = sorted(values_by_case)
+        if not cases:
+            return None
+        for _ in range(draws):
+            selected = generator.choices(cases, k=len(cases))
+            samples.append(sum(values_by_case[item] for item in selected) / len(selected))
+    return _interval(samples, confidence)
 
 
-def _behavior_case_metrics(rows: Sequence[Mapping[str, Any]], critical_ids: set[str]) -> dict[str, float]:
-    execution_means = [sum(row["assertion_scores"].values()) / len(row["assertion_scores"]) for row in rows]
-    all_pass = [float(all(row["assertion_scores"].values())) for row in rows]
-    critical = [float(any(not row["assertion_scores"][item] for item in critical_ids)) for row in rows]
+def _condition_summary(
+    suite: Mapping[str, Any],
+    block: Mapping[str, Any],
+    condition_id: str,
+    rows: Sequence[dict[str, Any]],
+    all_attempts: Sequence[dict[str, Any]],
+    complete: bool,
+    comparison_eligible: bool,
+) -> dict[str, Any]:
+    scored = [_scored_row(row, suite) for row in rows]
+    by_case: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in scored:
+        by_case[row["case_id"]].append(row)
+    interval_rule = suite["interval_rule"]
+    base: dict[str, Any] = {
+        "suite_id": suite["suite_id"],
+        "comparison_block_id": block["comparison_block_id"],
+        "run_batch_id": block["run_batch_id"],
+        "condition_id": condition_id,
+        "skill_release": suite["conditions_by_id"][condition_id].get("skill_release"),
+        "n_cases": len(by_case),
+        "n_selected_executions": len(rows),
+        "n_attempt_records": len(all_attempts),
+        "expected_executions": len(block["expected_pairs"]),
+        "complete": complete,
+        "comparison_eligible": comparison_eligible,
+        "run_status_counts": dict(
+            sorted(Counter(row["run_status"] for row in all_attempts).items())
+        ),
+        "diagnostics": {
+            "infrastructure_retry_count": len(all_attempts)
+            - len({(row["case_id"], row["replicate"]) for row in all_attempts}),
+        },
+    }
+    if suite["record_type"] == "trigger":
+        case_credit = {
+            case_id: sum(row["__credit__"] for row in case_rows) / len(case_rows)
+            for case_id, case_rows in by_case.items()
+        }
+        positive = [
+            case_id
+            for case_id in case_credit
+            if suite["cases_by_id"][case_id]["should_trigger"]
+        ]
+        negative = [case_id for case_id in case_credit if case_id not in positive]
+        balanced = (
+            (_mean(case_credit[item] for item in positive) + _mean(case_credit[item] for item in negative))
+            / 2
+            if positive and negative
+            else None
+        )
+        metrics = {
+            "balanced_accuracy_zero_credit_failures": balanced,
+            "case_macro_credit": _mean(case_credit.values()),
+            "agent_failure_rate": _mean(
+                float(row["run_status"] in AGENT_FAILURE_STATUSES) for row in scored
+            ),
+        }
+        base["diagnostics"]["agent_failure_rate"] = metrics["agent_failure_rate"]
+        intervals = {
+            "balanced_accuracy_zero_credit_failures": _case_bootstrap_interval(
+                case_credit,
+                int(interval_rule["draws"]),
+                int(interval_rule["seed"]),
+                float(interval_rule["confidence"]),
+                positive_cases=positive,
+                negative_cases=negative,
+            )
+        }
+        base.update(
+            {
+                "metrics": metrics,
+                "intervals": intervals,
+                "completed_output_diagnostics": _trigger_completed_confusion(scored),
+            }
+        )
+    else:
+        case_metrics = {
+            case_id: {
+                "assertion": _mean(row["__assertion_mean__"] for row in case_rows),
+                "all_pass": _mean(row["__all_pass__"] for row in case_rows),
+                "critical": _mean(row["__critical_violation__"] for row in case_rows),
+            }
+            for case_id, case_rows in by_case.items()
+        }
+        metrics = {
+            "case_mean_assertion_pass_rate": _mean(
+                item["assertion"] for item in case_metrics.values()
+            ),
+            "case_all_pass_rate": _mean(item["all_pass"] for item in case_metrics.values()),
+            "critical_violation_rate": _mean(item["critical"] for item in case_metrics.values()),
+            "assertion_micro_pass_rate_diagnostic": _mean(
+                float(value)
+                for row in scored
+                for value in row["__scores__"].values()
+            ),
+            "agent_failure_rate": _mean(
+                float(row["run_status"] in AGENT_FAILURE_STATUSES) for row in scored
+            ),
+        }
+        base["diagnostics"]["agent_failure_rate"] = metrics["agent_failure_rate"]
+        intervals = {}
+        for output_name, input_name in (
+            ("case_mean_assertion_pass_rate", "assertion"),
+            ("case_all_pass_rate", "all_pass"),
+            ("critical_violation_rate", "critical"),
+        ):
+            intervals[output_name] = _case_bootstrap_interval(
+                {case_id: item[input_name] for case_id, item in case_metrics.items()},
+                int(interval_rule["draws"]),
+                int(interval_rule["seed"]),
+                float(interval_rule["confidence"]),
+            )
+        base.update({"metrics": metrics, "intervals": intervals})
+    return base
+
+
+def _win_loss_tie(case_differences: Mapping[str, float], threshold: float) -> dict[str, int]:
+    wins = sum(value > threshold for value in case_differences.values())
+    losses = sum(value < -threshold for value in case_differences.values())
+    ties = len(case_differences) - wins - losses
+    return {"wins": wins, "losses": losses, "ties": ties, "unit": "case_mean"}
+
+
+def _execution_stochasticity(
+    differences_by_case: Mapping[str, Sequence[float]],
+) -> dict[str, Any]:
+    variances = [
+        value
+        for values in differences_by_case.values()
+        if (value := _variance(list(values))) is not None
+    ]
+    if not variances:
+        return {
+            "status": "not_estimable_under_current_design",
+            "mean_within_case_paired_variance": None,
+        }
     return {
-        "case_mean_assertion_pass_rate": sum(execution_means) / len(execution_means),
-        "case_all_pass_rate": sum(all_pass) / len(all_pass),
-        "critical_violation_rate": sum(critical) / len(critical),
+        "status": "estimated_from_within_case_replicates",
+        "mean_within_case_paired_variance": sum(variances) / len(variances),
+        "n_cases_with_replication": len(variances),
     }
 
 
-def _bootstrap_behavior(
-    case_metrics: Mapping[str, Mapping[str, float]],
-    draws: int,
-    seed: int,
-    confidence: float,
-) -> dict[str, list[float] | None]:
-    case_ids = sorted(case_metrics)
-    generator = random.Random(seed)
-    values: dict[str, list[float]] = defaultdict(list)
-    for _ in range(draws):
-        selected = generator.choices(case_ids, k=len(case_ids))
-        for name in ("case_mean_assertion_pass_rate", "case_all_pass_rate", "critical_violation_rate"):
-            values[name].append(sum(case_metrics[item][name] for item in selected) / len(selected))
-    return {name: _interval(samples, confidence) for name, samples in values.items()}
+def _paired_comparison(
+    suite: Mapping[str, Any],
+    block: Mapping[str, Any],
+    contrast: Mapping[str, str],
+    selected_by_condition: Mapping[str, Mapping[tuple[str, int], dict[str, Any]]],
+) -> dict[str, Any]:
+    target_id = contrast["target_condition_id"]
+    reference_id = contrast["reference_condition_id"]
+    target = selected_by_condition[target_id]
+    reference = selected_by_condition[reference_id]
+    interval_rule = suite["interval_rule"]
+    threshold = float(suite["tie_rule"]["absolute_delta_threshold"])
+    result: dict[str, Any] = {
+        "suite_id": suite["suite_id"],
+        "comparison_block_id": block["comparison_block_id"],
+        "run_batch_id": block["run_batch_id"],
+        "contrast_id": contrast["contrast_id"],
+        "target_condition_id": target_id,
+        "reference_condition_id": reference_id,
+        "pair_identity": ["comparison_block_id", "case_id", "replicate"],
+        "n_paired_executions": len(block["expected_pairs"]),
+        "case_variation": "estimated_by_frozen_case_cluster_bootstrap",
+        "seed_pairing": (
+            "enforced"
+            if block["seed_control_status"] == "enforced"
+            else "pairing_by_case_and_replicate_without_guaranteed_random_stream"
+        ),
+    }
+    if suite["record_type"] == "trigger":
+        differences_by_case: dict[str, list[float]] = defaultdict(list)
+        for pair in sorted(block["expected_pairs"]):
+            target_row = _scored_row(target[pair], suite)
+            reference_row = _scored_row(reference[pair], suite)
+            differences_by_case[pair[0]].append(
+                target_row["__credit__"] - reference_row["__credit__"]
+            )
+        case_differences = {
+            case_id: sum(values) / len(values)
+            for case_id, values in differences_by_case.items()
+        }
+        positive = [
+            case_id
+            for case_id in case_differences
+            if suite["cases_by_id"][case_id]["should_trigger"]
+        ]
+        negative = [case_id for case_id in case_differences if case_id not in positive]
+        delta = (
+            (_mean(case_differences[item] for item in positive) + _mean(case_differences[item] for item in negative))
+            / 2
+        )
+        result.update(
+            {
+                "point_estimates": {"trigger_balanced_accuracy_delta": delta},
+                "intervals": {
+                    "trigger_balanced_accuracy_delta": _case_bootstrap_interval(
+                        case_differences,
+                        int(interval_rule["draws"]),
+                        int(interval_rule["seed"]),
+                        float(interval_rule["confidence"]),
+                        positive_cases=positive,
+                        negative_cases=negative,
+                    )
+                },
+                "win_loss_tie": _win_loss_tie(case_differences, threshold),
+                "execution_stochasticity": _execution_stochasticity(
+                    differences_by_case
+                ),
+                "judge_uncertainty": "not_applicable",
+            }
+        )
+    else:
+        assertion_by_case: dict[str, list[float]] = defaultdict(list)
+        all_pass_by_case: dict[str, list[float]] = defaultdict(list)
+        critical_by_case: dict[str, list[float]] = defaultdict(list)
+        discordance = Counter()
+        for pair in sorted(block["expected_pairs"]):
+            target_row = _scored_row(target[pair], suite)
+            reference_row = _scored_row(reference[pair], suite)
+            assertion_by_case[pair[0]].append(
+                target_row["__assertion_mean__"] - reference_row["__assertion_mean__"]
+            )
+            all_pass_by_case[pair[0]].append(
+                target_row["__all_pass__"] - reference_row["__all_pass__"]
+            )
+            critical_by_case[pair[0]].append(
+                target_row["__critical_violation__"]
+                - reference_row["__critical_violation__"]
+            )
+            pair_state = (
+                int(target_row["__critical_violation__"]),
+                int(reference_row["__critical_violation__"]),
+            )
+            discordance[pair_state] += 1
+        case_assertion = {
+            case_id: sum(values) / len(values)
+            for case_id, values in assertion_by_case.items()
+        }
+        case_all_pass = {
+            case_id: sum(values) / len(values)
+            for case_id, values in all_pass_by_case.items()
+        }
+        case_critical = {
+            case_id: sum(values) / len(values)
+            for case_id, values in critical_by_case.items()
+        }
+        estimates = {
+            "behavioral_case_macro_delta": _mean(case_assertion.values()),
+            "case_all_pass_rate_delta": _mean(case_all_pass.values()),
+            "critical_violation_risk_difference": _mean(case_critical.values()),
+        }
+        intervals = {
+            name: _case_bootstrap_interval(
+                values,
+                int(interval_rule["draws"]),
+                int(interval_rule["seed"]),
+                float(interval_rule["confidence"]),
+            )
+            for name, values in (
+                ("behavioral_case_macro_delta", case_assertion),
+                ("case_all_pass_rate_delta", case_all_pass),
+                ("critical_violation_risk_difference", case_critical),
+            )
+        }
+        result.update(
+            {
+                "point_estimates": estimates,
+                "intervals": intervals,
+                "win_loss_tie": _win_loss_tie(case_assertion, threshold),
+                "critical_violation_discordance": {
+                    "target_only": discordance[(1, 0)],
+                    "reference_only": discordance[(0, 1)],
+                    "both": discordance[(1, 1)],
+                    "neither": discordance[(0, 0)],
+                    "unit": "case_replicate",
+                },
+                "execution_stochasticity": _execution_stochasticity(
+                    assertion_by_case
+                ),
+                "judge_uncertainty": "not_estimable_under_current_design",
+            }
+        )
+    return result
 
 
 def score_records(
@@ -633,204 +2139,363 @@ def score_records(
         protocol = _load_protocol(manifest_path)
     except ValueError as exc:
         return {
-            "score_schema_version": "2.0.0",
+            "score_schema_version": SCORE_SCHEMA_VERSION,
             "scorer_version": SCORER_VERSION,
             "valid": False,
-            "evaluation_status": "invalid",
+            "scoring_status": "invalid",
+            "evidence_status": "not_evaluated",
             "errors": [str(exc)],
-            "summaries": [],
+            "condition_summaries": [],
+            "paired_comparisons": [],
         }
     if not records:
         return {
-            "score_schema_version": "2.0.0",
+            "score_schema_version": SCORE_SCHEMA_VERSION,
             "scorer_version": SCORER_VERSION,
             "manifest_sha256": protocol["manifest_sha256"],
             "records_sha256": records_sha256,
             "valid": False,
-            "evaluation_status": "not_evaluated",
+            "scoring_status": "not_evaluated",
+            "evidence_status": "not_evaluated",
             "errors": ["no benchmark records were supplied"],
-            "summaries": [],
+            "condition_summaries": [],
+            "paired_comparisons": [],
         }
-
-    errors: list[str] = []
+    fatal_errors: list[str] = []
+    block_validation_errors: dict[tuple[str, str], list[str]] = defaultdict(list)
+    submitted_cells_by_block: dict[
+        tuple[str, str], set[tuple[str, str, int]]
+    ] = defaultdict(set)
+    invalid_attempt_records_by_block: dict[tuple[str, str], list[int]] = defaultdict(list)
     normalized: list[dict[str, Any]] = []
     for index, record in enumerate(records, start=1):
         record_errors, parsed = _validate_record(record, index, protocol, evidence_root)
-        errors.extend(record_errors)
+        suite_id = str(record.get("suite_id", ""))
+        block_id = str(record.get("comparison_block_id", ""))
+        suite = protocol["suites"].get(suite_id)
+        known_block = (
+            suite is not None
+            and block_id in suite.get("comparison_blocks_by_id", {})
+        )
+        if known_block and suite is not None:
+            block = suite["comparison_blocks_by_id"][block_id]
+            condition_id = str(record.get("condition_id", ""))
+            case_id = str(record.get("case_id", ""))
+            replicate = record.get("replicate")
+            if (
+                condition_id in block["condition_ids"]
+                and isinstance(replicate, int)
+                and not isinstance(replicate, bool)
+                and (case_id, replicate) in block["expected_pairs"]
+            ):
+                submitted_cells_by_block[(suite_id, block_id)].add(
+                    (condition_id, case_id, replicate)
+                )
+        if record_errors:
+            if known_block:
+                block_validation_errors[(suite_id, block_id)].extend(record_errors)
+                invalid_attempt_records_by_block[(suite_id, block_id)].append(index)
+            else:
+                fatal_errors.extend(record_errors)
         if parsed is not None:
             normalized.append(parsed)
-    if errors:
+    if fatal_errors:
         return {
-            "score_schema_version": "2.0.0",
+            "score_schema_version": SCORE_SCHEMA_VERSION,
             "scorer_version": SCORER_VERSION,
             "manifest_sha256": protocol["manifest_sha256"],
             "records_sha256": records_sha256,
             "valid": False,
-            "evaluation_status": "invalid",
-            "errors": errors,
-            "summaries": [],
+            "scoring_status": "invalid",
+            "evidence_status": "not_evaluated",
+            "errors": fatal_errors,
+            "condition_summaries": [],
+            "paired_comparisons": [],
         }
 
-    seen: set[tuple[Any, ...]] = set()
-    evidence_bindings: dict[str, tuple[Any, ...]] = {}
-    judgment_bindings: dict[str, tuple[Any, ...]] = {}
-    groups: dict[tuple[Any, ...], list[dict[str, Any]]] = defaultdict(list)
-    for index, record in enumerate(normalized, start=1):
-        identity = (
-            record["manifest_sha256"],
-            record["suite_id"],
-            record["skill_release"],
-            record["condition_id"],
-            record["agent"],
-            record["model"],
-            record["runtime"],
-            record["execution_config_sha256"],
-            record["seed_control_status"],
-            record["record_type"],
-            record["case_id"],
-            record["replicate"],
-        )
-        if identity in seen:
-            errors.append(f"record {index}: duplicate execution identity {identity[1:]}")
-        seen.add(identity)
-        evidence_path = record["__evidence_absolute__"]
-        if evidence_path in evidence_bindings and evidence_bindings[evidence_path] != identity:
-            errors.append(f"record {index}: one evidence path is reused across execution identities")
-        evidence_bindings[evidence_path] = identity
-        judgment_path = record.get("__judgment_absolute__")
+    identities: dict[str, tuple[int, tuple[str, str]]] = {}
+    sessions: dict[str, tuple[str, int, tuple[str, str]]] = {}
+    evidence_paths: dict[str, tuple[str, int, tuple[str, str]]] = {}
+    judgment_paths: dict[str, tuple[str, int, tuple[str, str]]] = {}
+
+    def invalidate_blocks(
+        current_key: tuple[str, str],
+        previous_key: tuple[str, str],
+        message: str,
+    ) -> None:
+        block_validation_errors[current_key].append(message)
+        if previous_key != current_key:
+            block_validation_errors[previous_key].append(message)
+
+    for index, row in enumerate(normalized, start=1):
+        block_key = (row["suite_id"], row["comparison_block_id"])
+        identity = row["execution_identity_sha256"]
+        if identity in identities:
+            previous_index, previous_key = identities[identity]
+            invalidate_blocks(
+                block_key,
+                previous_key,
+                f"records {previous_index} and {index}: duplicate execution identity",
+            )
+        identities[identity] = (index, block_key)
+        session = row["session_identity_sha256"]
+        if session in sessions and sessions[session][0] != identity:
+            _, previous_index, previous_key = sessions[session]
+            invalidate_blocks(
+                block_key,
+                previous_key,
+                f"records {previous_index} and {index}: session identity was reused",
+            )
+        sessions[session] = (identity, index, block_key)
+        evidence_path = row["__evidence_absolute__"]
+        if evidence_path in evidence_paths and evidence_paths[evidence_path][0] != identity:
+            _, previous_index, previous_key = evidence_paths[evidence_path]
+            invalidate_blocks(
+                block_key,
+                previous_key,
+                f"records {previous_index} and {index}: evidence path was reused",
+            )
+        evidence_paths[evidence_path] = (identity, index, block_key)
+        judgment_path = row.get("__judgment_absolute__")
         if judgment_path:
-            if judgment_path in judgment_bindings and judgment_bindings[judgment_path] != identity:
-                errors.append(f"record {index}: one judgment path is reused across execution identities")
-            judgment_bindings[judgment_path] = identity
-        groups[identity[:-2]].append(record)
-    if errors:
+            if (
+                judgment_path in judgment_paths
+                and judgment_paths[judgment_path][0] != identity
+            ):
+                _, previous_index, previous_key = judgment_paths[judgment_path]
+                invalidate_blocks(
+                    block_key,
+                    previous_key,
+                    f"records {previous_index} and {index}: judgment path was reused",
+                )
+            judgment_paths[judgment_path] = (identity, index, block_key)
+    attempt_errors, selected, unresolved = _resolve_attempts(normalized, protocol)
+    for block_key, messages in attempt_errors.items():
+        block_validation_errors[block_key].extend(messages)
+
+    normalized_by_block: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for row in normalized:
+        normalized_by_block[(row["suite_id"], row["comparison_block_id"])].append(row)
+    selected_by_block: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for key, row in selected.items():
+        selected_by_block[(key[0], key[1])].append(row)
+
+    condition_summaries: list[dict[str, Any]] = []
+    paired_comparisons: list[dict[str, Any]] = []
+    block_results: list[dict[str, Any]] = []
+    completeness_errors: list[str] = []
+    completed_evidence_statuses: list[str] = []
+    frozen_blocks: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    for suite in protocol["suites"].values():
+        for block in suite.get("comparison_blocks_by_id", {}).values():
+            frozen_blocks.append((suite, block))
+    if not frozen_blocks:
         return {
-            "score_schema_version": "2.0.0",
+            "score_schema_version": SCORE_SCHEMA_VERSION,
             "scorer_version": SCORER_VERSION,
             "manifest_sha256": protocol["manifest_sha256"],
             "records_sha256": records_sha256,
             "valid": False,
-            "evaluation_status": "invalid",
-            "errors": errors,
-            "summaries": [],
+            "scoring_status": "invalid",
+            "evidence_status": "not_evaluated",
+            "errors": ["the manifest has no frozen comparison block"],
+            "condition_summaries": [],
+            "paired_comparisons": [],
         }
 
-    summaries: list[dict[str, Any]] = []
-    completeness_errors: list[str] = []
-    expected_suite_conditions = {
-        (suite_id, condition_id)
-        for suite_id, suite in protocol["suites"].items()
-        if suite.get("scoring_backend") == "score.py"
-        for condition_id in suite["conditions_by_id"]
-    }
-    present_suite_conditions = {
-        (item["suite_id"], item["condition_id"]) for item in normalized
-    }
-    missing_suite_conditions = sorted(
-        expected_suite_conditions - present_suite_conditions
-    )
-    for suite_id, condition_id in missing_suite_conditions:
-        completeness_errors.append(
-            f"suite={suite_id}, condition={condition_id} has no submitted executions"
+    for suite, block in frozen_blocks:
+        suite_id = suite["suite_id"]
+        block_id = block["comparison_block_id"]
+        expected_cells = {
+            (condition_id, case_id, replicate)
+            for condition_id in block["condition_ids"]
+            for case_id, replicate in block["expected_pairs"]
+        }
+        attempt_cells = submitted_cells_by_block.get((suite_id, block_id), set())
+        selected_cells = {
+            (row["condition_id"], row["case_id"], row["replicate"])
+            for row in selected_by_block.get((suite_id, block_id), [])
+        }
+        missing_attempts = sorted(expected_cells - attempt_cells)
+        unresolved_cells = sorted(
+            (condition_id, case_id, replicate)
+            for (key_suite, key_block, condition_id, case_id, replicate), _reason in unresolved.items()
+            if key_suite == suite_id and key_block == block_id
         )
-    for group_key, group in sorted(groups.items(), key=lambda item: tuple(str(value) for value in item[0])):
-        (
-            _,
-            suite_id,
-            skill_release,
-            condition_id,
-            agent,
-            model,
-            runtime,
-            execution_config_sha256,
-            seed_control_status,
-            record_type,
-        ) = group_key
-        suite = protocol["suites"][suite_id]
-        expected_pairs = {
-            (case_id, replicate)
-            for case_id in suite["cases_by_id"]
-            for replicate in range(1, suite["repetitions"] + 1)
-        }
-        actual_pairs = {(item["case_id"], item["replicate"]) for item in group}
-        missing = sorted(expected_pairs - actual_pairs)
-        if missing:
-            completeness_errors.append(
-                f"suite={suite_id}, condition={condition_id}, agent={agent}, model={model}, runtime={runtime} is missing {len(missing)} case-replicate executions"
-            )
-        by_case: dict[str, list[dict[str, Any]]] = defaultdict(list)
-        for item in group:
-            by_case[item["case_id"]].append(item)
-        interval_rule = suite["interval_rule"]
-        base = {
-            "suite_id": suite_id,
-            "skill_release": skill_release,
-            "condition_id": condition_id,
-            "agent": agent,
-            "model": model,
-            "runtime": runtime,
-            "execution_config_sha256": execution_config_sha256,
-            "seed_control_status": seed_control_status,
-            "record_type": record_type,
-            "n_cases": len(by_case),
-            "n_executions": len(group),
-            "expected_executions": len(expected_pairs),
-            "complete": not missing,
-        }
-        if record_type == "trigger":
-            metrics = _trigger_metrics(group)
-            intervals = _bootstrap_trigger(
-                by_case,
-                int(interval_rule["draws"]),
-                int(interval_rule["seed"]),
-                float(interval_rule["confidence"]),
-            )
-            base.update({"metrics": metrics, "intervals": intervals})
-        else:
-            case_metrics = {
-                case_id: _behavior_case_metrics(
-                    rows,
-                    set(suite["cases_by_id"][case_id].get("critical_assertion_ids", [])),
+        missing_selected = sorted(expected_cells - selected_cells)
+
+        block_schedule_errors: list[str] = []
+        for case_id, replicate in sorted(block["expected_pairs"]):
+            first_attempts = {
+                row["condition_id"]: row
+                for row in normalized_by_block.get((suite_id, block_id), [])
+                if row["case_id"] == case_id
+                and row["replicate"] == replicate
+                and row["attempt"] == 1
+            }
+            if set(first_attempts) == set(block["condition_ids"]):
+                scheduled = block["order_by_pair"][(case_id, replicate)]
+                actual = sorted(
+                    first_attempts,
+                    key=lambda condition: first_attempts[condition]["__started_datetime__"],
                 )
-                for case_id, rows in by_case.items()
+                starts = [first_attempts[item]["__started_datetime__"] for item in scheduled]
+                if len(set(starts)) != len(starts):
+                    block_schedule_errors.append(
+                        f"suite={suite_id}, block={block_id}, pair={(case_id, replicate)} actual start order is not identifiable"
+                    )
+                if actual != scheduled:
+                    block_schedule_errors.append(
+                        f"suite={suite_id}, block={block_id}, pair={(case_id, replicate)} actual start order differs from schedule"
+                    )
+                span = (max(starts) - min(starts)).total_seconds()
+                if span > block["max_pair_window_seconds"]:
+                    block_schedule_errors.append(
+                        f"suite={suite_id}, block={block_id}, pair={(case_id, replicate)} exceeds the frozen adjacent-run window"
+                    )
+            score_bearing_attempts = {
+                row["condition_id"]: row
+                for row in selected_by_block.get((suite_id, block_id), [])
+                if row["case_id"] == case_id and row["replicate"] == replicate
             }
-            metrics = {
-                name: _mean(item[name] for item in case_metrics.values())
-                for name in ("case_mean_assertion_pass_rate", "case_all_pass_rate", "critical_violation_rate")
-            }
-            all_assertions = [value for item in group for value in item["assertion_scores"].values()]
-            metrics["assertion_micro_pass_rate_diagnostic"] = _mean(float(value) for value in all_assertions)
-            intervals = _bootstrap_behavior(
-                case_metrics,
-                int(interval_rule["draws"]),
-                int(interval_rule["seed"]),
-                float(interval_rule["confidence"]),
+            if set(score_bearing_attempts) == set(block["condition_ids"]):
+                score_bearing_starts = [
+                    row["__started_datetime__"]
+                    for row in score_bearing_attempts.values()
+                ]
+                score_bearing_span = (
+                    max(score_bearing_starts) - min(score_bearing_starts)
+                ).total_seconds()
+                if score_bearing_span > block["max_pair_window_seconds"]:
+                    block_schedule_errors.append(
+                        f"suite={suite_id}, block={block_id}, pair={(case_id, replicate)} selected score-bearing attempts exceed the frozen adjacent-run window"
+                    )
+
+        block_protocol_errors = list(
+            block_validation_errors.get((suite_id, block_id), [])
+        ) + block_schedule_errors
+        completeness_errors.extend(block_protocol_errors)
+        block_invalidated = bool(block_protocol_errors)
+        complete = (
+            not missing_attempts
+            and not unresolved_cells
+            and not missing_selected
+            and not block_invalidated
+        )
+        if missing_attempts:
+            completeness_errors.append(
+                f"suite={suite_id}, block={block_id} has {len(missing_attempts)} cells with no attempt record"
             )
-            base.update({"metrics": metrics, "intervals": intervals})
-        summaries.append(base)
+        if unresolved_cells:
+            completeness_errors.append(
+                f"suite={suite_id}, block={block_id} has {len(unresolved_cells)} unresolved infrastructure cells"
+            )
+        by_condition: dict[str, dict[tuple[str, int], dict[str, Any]]] = defaultdict(dict)
+        for row in selected_by_block.get((suite_id, block_id), []):
+            by_condition[row["condition_id"]][(row["case_id"], row["replicate"])] = row
+        all_attempts_by_condition: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for row in normalized_by_block.get((suite_id, block_id), []):
+            all_attempts_by_condition[row["condition_id"]].append(row)
+        for condition_id in block["condition_ids"]:
+            rows = list(by_condition.get(condition_id, {}).values())
+            condition_complete = set(by_condition.get(condition_id, {})) == block["expected_pairs"]
+            condition_summaries.append(
+                _condition_summary(
+                    suite,
+                    block,
+                    condition_id,
+                    rows,
+                    all_attempts_by_condition.get(condition_id, []),
+                    condition_complete,
+                    complete,
+                )
+            )
+        block_status = (
+            "invalidated"
+            if block_invalidated
+            else "complete" if complete else "comparison_incomplete"
+        )
+        block_result = {
+            "suite_id": suite_id,
+            "comparison_block_id": block_id,
+            "run_batch_id": block["run_batch_id"],
+            "status": block_status,
+            "expected_cells": len(expected_cells),
+            "attempted_cells": len(attempt_cells),
+            "selected_cells": len(selected_cells),
+            "invalid_attempt_records": invalid_attempt_records_by_block.get(
+                (suite_id, block_id), []
+            ),
+            "missing_attempt_cells": [list(item) for item in missing_attempts],
+            "unresolved_infrastructure_cells": [list(item) for item in unresolved_cells],
+            "protocol_deviation_errors": block_protocol_errors,
+            "paired_deltas_reported": complete,
+            "evidence_status": (
+                block["evidence_status_on_complete"] if complete else "not_evaluated"
+            ),
+        }
+        block_results.append(block_result)
+        if complete:
+            completed_evidence_statuses.append(block["evidence_status_on_complete"])
+            for contrast in block["contrasts"]:
+                paired_comparisons.append(
+                    _paired_comparison(suite, block, contrast, by_condition)
+                )
 
     evidence_index = sorted(
-        {
-            (item["evidence_path"], item["evidence_sha256"], item.get("judgment_path"), item.get("judgment_sha256"))
-            for item in normalized
-        }
+        (
+            row["suite_id"],
+            row["comparison_block_id"],
+            row["condition_id"],
+            row["case_id"],
+            row["replicate"],
+            row["attempt"],
+            row["run_status"],
+            row["evidence_path"],
+            row["evidence_sha256"],
+            row.get("judgment_path"),
+            row.get("judgment_sha256"),
+        )
+        for row in normalized
     )
-    complete = not completeness_errors
+    complete = not completeness_errors and all(
+        item["status"] == "complete" for item in block_results
+    )
+    evidence_statuses = sorted(
+        set(completed_evidence_statuses), key=EVIDENCE_STATUS_ORDER.get
+    )
+    if not evidence_statuses:
+        evidence_status: str | None = "not_evaluated"
+        evidence_status_scope = "no_completed_blocks"
+    elif len(evidence_statuses) == 1:
+        evidence_status = evidence_statuses[0]
+        evidence_status_scope = "uniform_across_completed_blocks"
+    else:
+        evidence_status = None
+        evidence_status_scope = "block_specific"
+    any_invalidated = any(item["status"] == "invalidated" for item in block_results)
+    scoring_status = (
+        "complete"
+        if complete
+        else "invalidated" if any_invalidated else "comparison_incomplete"
+    )
     return {
-        "score_schema_version": "2.0.0",
+        "score_schema_version": SCORE_SCHEMA_VERSION,
         "scorer_version": SCORER_VERSION,
+        "benchmark_protocol_version": protocol["manifest"]["benchmark_protocol_version"],
         "manifest_sha256": protocol["manifest_sha256"],
         "records_sha256": records_sha256,
         "evidence_index_sha256": _canonical_hash(evidence_index),
-        "protocol_coverage": {
-            "expected_suite_conditions": [list(item) for item in sorted(expected_suite_conditions)],
-            "present_suite_conditions": [list(item) for item in sorted(present_suite_conditions)],
-            "missing_suite_conditions": [list(item) for item in missing_suite_conditions],
-        },
         "valid": complete,
-        "evaluation_status": "complete" if complete else "partial",
+        "scoring_status": scoring_status,
+        "evidence_status": evidence_status,
+        "evidence_status_scope": evidence_status_scope,
+        "evidence_statuses": evidence_statuses,
         "errors": completeness_errors,
-        "summaries": summaries,
+        "block_results": block_results,
+        "condition_summaries": condition_summaries,
+        "paired_comparisons": paired_comparisons,
+        "pooling_policy": "comparison blocks are reported separately and never pooled",
     }
 
 
@@ -838,34 +2503,91 @@ def _self_test() -> dict[str, Any]:
     with tempfile.TemporaryDirectory(prefix="scientific-autoresearch-score-") as temporary:
         root = Path(temporary)
         repo = root / "repo"
-        benchmark = repo / "benchmarks"
-        evidence = root / "evidence"
+        benchmarks = repo / "benchmarks"
         cases_dir = repo / "cases"
-        benchmark.mkdir(parents=True)
-        evidence.mkdir()
-        cases_dir.mkdir()
-        trigger_cases = [
+        artifacts = repo / "artifacts"
+        evidence = root / "evidence"
+        for directory in (benchmarks, cases_dir, artifacts, evidence):
+            directory.mkdir(parents=True, exist_ok=True)
+        cases = [
             {"id": "positive", "query": "positive", "should_trigger": True},
+            {"id": "positive-2", "query": "positive two", "should_trigger": True},
             {"id": "negative", "query": "negative", "should_trigger": False},
+            {"id": "negative-2", "query": "negative two", "should_trigger": False},
         ]
-        behavior_cases = {
-            "evals": [
-                {
-                    "id": "behavior",
-                    "prompt": "behavior",
-                    "assertions": ["required behavior", "critical safeguard"],
-                    "assertion_ids": ["a01", "a02"],
-                    "critical_assertion_ids": ["a02"],
-                }
-            ]
+        case_path = cases_dir / "trigger.json"
+        case_path.write_text(json.dumps(cases), encoding="utf-8")
+        config = {
+            "execution_config_schema_version": "1.0.0",
+            "shared_execution_config": {
+                "harness_identity": {
+                    "id": "self-test",
+                    "version": "1",
+                    "sha256_or_immutable_version": "self-test-harness@1",
+                    "attestation_mode": "immutable_version",
+                },
+                "generation_parameters": {"temperature": 0},
+                "tool_policy": "none",
+                "context_policy": "isolated",
+                "timeout_seconds": 30,
+                "isolated_sessions": True,
+            },
         }
-        trigger_path = cases_dir / "trigger.json"
-        behavior_path = cases_dir / "behavior.json"
-        trigger_path.write_text(json.dumps(trigger_cases), encoding="utf-8")
-        behavior_path.write_text(json.dumps(behavior_cases), encoding="utf-8")
+        config_path = artifacts / "config.json"
+        config_path.write_text(json.dumps(config), encoding="utf-8")
+        assignments = [
+            {"case_id": case["id"], "replicate": 1, "generation_seed": 7}
+            for case in cases
+        ]
+        seed = {
+            "seed_schedule_schema_version": "1.0.0",
+            "comparison_block_id": "self-test-block",
+            "seed_control_status": "enforced",
+            "assignments": assignments,
+        }
+        seed_path = artifacts / "seed.json"
+        seed_path.write_text(json.dumps(seed), encoding="utf-8")
+        order = {
+            "order_schedule_schema_version": "1.0.0",
+            "comparison_block_id": "self-test-block",
+            "generation_method": "seeded_balanced_rotation_v1",
+            "order_generation_seed": 1,
+            "assignments": [
+                {
+                    "case_id": case["id"],
+                    "replicate": 1,
+                    "condition_order": _balanced_condition_orders(
+                        ["target", "reference"],
+                        [(item["id"], 1) for item in cases],
+                        1,
+                    )[(case["id"], 1)],
+                }
+                for case in cases
+            ],
+        }
+        order_path = artifacts / "order.json"
+        order_path.write_text(json.dumps(order), encoding="utf-8")
+        routing = {
+            "routing_protocol_schema_version": "1.0.0",
+            "routing_protocol_id": "self-test-routing-v1",
+            "extractor_identity": {
+                "kind": "deterministic",
+                "id": "self-test-extractor",
+                "version": "1",
+            },
+            "decision_rule": "Read the Boolean routing decision.",
+        }
+        routing_path = artifacts / "routing.json"
+        routing_path.write_text(json.dumps(routing), encoding="utf-8")
+        artifact_ref = lambda path: {
+            "path": str(path.relative_to(repo)),
+            "schema_version": "1.0.0",
+            "sha256": _sha256_file(path),
+        }
         manifest = {
-            "benchmark_schema_version": "2.0.0",
-            "record_schema_version": "2.0.0",
+            "benchmark_schema_version": BENCHMARK_SCHEMA_VERSION,
+            "benchmark_protocol_version": "2.1.0",
+            "record_schema_version": RECORD_SCHEMA_VERSION,
             "scorer_sha256": hashlib.sha256(Path(__file__).resolve().read_bytes()).hexdigest(),
             "suites": [
                 {
@@ -873,130 +2595,140 @@ def _self_test() -> dict[str, Any]:
                     "protocol_status": "frozen",
                     "record_type": "trigger",
                     "scoring_backend": "score.py",
-                    "case_source": {"path": "cases/trigger.json", "sha256": hashlib.sha256(trigger_path.read_bytes()).hexdigest(), "collection_key": None, "case_id_field": "id", "prompt_field": "query"},
-                    "conditions": [{"condition_id": "current", "skill_release": "test", "skill_package_sha256": "sha256:" + "1" * 64}],
-                    "repetitions": 1,
-                    "interval_rule": {
-                        "method": "stratified_case_cluster_bootstrap",
-                        "draws": 20,
-                        "seed": 1,
-                        "confidence": 0.95,
+                    "evidence_type": "behavioral_conformance",
+                    "target": "self-test trigger routing",
+                    "case_source": {
+                        "path": "cases/trigger.json",
+                        "sha256": _sha256_file(case_path),
+                        "collection_key": None,
+                        "case_id_field": "id",
+                        "prompt_field": "query",
+                        "role": "development",
                     },
-                },
-                {
-                    "suite_id": "behavior",
-                    "protocol_status": "frozen",
-                    "record_type": "behavioral",
-                    "scoring_backend": "score.py",
-                    "case_source": {"path": "cases/behavior.json", "sha256": hashlib.sha256(behavior_path.read_bytes()).hexdigest(), "collection_key": "evals", "case_id_field": "id", "prompt_field": "prompt"},
-                    "conditions": [{"condition_id": "current", "skill_release": "test", "skill_package_sha256": "sha256:" + "1" * 64}],
+                    "conditions": [
+                        {"condition_id": "target", "skill_release": "test", "skill_package_sha256": "sha256:" + "1" * 64},
+                        {"condition_id": "reference", "skill_release": None, "skill_package_sha256": None},
+                    ],
+                    "evaluation_unit": "one self-test case in one isolated execution attempt",
                     "repetitions": 1,
-                    "interval_rule": {
-                        "method": "case_cluster_bootstrap",
-                        "draws": 20,
-                        "seed": 1,
-                        "confidence": 0.95,
-                    },
-                },
+                    "primary_estimands": ["trigger_balanced_accuracy_delta"],
+                    "secondary_estimands": ["case_level_win_loss_tie", "absolute_condition_scores"],
+                    "diagnostic_estimands": ["completed_output_confusion", "agent_failure_rate", "infrastructure_retry_count"],
+                    "aggregation_method_id": "trigger_paired_truth_stratified_case_macro_v1",
+                    "aggregation_rule": "Compute paired case-by-replicate credit differences, average replicates within case, then form a truth-stratified case macro difference.",
+                    "interval_rule": {"method": "paired_stratified_case_cluster_bootstrap", "bootstrap_unit": "case", "draws": 20, "seed": 1, "confidence": 0.95},
+                    "tie_rule": {"unit": "case_mean", "absolute_delta_threshold": 0.0},
+                    "missing_run_policy": "comparison_incomplete_no_paired_delta",
+                    "failure_retry_policy": {"maximum_infrastructure_retries": 1, "retry_eligible_statuses": ["harness_error", "provider_error", "cancelled_before_execution"], "retain_all_attempts": True, "scoring_attempt_selection_rule": "first_non_retry_eligible_attempt", "agent_failure_scoring": "zero_credit"},
+                    "uncertainty_design": {"case_variation": "case_cluster_bootstrap", "execution_stochasticity": "within_case_paired_replicates_when_available", "judge_uncertainty": "not_applicable"},
+                    "interpretation_scope_id": "development_only_no_generalization_v1",
+                    "interpretation_rule": "Development evidence only; do not infer a release gate or deployment generalization.",
+                    "comparison_blocks": [
+                        {
+                            "comparison_block_id": "self-test-block",
+                            "run_batch_id": "batch-1",
+                            "protocol_status": "frozen",
+                            "condition_ids": ["target", "reference"],
+                            "contrasts": [{"contrast_id": "target-minus-reference", "target_condition_id": "target", "reference_condition_id": "reference"}],
+                            "executor_identity": {"agent": "self-test", "model": "self-test", "runtime": "self-test"},
+                            "execution_config_artifact": artifact_ref(config_path),
+                            "seed_control_status": "enforced",
+                            "seed_schedule_artifact": artifact_ref(seed_path),
+                            "order_schedule_artifact": artifact_ref(order_path),
+                            "judge_protocol_artifact": None,
+                            "routing_protocol_artifact": artifact_ref(routing_path),
+                            "isolation_policy": "fresh_context_per_attempt",
+                            "max_pair_window_seconds": 60,
+                            "evidence_status_on_complete": "development_suite_evaluated",
+                        }
+                    ],
+                }
             ],
         }
-        manifest_path = benchmark / "manifest.json"
+        manifest_path = benchmarks / "manifest.json"
         manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
         protocol = _load_protocol(manifest_path)
         records: list[dict[str, Any]] = []
-        common = {
-            "record_schema_version": "2.0.0",
-            "manifest_sha256": protocol["manifest_sha256"],
-            "condition_id": "current",
-            "skill_release": "test",
-            "skill_package_sha256": "sha256:" + "1" * 64,
-            "replicate": 1,
-            "agent": "self-test",
-            "model": "self-test",
-            "runtime": "self-test",
-            "execution_config_sha256": "sha256:" + "3" * 64,
-            "generation_seed": 1,
-            "seed_control_status": "controlled",
-        }
-        for case_id, predicted in (("positive", True), ("negative", False)):
-            output = evidence / f"{case_id}.txt"
-            output.write_text(case_id, encoding="utf-8")
+        for case_index, case_id in enumerate(
+            (case["id"] for case in cases), start=1
+        ):
             case = protocol["suites"]["trigger"]["cases_by_id"][case_id]
-            record = {
-                    **common,
+            scheduled_order = protocol["suites"]["trigger"][
+                "comparison_blocks_by_id"
+            ]["self-test-block"]["order_by_pair"][(case_id, 1)]
+            for order_index, condition_id in enumerate(scheduled_order, start=1):
+                output = evidence / f"{case_id}-{condition_id}.txt"
+                output.write_text(f"{case_id}-{condition_id}", encoding="utf-8")
+                record = {
+                    "record_schema_version": RECORD_SCHEMA_VERSION,
+                    "manifest_sha256": protocol["manifest_sha256"],
                     "suite_id": "trigger",
-                    "record_type": "trigger",
+                    "comparison_block_id": "self-test-block",
+                    "run_batch_id": "batch-1",
+                    "condition_id": condition_id,
+                    "skill_release": "test" if condition_id == "target" else None,
+                    "skill_package_sha256": "sha256:" + "1" * 64 if condition_id == "target" else None,
                     "case_id": case_id,
+                    "replicate": 1,
+                    "attempt": 1,
+                    "agent": "self-test",
+                    "model": "self-test",
+                    "runtime": "self-test",
+                    "execution_config_path": "artifacts/config.json",
+                    "execution_config_schema_version": "1.0.0",
+                    "execution_config_sha256": _sha256_file(config_path),
+                    "generation_seed": 7,
+                    "seed_control_status": "enforced",
+                    "run_status": "completed",
+                    "run_order_index": order_index,
+                    "started_at": f"2000-01-0{case_index}T00:00:0{order_index}Z",
+                    "completed_at": f"2000-01-0{case_index}T00:00:0{order_index + 1}Z",
+                    "session_identity_sha256": "sha256:" + f"{len(records) + 1:064x}",
+                    "record_type": "trigger",
                     "case_spec_sha256": case["case_spec_sha256"],
                     "prompt_sha256": case["prompt_sha256"],
                     "evidence_path": output.name,
                     "evidence_sha256": _sha256_file(output),
-                    "predicted_trigger": predicted,
+                    "predicted_trigger": bool(case["should_trigger"]) if condition_id == "target" else not bool(case["should_trigger"]),
+                    "routing_protocol_id": routing["routing_protocol_id"],
+                    "routing_protocol_sha256": _sha256_file(routing_path),
+                    "routing_extractor": routing["extractor_identity"],
+                    "scored_at": f"2000-01-0{case_index}T00:00:0{order_index + 1}Z",
                 }
-            record["execution_identity_sha256"] = _execution_identity_hash(record)
-            records.append(record)
-        output = evidence / "behavior.txt"
-        output.write_text("behavior", encoding="utf-8")
-        case = protocol["suites"]["behavior"]["cases_by_id"]["behavior"]
-        scores = {"a01": True, "a02": True}
-        judge = {"kind": "deterministic", "id": "self-test", "version": "1", "panel_size": 1}
-        judge_prompt_hash = "sha256:" + "2" * 64
-        scored_at = "2000-01-01T00:00:00Z"
-        behavior_record = {
-            **common,
-            "suite_id": "behavior",
-            "record_type": "behavioral",
-            "case_id": "behavior",
-            "case_spec_sha256": case["case_spec_sha256"],
-            "prompt_sha256": case["prompt_sha256"],
-            "evidence_path": output.name,
-            "evidence_sha256": _sha256_file(output),
-            "rubric_sha256": case["rubric_sha256"],
-            "assertion_scores": scores,
-            "judge": judge,
-            "judge_prompt_sha256": judge_prompt_hash,
-            "scored_at": scored_at,
-        }
-        behavior_record["execution_identity_sha256"] = _execution_identity_hash(
-            behavior_record
-        )
-        judgment = {
-            "execution_identity_sha256": behavior_record["execution_identity_sha256"],
-            "evidence_sha256": _sha256_file(output),
-            "case_spec_sha256": case["case_spec_sha256"],
-            "rubric_sha256": case["rubric_sha256"],
-            "judge_prompt_sha256": judge_prompt_hash,
-            "assertion_scores": scores,
-            "judge": judge,
-            "scored_at": scored_at,
-        }
-        judgment_path = evidence / "behavior-judgment.json"
-        judgment_path.write_text(json.dumps(judgment), encoding="utf-8")
-        records.append(
-            {
-                **behavior_record,
-                "judgment_path": judgment_path.name,
-                "judgment_sha256": _sha256_file(judgment_path),
-            }
-        )
+                record["execution_identity_sha256"] = _execution_identity_hash(record)
+                judgment = {
+                    "execution_identity_sha256": record["execution_identity_sha256"],
+                    "evidence_sha256": record["evidence_sha256"],
+                    "case_spec_sha256": record["case_spec_sha256"],
+                    "prompt_sha256": record["prompt_sha256"],
+                    "routing_protocol_id": record["routing_protocol_id"],
+                    "routing_protocol_sha256": record["routing_protocol_sha256"],
+                    "routing_extractor": record["routing_extractor"],
+                    "predicted_trigger": record["predicted_trigger"],
+                    "scored_at": record["scored_at"],
+                }
+                judgment_path = evidence / f"{case_id}-{condition_id}-routing.json"
+                judgment_path.write_text(json.dumps(judgment), encoding="utf-8")
+                record["judgment_path"] = judgment_path.name
+                record["judgment_sha256"] = _sha256_file(judgment_path)
+                records.append(record)
         result = score_records(records, manifest_path, evidence)
-        trigger = next(item for item in result.get("summaries", []) if item["record_type"] == "trigger")
-        behavior = next(item for item in result.get("summaries", []) if item["record_type"] == "behavioral")
+        comparison = result.get("paired_comparisons", [{}])[0]
         passed = (
             result.get("valid") is True
-            and trigger["metrics"]["balanced_accuracy"] == 1.0
-            and behavior["metrics"]["case_mean_assertion_pass_rate"] == 1.0
+            and comparison.get("point_estimates", {}).get("trigger_balanced_accuracy_delta") == 1.0
+            and result.get("evidence_status") == "development_suite_evaluated"
         )
         return {"self_test": "passed" if passed else "failed", "result": result}
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("records", nargs="?", type=Path, help="Version-2 JSON Lines records.")
+    parser.add_argument("records", nargs="?", type=Path, help="Protocol-2.1 JSON Lines attempts.")
     parser.add_argument("--manifest", type=Path, default=Path(__file__).with_name("manifest.json"))
-    parser.add_argument("--evidence-root", type=Path, help="Root containing bound raw outputs and judgments.")
-    parser.add_argument("--output", type=Path, help="Optional scored result JSON.")
-    parser.add_argument("--self-test", action="store_true", help="Run deterministic scorer fixtures.")
+    parser.add_argument("--evidence-root", type=Path, help="Root containing bound outputs, failure logs, and judgments.")
+    parser.add_argument("--output", type=Path, help="Optional scored-result JSON path.")
+    parser.add_argument("--self-test", action="store_true", help="Run deterministic paired fixtures.")
     args = parser.parse_args()
     if args.self_test:
         result = _self_test()
@@ -1004,7 +2736,7 @@ def main() -> int:
         if args.records is None:
             parser.error("records is required unless --self-test is used")
         if args.evidence_root is None:
-            parser.error("--evidence-root is required for hash-bound scoring")
+            parser.error("--evidence-root is required")
         try:
             records = _load_jsonl(args.records)
             result = score_records(
@@ -1015,12 +2747,14 @@ def main() -> int:
             )
         except (OSError, ValueError) as exc:
             result = {
-                "score_schema_version": "2.0.0",
+                "score_schema_version": SCORE_SCHEMA_VERSION,
                 "scorer_version": SCORER_VERSION,
                 "valid": False,
-                "evaluation_status": "invalid",
+                "scoring_status": "invalid",
+                "evidence_status": "not_evaluated",
                 "errors": [str(exc)],
-                "summaries": [],
+                "condition_summaries": [],
+                "paired_comparisons": [],
             }
     payload = json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     if args.output is not None:

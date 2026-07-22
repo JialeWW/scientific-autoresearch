@@ -1,0 +1,19 @@
+{
+  "benchmark_result_schema_version": "2.1.0",
+  "benchmark_protocol_version": "2.1.0",
+  "skill_release": "0.2.8",
+  "manifest_sha256": "sha256:76063b3f8f6155938a01a7810951ca3beaac84f5cc1f2d34b22aca90c31f2e96",
+  "scoring_status": "not_evaluated",
+  "evidence_status": "not_evaluated",
+  "package_validation": "separate_structural_check",
+  "behavioral_evaluation": "not_evaluated",
+  "empirical_method_validation": "not_evaluated",
+  "comparison_blocks_frozen": 0,
+  "scored_attempt_counts": {
+    "trigger": 0,
+    "behavioral": 0,
+    "empirical": 0
+  },
+  "summary": null,
+  "statement": "Protocol 2.1 defines paired comparison, pre-outcome estimands, evidence-bound execution artifacts, attempt retention, and failure/retry semantics. No compute-specific comparison block or scored execution is reported for this release."
+}

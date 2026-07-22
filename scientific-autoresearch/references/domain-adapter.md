@@ -53,6 +53,23 @@ Each rule records a stable ID, affected inputs and fields, expected relation or 
 
 Let project code perform the actual checks. The generic validator can verify only that the declared adapter, contract, report, versions, hashes, statuses, and objections agree; it cannot infer whether a scientific identifier or domain tolerance is correct.
 
+Classify a preflight's evidence as `automated`, `manual`, `semantic_review`, or `declarative`. Do not invent an executable command for a manual or semantic judgment. For schema 1.5.4, a passed automated preflight that can support or block a decision-bearing result also records:
+
+```text
+evidence_mode
+decision_bearing
+procedure_artifact:
+  path
+  sha256
+input_bindings[]:
+  data_version_id  # must resolve to exactly one registered data product/version row
+  sha256_or_immutable_version
+execution_status
+exit_status
+```
+
+Preserve a script, notebook, workflow definition, fixed query, software entry configuration, or equivalent procedure artifact; a shell command is not required. Bind every declared input version to a digest or immutable version. The report repeats `procedure_artifact`, records `checked_input_bindings`, and agrees on the evidence and execution statuses. Record `execution_status=completed` and `exit_status=success` only when that procedure produced the bound report. A passed applicable preflight is the gate for later outcome-bearing work and therefore records `decision_bearing=true`; a passed automated preflight requires the executable binding above even if the manifest has not yet advanced from `planned`. Nonautomated evidence and checks that are not passed gates do not imitate executable evidence.
+
 ## 4. Bind the Preflight Report
 
 For a machine-audited run, preserve a report or equivalent record with this shape:
@@ -61,16 +78,29 @@ For a machine-audited run, preserve a report or equivalent record with this shap
 contract_version
 checked_data_version_ids
 overall_status
+evidence_mode              # automated decision-bearing report only
+decision_bearing           # automated decision-bearing report only
+procedure_artifact:        # automated decision-bearing report only
+  path
+  sha256
+checked_input_bindings[]:  # automated decision-bearing report only
+  data_version_id
+  sha256_or_immutable_version
+execution_status           # automated decision-bearing report only
+exit_status                # automated decision-bearing report only
 checks[]:
   check_id
   check_type
   status
   observed_summary
   evidence_path_or_locator  # optional when no separate evidence artifact exists
+  evidence_sha256_or_immutable_version  # required with a separate evidence locator
 checked_at
 ```
 
 Require every applicable frozen rule to have exactly one entry in `checks[]`. The top-level `overall_status` may be `passed`, `failed`, or `inconclusive`; `passed` requires all blocking checks to pass. A `failed` or `inconclusive` overall status, or any unresolved required check, blocks affected outcome-bearing execution but may support a transparent blocked report.
+
+The generic validator reads and reconciles these records but never runs the procedure. It verifies contained artifact paths and hashes, input-version bindings, execution-status agreement, rule coverage, and report consistency. Scientific adequacy of the procedure remains a domain and reproduction question.
 
 ## 5. Record Semantic Review Proportionately
 

@@ -1,66 +1,124 @@
 {
-  "benchmark_schema_version": "2.0.0",
-  "protocol_id": "scientific-autoresearch-benchmark-v2",
-  "release_under_test": "0.2.7",
-  "benchmark_status": "protocol_defined_not_evaluated",
-  "record_schema_version": "2.0.0",
-  "scorer_sha256": "19d8ba84a19c2a450d92b02de6e218cee669a887ac9a56d1bbd0d6c285a9f4a5",
+  "benchmark_schema_version": "2.1.0",
+  "benchmark_protocol_version": "2.1.0",
+  "protocol_id": "scientific-autoresearch-benchmark-v2.1",
+  "release_under_test": "0.2.8",
+  "benchmark_status": "protocol_2_1_defined_not_evaluated",
+  "record_schema_version": "2.1.0",
+  "scorer_sha256": "409f19d74a69b417b96dfabea7c62d1973e96b0dc04957937a00144ae1d92549",
+  "evaluation_state_vocabulary": [
+    "not_evaluated",
+    "development_suite_evaluated",
+    "sealed_suite_baseline_established",
+    "prospective_release_gate_evaluated",
+    "empirical_method_evaluated"
+  ],
   "suites": [
     {
       "suite_id": "trigger-routing",
-      "protocol_status": "frozen",
+      "protocol_status": "awaiting_execution_freeze",
       "record_type": "trigger",
       "scoring_backend": "score.py",
       "evidence_type": "behavioral_conformance",
       "target": "skill activation and adjacent-task nonactivation",
       "case_source": {
         "path": "scientific-autoresearch/evals/eval_queries.json",
-        "sha256": "0fe6d9302df069f207ef121ce71ad91afe035c43c138014a5b8f0058cfe369ba",
+        "sha256": "sha256:0fe6d9302df069f207ef121ce71ad91afe035c43c138014a5b8f0058cfe369ba",
         "collection_key": null,
         "case_id_field": "id",
         "prompt_field": "query",
         "role": "development"
       },
       "conditions": [
+        {"condition_id": "skill-v0.2.8", "skill_release": "0.2.8", "skill_package_sha256": "sha256:ea5a9e5d33720ab3b6cc2bb094f2cdf52da1c8a2031786a0091901aee2719412"},
         {"condition_id": "skill-v0.2.7", "skill_release": "0.2.7", "skill_package_sha256": "sha256:20b2fe538932919c54863277e8cc677e1b375d79d379577272727a0553e72fa9"},
         {"condition_id": "skill-v0.2.6", "skill_release": "0.2.6", "skill_package_sha256": "sha256:d7dc173bd510eff7384f59d807600e8f1a6de7f5d9ff52ef3800dac77d16e547"},
         {"condition_id": "no-skill", "skill_release": null, "skill_package_sha256": null}
       ],
-      "evaluation_unit": "one case in one isolated execution",
+      "evaluation_unit": "one case in one isolated execution attempt",
       "repetitions": 5,
-      "seed_policy": "Use isolated executions; record any controllable seed; never retry or select a run by outcome.",
-      "metrics": ["precision", "recall", "specificity", "balanced_accuracy"],
-      "aggregation_rule": "Score truth from the frozen case source; aggregate case-replicate outcomes within one complete provenance stratum.",
-      "interval_rule": {"method": "stratified_case_cluster_bootstrap", "draws": 2000, "seed": 20260722, "confidence": 0.95},
-      "pass_rule": {"decision": "descriptive_only", "rule": "Report frozen metrics and intervals without a release-level pass claim."}
+      "primary_estimands": ["trigger_balanced_accuracy_delta"],
+      "secondary_estimands": ["case_level_win_loss_tie", "absolute_condition_scores"],
+      "diagnostic_estimands": ["completed_output_confusion", "agent_failure_rate", "infrastructure_retry_count"],
+      "aggregation_method_id": "trigger_paired_truth_stratified_case_macro_v1",
+      "aggregation_rule": "Compute paired case-by-replicate credit differences, average replicates within case, then form a truth-stratified case macro difference.",
+      "interval_rule": {
+        "method": "paired_stratified_case_cluster_bootstrap",
+        "bootstrap_unit": "case",
+        "draws": 2000,
+        "seed": 20260722,
+        "confidence": 0.95
+      },
+      "tie_rule": {"unit": "case_mean", "absolute_delta_threshold": 0.0},
+      "missing_run_policy": "comparison_incomplete_no_paired_delta",
+      "failure_retry_policy": {
+        "maximum_infrastructure_retries": 1,
+        "retry_eligible_statuses": ["harness_error", "provider_error", "cancelled_before_execution"],
+        "retain_all_attempts": true,
+        "scoring_attempt_selection_rule": "first_non_retry_eligible_attempt",
+        "agent_failure_scoring": "zero_credit"
+      },
+      "uncertainty_design": {
+        "case_variation": "case_cluster_bootstrap",
+        "execution_stochasticity": "within_case_paired_replicates_when_available",
+        "judge_uncertainty": "not_applicable"
+      },
+      "interpretation_scope_id": "development_only_no_generalization_v1",
+      "interpretation_rule": "Development evidence only; do not infer a release gate or deployment generalization.",
+      "comparison_blocks": []
     },
     {
       "suite_id": "behavioral-profile-routing",
-      "protocol_status": "frozen",
+      "protocol_status": "awaiting_execution_freeze",
       "record_type": "behavioral",
       "scoring_backend": "score.py",
       "evidence_type": "behavioral_conformance",
       "target": "profile selection and safeguard behavior",
       "case_source": {
         "path": "scientific-autoresearch/evals/evals.json",
-        "sha256": "6da70bcdf3e7a94d8d7faac05830bcbe37ad16161ba0af6b4919c710732c7d92",
+        "sha256": "sha256:6da70bcdf3e7a94d8d7faac05830bcbe37ad16161ba0af6b4919c710732c7d92",
         "collection_key": "evals",
         "case_id_field": "id",
         "prompt_field": "prompt",
         "role": "development"
       },
       "conditions": [
+        {"condition_id": "skill-v0.2.8", "skill_release": "0.2.8", "skill_package_sha256": "sha256:ea5a9e5d33720ab3b6cc2bb094f2cdf52da1c8a2031786a0091901aee2719412"},
         {"condition_id": "skill-v0.2.7", "skill_release": "0.2.7", "skill_package_sha256": "sha256:20b2fe538932919c54863277e8cc677e1b375d79d379577272727a0553e72fa9"},
         {"condition_id": "skill-v0.2.6", "skill_release": "0.2.6", "skill_package_sha256": "sha256:d7dc173bd510eff7384f59d807600e8f1a6de7f5d9ff52ef3800dac77d16e547"},
         {"condition_id": "no-skill", "skill_release": null, "skill_package_sha256": null}
       ],
-      "evaluation_unit": "one case in one isolated execution",
+      "evaluation_unit": "one case in one isolated execution attempt",
       "repetitions": 5,
-      "seed_policy": "Use isolated executions; record any controllable seed; never retry or select a run by outcome.",
-      "metrics": ["case_mean_assertion_pass_rate", "case_all_pass_rate", "critical_violation_rate"],
-      "aggregation_rule": "Average assertions within each execution, replicates within each case, then weight cases equally; assertion-micro rate is diagnostic only.",
-      "interval_rule": {"method": "case_cluster_bootstrap", "draws": 2000, "seed": 20260722, "confidence": 0.95},
-      "pass_rule": {"decision": "descriptive_only", "rule": "Report frozen metrics and intervals without a release-level pass claim."}
+      "primary_estimands": ["behavioral_case_macro_delta", "critical_violation_risk_difference"],
+      "secondary_estimands": ["case_all_pass_rate_delta", "case_level_win_loss_tie", "critical_violation_discordance", "absolute_condition_scores"],
+      "diagnostic_estimands": ["assertion_micro_pass_rate", "agent_failure_rate", "infrastructure_retry_count"],
+      "aggregation_method_id": "behavioral_paired_case_macro_v1",
+      "aggregation_rule": "Compute paired case-by-replicate differences, average replicates within case, then weight cases equally.",
+      "interval_rule": {
+        "method": "paired_case_cluster_bootstrap",
+        "bootstrap_unit": "case",
+        "draws": 2000,
+        "seed": 20260722,
+        "confidence": 0.95
+      },
+      "tie_rule": {"unit": "case_mean", "absolute_delta_threshold": 0.0},
+      "missing_run_policy": "comparison_incomplete_no_paired_delta",
+      "failure_retry_policy": {
+        "maximum_infrastructure_retries": 1,
+        "retry_eligible_statuses": ["harness_error", "provider_error", "cancelled_before_execution"],
+        "retain_all_attempts": true,
+        "scoring_attempt_selection_rule": "first_non_retry_eligible_attempt",
+        "agent_failure_scoring": "zero_credit"
+      },
+      "uncertainty_design": {
+        "case_variation": "case_cluster_bootstrap",
+        "execution_stochasticity": "within_case_paired_replicates_when_available",
+        "judge_uncertainty": "not_estimable_without_repeated_independent_judgments"
+      },
+      "interpretation_scope_id": "development_only_no_generalization_v1",
+      "interpretation_rule": "Development evidence only; do not infer a release gate or deployment generalization.",
+      "comparison_blocks": []
     },
     {
       "suite_id": "empirical-operating-characteristics",
@@ -71,26 +129,59 @@
       "target": "end-to-end behavior under known or defensible truth",
       "case_source": null,
       "conditions": [
+        {"condition_id": "skill-v0.2.8", "skill_release": "0.2.8", "skill_package_sha256": "sha256:ea5a9e5d33720ab3b6cc2bb094f2cdf52da1c8a2031786a0091901aee2719412"},
         {"condition_id": "skill-v0.2.7", "skill_release": "0.2.7", "skill_package_sha256": "sha256:20b2fe538932919c54863277e8cc677e1b375d79d379577272727a0553e72fa9"},
-        {"condition_id": "skill-v0.2.6", "skill_release": "0.2.6", "skill_package_sha256": "sha256:d7dc173bd510eff7384f59d807600e8f1a6de7f5d9ff52ef3800dac77d16e547"},
         {"condition_id": "no-skill", "skill_release": null, "skill_package_sha256": null},
-        {"condition_id": "component-ablations", "skill_release": "0.2.7", "skill_package_sha256": "sha256:20b2fe538932919c54863277e8cc677e1b375d79d379577272727a0553e72fa9"}
+        {"condition_id": "component-ablations", "skill_release": "0.2.8", "skill_package_sha256": "sha256:ea5a9e5d33720ab3b6cc2bb094f2cdf52da1c8a2031786a0091901aee2719412"}
       ],
       "evaluation_unit": "to be frozen with the known-truth scenario family",
       "repetitions": null,
-      "seed_policy": null,
-      "metrics": ["false_promotion_rate", "detection_power", "interval_coverage", "false_completion_rate", "run_reproducibility", "record_completeness"],
+      "primary_estimands": ["false_promotion_rate", "detection_power", "interval_coverage", "false_completion_rate"],
+      "secondary_estimands": ["run_reproducibility", "record_completeness"],
+      "diagnostic_estimands": [],
       "aggregation_rule": null,
       "interval_rule": null,
-      "pass_rule": null
+      "tie_rule": null,
+      "missing_run_policy": null,
+      "failure_retry_policy": null,
+      "uncertainty_design": null,
+      "interpretation_rule": null,
+      "comparison_blocks": []
     }
   ],
   "result_policy": {
     "development_and_sealed_cases_separate": true,
-    "raw_outputs_required": true,
-    "hash_verified_local_evidence_required_for_scoring": true,
-    "uncertainty_required_for_repeated_metrics": true,
-    "scope_claims_to_tested_conditions": true,
+    "raw_outputs_and_all_attempts_required": true,
+    "complete_cross_condition_pairing_required_for_deltas": true,
+    "condition_is_the_only_allowed_scientific_treatment_difference": true,
+    "hash_verified_config_schedule_and_judge_artifacts_required": true,
+    "uncertainty_reported_only_for_observed_replication_levels": true,
+    "scope_claims_to_tested_blocks": true,
+    "comparison_blocks_never_pooled": true,
     "structural_checks_do_not_establish_behavioral_or_empirical_validity": true
+  },
+  "sealed_suite_policy": {
+    "status": "not_established",
+    "required_commitment_fields": [
+      "sealed_suite_id",
+      "case_count",
+      "stratum_counts",
+      "case_bundle_commitment_sha256",
+      "rubric_bundle_commitment_sha256",
+      "frozen_at",
+      "custodian",
+      "access_policy",
+      "retirement_policy"
+    ],
+    "first_use_status": "sealed_suite_baseline_established",
+    "prospective_gate_must_be_frozen_before_target_release": true,
+    "leaked_or_tuning_exposed_suite_becomes_development": true,
+    "rotation_policy_required_before_reuse": true
+  },
+  "protocol_invalidation_policy": {
+    "comparison_validity_defect_invalidates_entire_affected_block": true,
+    "partial_result_repair_forbidden": true,
+    "repair_requires_new_protocol_or_scorer_patch_version": true,
+    "superseded_batches_retain_original_attempts_and_invalidation_reason": true
   }
 }

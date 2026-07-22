@@ -70,6 +70,28 @@ def behavior_package_sha256(skill_dir: Path) -> str:
     return "sha256:" + digest.hexdigest()
 
 
+def frozen_comparison_block_count(manifest: object) -> int:
+    """Count comparison blocks that the manifest explicitly marks as frozen."""
+
+    if not isinstance(manifest, dict):
+        return 0
+    suites = manifest.get("suites")
+    if not isinstance(suites, list):
+        return 0
+    count = 0
+    for suite in suites:
+        if not isinstance(suite, dict):
+            continue
+        blocks = suite.get("comparison_blocks")
+        if not isinstance(blocks, list):
+            continue
+        count += sum(
+            isinstance(block, dict) and block.get("protocol_status") == "frozen"
+            for block in blocks
+        )
+    return count
+
+
 def validate(skill_dir: Path, repo_root: Path) -> list[str]:
     errors: list[str] = []
     skill_md = skill_dir / "SKILL.md"
@@ -207,19 +229,17 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
     if not benchmark_scorer_path.is_file():
         errors.append("Missing repository benchmark scorer: benchmarks/score.py")
     try:
-        benchmark_manifest = json.loads(
-            benchmark_manifest_path.read_text(encoding="utf-8")
-        )
+        benchmark_manifest = json.loads(benchmark_manifest_path.read_text(encoding="utf-8"))
         if not isinstance(benchmark_manifest, dict):
             raise ValueError("top level must be an object")
-        if benchmark_manifest.get("benchmark_schema_version") != "2.0.0":
-            errors.append("benchmarks/manifest.json must use benchmark schema 2.0.0")
-        if benchmark_manifest.get("record_schema_version") != "2.0.0":
-            errors.append("benchmarks/manifest.json must bind record schema 2.0.0")
+        if benchmark_manifest.get("benchmark_schema_version") != "2.1.0":
+            errors.append("benchmarks/manifest.json must use benchmark schema 2.1.0")
+        if benchmark_manifest.get("benchmark_protocol_version") != "2.1.0":
+            errors.append("benchmarks/manifest.json must bind protocol 2.1.0")
+        if benchmark_manifest.get("record_schema_version") != "2.1.0":
+            errors.append("benchmarks/manifest.json must bind record schema 2.1.0")
         scorer_hash = benchmark_manifest.get("scorer_sha256")
-        if not isinstance(scorer_hash, str) or not re.fullmatch(
-            r"[0-9a-f]{64}", scorer_hash
-        ):
+        if not isinstance(scorer_hash, str) or not re.fullmatch(r"[0-9a-f]{64}", scorer_hash):
             errors.append("benchmarks/manifest.json must bind the scorer SHA-256")
         elif benchmark_scorer_path.is_file() and hashlib.sha256(
             benchmark_scorer_path.read_bytes()
@@ -228,159 +248,225 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
         if benchmark_manifest.get("release_under_test") != version:
             errors.append("benchmarks/manifest.json release does not match SKILL.md")
         if benchmark_manifest.get("benchmark_status") not in {
-            "protocol_defined_not_evaluated",
+            "protocol_2_1_defined_not_evaluated",
             "partially_evaluated",
             "evaluated",
         }:
             errors.append("benchmarks/manifest.json has an invalid benchmark_status")
+        states = benchmark_manifest.get("evaluation_state_vocabulary")
+        required_states = {
+            "not_evaluated",
+            "development_suite_evaluated",
+            "sealed_suite_baseline_established",
+            "prospective_release_gate_evaluated",
+            "empirical_method_evaluated",
+        }
+        if not isinstance(states, list) or set(states) != required_states:
+            errors.append("Benchmark evaluation-state vocabulary is incomplete")
         suites = benchmark_manifest.get("suites")
         if not isinstance(suites, list) or len(suites) < 3:
             errors.append("benchmarks/manifest.json must define the evidence suites")
-        else:
-            suite_ids = [suite.get("suite_id") for suite in suites if isinstance(suite, dict)]
-            if len(suite_ids) != len(suites) or len(suite_ids) != len(set(suite_ids)):
-                errors.append("Benchmark suite IDs must be present and unique")
-            package_hashes_by_release: dict[str, set[str]] = {}
-            for suite in suites:
-                if not isinstance(suite, dict):
-                    continue
+            suites = []
+        suite_ids = [suite.get("suite_id") for suite in suites if isinstance(suite, dict)]
+        if len(suite_ids) != len(suites) or len(suite_ids) != len(set(suite_ids)):
+            errors.append("Benchmark suite IDs must be present and unique")
+        package_hashes_by_release: dict[str, set[str]] = {}
+        benchmark_specs = {
+            "trigger": {
+                "primary_estimands": ["trigger_balanced_accuracy_delta"],
+                "secondary_estimands": [
+                    "case_level_win_loss_tie",
+                    "absolute_condition_scores",
+                ],
+                "diagnostic_estimands": [
+                    "completed_output_confusion",
+                    "agent_failure_rate",
+                    "infrastructure_retry_count",
+                ],
+                "aggregation_method_id": "trigger_paired_truth_stratified_case_macro_v1",
+                "aggregation_rule": "Compute paired case-by-replicate credit differences, average replicates within case, then form a truth-stratified case macro difference.",
+                "uncertainty_design": {
+                    "case_variation": "case_cluster_bootstrap",
+                    "execution_stochasticity": "within_case_paired_replicates_when_available",
+                    "judge_uncertainty": "not_applicable",
+                },
+                "interpretation_scope_id": "development_only_no_generalization_v1",
+                "interpretation_rule": "Development evidence only; do not infer a release gate or deployment generalization.",
+            },
+            "behavioral": {
+                "primary_estimands": [
+                    "behavioral_case_macro_delta",
+                    "critical_violation_risk_difference",
+                ],
+                "secondary_estimands": [
+                    "case_all_pass_rate_delta",
+                    "case_level_win_loss_tie",
+                    "critical_violation_discordance",
+                    "absolute_condition_scores",
+                ],
+                "diagnostic_estimands": [
+                    "assertion_micro_pass_rate",
+                    "agent_failure_rate",
+                    "infrastructure_retry_count",
+                ],
+                "aggregation_method_id": "behavioral_paired_case_macro_v1",
+                "aggregation_rule": "Compute paired case-by-replicate differences, average replicates within case, then weight cases equally.",
+                "uncertainty_design": {
+                    "case_variation": "case_cluster_bootstrap",
+                    "execution_stochasticity": "within_case_paired_replicates_when_available",
+                    "judge_uncertainty": "not_estimable_without_repeated_independent_judgments",
+                },
+                "interpretation_scope_id": "development_only_no_generalization_v1",
+                "interpretation_rule": "Development evidence only; do not infer a release gate or deployment generalization.",
+            },
+        }
+        for suite in suites:
+            if not isinstance(suite, dict):
+                continue
+            suite_id = suite.get("suite_id")
+            for field in (
+                "suite_id",
+                "protocol_status",
+                "record_type",
+                "scoring_backend",
+                "evidence_type",
+                "target",
+                "conditions",
+                "evaluation_unit",
+                "primary_estimands",
+            ):
+                if suite.get(field) in (None, "", []):
+                    errors.append(f"Benchmark suite {suite_id!r} is missing {field}")
+            status = suite.get("protocol_status")
+            backend = suite.get("scoring_backend")
+            record_type = suite.get("record_type")
+            if backend not in {"score.py", "external"}:
+                errors.append(f"Benchmark suite {suite_id!r} has invalid scoring_backend")
+            if backend == "score.py" and record_type not in {"trigger", "behavioral"}:
+                errors.append(f"Benchmark suite {suite_id!r} has unsupported record_type")
+            if backend == "score.py" and status not in {"awaiting_execution_freeze", "frozen"}:
+                errors.append(f"Benchmark suite {suite_id!r} has invalid protocol_status")
+            if backend == "external" and status != "draft":
+                errors.append(f"External benchmark suite {suite_id!r} must remain draft")
+            conditions = suite.get("conditions")
+            if not isinstance(conditions, list) or not conditions or any(
+                not isinstance(condition, dict) for condition in conditions
+            ):
+                errors.append(f"Benchmark suite {suite_id!r} conditions are invalid")
+                conditions = []
+            condition_ids = [condition.get("condition_id") for condition in conditions]
+            if any(not isinstance(item, str) or not item for item in condition_ids):
+                errors.append(f"Benchmark suite {suite_id!r} needs stable condition IDs")
+            elif len(condition_ids) != len(set(condition_ids)):
+                errors.append(f"Benchmark suite {suite_id!r} condition IDs must be unique")
+            for condition in conditions:
+                package_hash = condition.get("skill_package_sha256")
+                if condition.get("skill_release") is None:
+                    if package_hash is not None:
+                        errors.append(f"Benchmark suite {suite_id!r} no-skill package must be null")
+                elif not isinstance(package_hash, str) or not re.fullmatch(
+                    r"sha256:[0-9a-f]{64}", package_hash
+                ):
+                    errors.append(f"Benchmark suite {suite_id!r} skill package hash is invalid")
+                else:
+                    release = str(condition.get("skill_release"))
+                    package_hashes_by_release.setdefault(release, set()).add(package_hash)
+                    if (
+                        release == version
+                        and current_package_hash is not None
+                        and package_hash != current_package_hash
+                    ):
+                        errors.append(
+                            f"Benchmark suite {suite_id!r} current package hash does not match the installable skill"
+                        )
+            blocks = suite.get("comparison_blocks")
+            if not isinstance(blocks, list):
+                errors.append(f"Benchmark suite {suite_id!r} comparison_blocks must be a list")
+                blocks = []
+            if backend == "score.py":
+                expected_spec = benchmark_specs.get(record_type)
+                if expected_spec is not None:
+                    for field, expected in expected_spec.items():
+                        if suite.get(field) != expected:
+                            errors.append(
+                                f"Built-in suite {suite_id!r} {field} does not match protocol 2.1"
+                            )
                 for field in (
-                    "suite_id",
-                    "protocol_status",
-                    "record_type",
-                    "scoring_backend",
-                    "evidence_type",
-                    "target",
-                    "metrics",
-                    "conditions",
-                    "evaluation_unit",
+                    "repetitions",
+                    "aggregation_method_id",
+                    "aggregation_rule",
+                    "interval_rule",
+                    "tie_rule",
+                    "missing_run_policy",
+                    "failure_retry_policy",
+                    "uncertainty_design",
+                    "interpretation_scope_id",
+                    "interpretation_rule",
                 ):
-                    if suite.get(field) in (None, "", []):
-                        errors.append(
-                            f"Benchmark suite {suite.get('suite_id')!r} is missing {field}"
-                        )
-                suite_id = suite.get("suite_id")
-                protocol_status = suite.get("protocol_status")
-                backend = suite.get("scoring_backend")
-                record_type = suite.get("record_type")
-                if protocol_status not in {"draft", "frozen"}:
-                    errors.append(f"Benchmark suite {suite_id!r} has invalid protocol_status")
-                if backend not in {"score.py", "external"}:
-                    errors.append(f"Benchmark suite {suite_id!r} has invalid scoring_backend")
-                if backend == "score.py" and record_type not in {"trigger", "behavioral"}:
-                    errors.append(f"Benchmark suite {suite_id!r} has unsupported score.py record_type")
-                if backend == "external" and record_type in {"trigger", "behavioral"}:
-                    errors.append(f"Benchmark suite {suite_id!r} incorrectly externalizes a built-in record type")
-                conditions = suite.get("conditions")
-                if not isinstance(conditions, list) or not conditions or any(
-                    not isinstance(condition, dict) for condition in conditions
-                ):
-                    errors.append(f"Benchmark suite {suite_id!r} conditions must be a nonempty object list")
-                    conditions = []
-                condition_ids = [condition.get("condition_id") for condition in conditions]
-                if any(not isinstance(item, str) or not item for item in condition_ids):
-                    errors.append(f"Benchmark suite {suite_id!r} needs stable condition IDs")
-                elif len(condition_ids) != len(set(condition_ids)):
-                    errors.append(f"Benchmark suite {suite_id!r} condition IDs must be unique")
-                for condition in conditions:
-                    package_hash = condition.get("skill_package_sha256")
-                    if condition.get("skill_release") is None:
-                        if package_hash is not None:
-                            errors.append(
-                                f"Benchmark suite {suite_id!r} no-skill condition must keep skill_package_sha256=null"
-                            )
-                    elif not isinstance(package_hash, str) or not re.fullmatch(
-                        r"sha256:[0-9a-f]{64}", package_hash
-                    ):
-                        errors.append(
-                            f"Benchmark suite {suite_id!r} skill condition must bind skill_package_sha256"
-                        )
-                    else:
-                        release = str(condition.get("skill_release"))
-                        package_hashes_by_release.setdefault(release, set()).add(
-                            package_hash
-                        )
-                        if (
-                            release == version
-                            and current_package_hash is not None
-                            and package_hash != current_package_hash
-                        ):
-                            errors.append(
-                                f"Benchmark suite {suite_id!r} current-release package hash does not match the installable skill"
-                            )
-                if protocol_status == "frozen":
-                    for field in (
-                        "repetitions",
-                        "seed_policy",
-                        "aggregation_rule",
-                        "interval_rule",
-                        "pass_rule",
-                    ):
-                        if suite.get(field) in (None, "", [], {}):
-                            errors.append(f"Frozen benchmark suite {suite_id!r} is missing {field}")
-                    repetitions = suite.get("repetitions")
-                    if not isinstance(repetitions, int) or isinstance(repetitions, bool) or repetitions < 1:
-                        errors.append(f"Frozen benchmark suite {suite_id!r} needs positive repetitions")
-                    interval_rule = suite.get("interval_rule")
-                    if isinstance(interval_rule, dict) and backend == "score.py":
-                        expected_method = (
-                            "stratified_case_cluster_bootstrap"
-                            if record_type == "trigger"
-                            else "case_cluster_bootstrap"
-                        )
-                        if interval_rule.get("method") != expected_method:
-                            errors.append(
-                                f"Frozen benchmark suite {suite_id!r} has an unsupported interval method"
-                            )
-                        draws = interval_rule.get("draws")
-                        seed = interval_rule.get("seed")
-                        confidence = interval_rule.get("confidence")
-                        if not isinstance(draws, int) or isinstance(draws, bool) or draws < 1:
-                            errors.append(f"Frozen benchmark suite {suite_id!r} has invalid interval draws")
-                        if not isinstance(seed, int) or isinstance(seed, bool):
-                            errors.append(f"Frozen benchmark suite {suite_id!r} has invalid interval seed")
-                        if (
-                            not isinstance(confidence, (int, float))
-                            or isinstance(confidence, bool)
-                            or not 0 < float(confidence) < 1
-                        ):
-                            errors.append(f"Frozen benchmark suite {suite_id!r} has invalid interval confidence")
+                    if suite.get(field) in (None, "", [], {}):
+                        errors.append(f"Built-in suite {suite_id!r} is missing {field}")
+                if status == "awaiting_execution_freeze" and blocks:
+                    errors.append(f"Unfrozen suite {suite_id!r} cannot claim frozen blocks")
+                if status == "frozen" and not blocks:
+                    errors.append(f"Frozen suite {suite_id!r} needs a comparison block")
+                repetitions = suite.get("repetitions")
+                if not isinstance(repetitions, int) or isinstance(repetitions, bool) or repetitions < 1:
+                    errors.append(f"Built-in suite {suite_id!r} needs positive repetitions")
+                interval = suite.get("interval_rule")
+                expected_method = (
+                    "paired_stratified_case_cluster_bootstrap"
+                    if record_type == "trigger"
+                    else "paired_case_cluster_bootstrap"
+                )
+                if not isinstance(interval, dict) or interval.get("method") != expected_method:
+                    errors.append(f"Built-in suite {suite_id!r} has invalid interval method")
+                elif interval.get("bootstrap_unit") != "case":
+                    errors.append(f"Built-in suite {suite_id!r} must bootstrap cases")
                 source = suite.get("case_source")
-                if backend == "score.py":
-                    if not isinstance(source, dict):
-                        errors.append(f"Benchmark suite {suite_id!r} requires a case_source object")
-                    else:
-                        source_path = contained_regular_file(repo_root, source.get("path"))
-                        if source_path is None:
-                            errors.append(f"Benchmark suite {suite_id!r} has an unsafe or missing case source")
-                        expected_hash = source.get("sha256")
-                        if not isinstance(expected_hash, str) or not re.fullmatch(r"[0-9a-f]{64}", expected_hash):
-                            errors.append(f"Benchmark suite {suite_id!r} case source needs a SHA-256")
-                        elif source_path is not None and hashlib.sha256(source_path.read_bytes()).hexdigest() != expected_hash:
-                            errors.append(f"Benchmark suite {suite_id!r} case-source SHA-256 mismatch")
-                        for field in ("case_id_field", "prompt_field", "role"):
-                            if source.get(field) in (None, ""):
-                                errors.append(f"Benchmark suite {suite_id!r} case source is missing {field}")
-                elif source is not None and not isinstance(source, dict):
-                    errors.append(f"External benchmark suite {suite_id!r} case_source must be null or an object")
-            for release, package_hashes in sorted(package_hashes_by_release.items()):
-                if len(package_hashes) > 1:
-                    errors.append(
-                        f"Benchmark conditions bind inconsistent package hashes for release {release}"
-                    )
+                if not isinstance(source, dict):
+                    errors.append(f"Built-in suite {suite_id!r} requires case_source")
+                else:
+                    source_path = contained_regular_file(repo_root, source.get("path"))
+                    expected_hash = str(source.get("sha256", ""))
+                    if source_path is None:
+                        errors.append(f"Benchmark suite {suite_id!r} has an unsafe case source")
+                    if not re.fullmatch(r"sha256:[0-9a-f]{64}", expected_hash):
+                        errors.append(f"Benchmark suite {suite_id!r} case hash is invalid")
+                    elif source_path is not None and (
+                        "sha256:" + hashlib.sha256(source_path.read_bytes()).hexdigest()
+                    ) != expected_hash:
+                        errors.append(f"Benchmark suite {suite_id!r} case hash mismatch")
+                    for field in ("case_id_field", "prompt_field", "role"):
+                        if source.get(field) in (None, ""):
+                            errors.append(f"Benchmark suite {suite_id!r} case source lacks {field}")
+            elif suite.get("case_source") is not None and not isinstance(
+                suite.get("case_source"), dict
+            ):
+                errors.append(f"External suite {suite_id!r} case_source is invalid")
+        for release, package_hashes in sorted(package_hashes_by_release.items()):
+            if len(package_hashes) > 1:
+                errors.append(f"Benchmark release {release} has inconsistent package hashes")
+        sealed_policy = benchmark_manifest.get("sealed_suite_policy")
+        if not isinstance(sealed_policy, dict) or sealed_policy.get("status") != "not_established":
+            errors.append("Current manifest must state that no sealed suite is established")
+        invalidation = benchmark_manifest.get("protocol_invalidation_policy")
+        if not isinstance(invalidation, dict) or invalidation.get(
+            "comparison_validity_defect_invalidates_entire_affected_block"
+        ) is not True:
+            errors.append("Benchmark protocol invalidation policy is incomplete")
     except (OSError, json.JSONDecodeError, ValueError, TypeError) as exc:
         errors.append(f"Invalid benchmarks/manifest.json: {exc}")
 
     if version:
         benchmark_result_path = benchmark_root / "results" / f"v{version}.json"
         try:
-            benchmark_result = json.loads(
-                benchmark_result_path.read_text(encoding="utf-8")
-            )
+            benchmark_result = json.loads(benchmark_result_path.read_text(encoding="utf-8"))
             if not isinstance(benchmark_result, dict):
                 raise ValueError("top level must be an object")
-            if benchmark_result.get("benchmark_result_schema_version") != "2.0.0":
-                errors.append("Current benchmark result must use result schema 2.0.0")
+            if benchmark_result.get("benchmark_result_schema_version") != "2.1.0":
+                errors.append("Current benchmark result must use result schema 2.1.0")
+            if benchmark_result.get("benchmark_protocol_version") != "2.1.0":
+                errors.append("Current benchmark result must bind protocol 2.1.0")
             if benchmark_result.get("skill_release") != version:
                 errors.append("Current benchmark result release does not match SKILL.md")
             manifest_hash = "sha256:" + hashlib.sha256(
@@ -388,40 +474,58 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
             ).hexdigest()
             if benchmark_result.get("manifest_sha256") != manifest_hash:
                 errors.append("Current benchmark result does not bind the current manifest")
-            if not isinstance(benchmark_result.get("statement"), str) or not benchmark_result["statement"].strip():
+            if not isinstance(benchmark_result.get("statement"), str) or not benchmark_result[
+                "statement"
+            ].strip():
                 errors.append("Current benchmark result needs a nonempty scope statement")
-            if benchmark_result.get("status") == "not_evaluated":
-                counts = benchmark_result.get("scored_execution_counts")
-                expected_count_keys = {"trigger", "behavioral", "empirical"}
+            scoring_status = benchmark_result.get("scoring_status")
+            evidence_status = benchmark_result.get("evidence_status")
+            if scoring_status == "not_evaluated":
+                if evidence_status != "not_evaluated":
+                    errors.append("Unevaluated scoring cannot claim evaluated evidence")
+                if benchmark_result.get("behavioral_evaluation") != "not_evaluated":
+                    errors.append("Unevaluated scoring cannot claim behavioral evaluation")
+                if benchmark_result.get("empirical_method_validation") != "not_evaluated":
+                    errors.append("Unevaluated scoring cannot claim empirical method validation")
+                counts = benchmark_result.get("scored_attempt_counts")
+                expected_keys = {"trigger", "behavioral", "empirical"}
                 if (
                     not isinstance(counts, dict)
-                    or set(counts) != expected_count_keys
+                    or set(counts) != expected_keys
                     or any(
-                        not isinstance(value, int)
-                        or isinstance(value, bool)
-                        or value != 0
+                        not isinstance(value, int) or isinstance(value, bool) or value != 0
                         for value in counts.values()
                     )
                 ):
-                    errors.append("Unevaluated benchmark result must keep every scored execution count at zero")
+                    errors.append("Unevaluated result must keep every attempt count at zero")
                 if benchmark_result.get("summary") is not None:
-                    errors.append("Unevaluated benchmark result must keep summary=null")
-                if benchmark_result.get("package_validation") != "separate_structural_check":
-                    errors.append(
-                        "Unevaluated benchmark result must separate package consistency from behavioral evaluation"
-                    )
-                for field in (
-                    "behavioral_evaluation",
-                    "empirical_method_validation",
+                    errors.append("Unevaluated result must keep summary=null")
+                reported_frozen_blocks = benchmark_result.get("comparison_blocks_frozen")
+                actual_frozen_blocks = frozen_comparison_block_count(benchmark_manifest)
+                if (
+                    not isinstance(reported_frozen_blocks, int)
+                    or isinstance(reported_frozen_blocks, bool)
+                    or reported_frozen_blocks != actual_frozen_blocks
                 ):
-                    if benchmark_result.get(field) != "not_evaluated":
-                        errors.append(
-                            f"Unevaluated benchmark result must mark {field}=not_evaluated"
-                        )
-                if benchmark_manifest.get("benchmark_status") != "protocol_defined_not_evaluated":
-                    errors.append("Unevaluated result conflicts with benchmark manifest status")
-            elif benchmark_result.get("status") not in {"partially_evaluated", "evaluated"}:
-                errors.append("Current benchmark result has an invalid status")
+                    errors.append(
+                        "Unevaluated result comparison_blocks_frozen does not match "
+                        f"the manifest ({actual_frozen_blocks})"
+                    )
+                if actual_frozen_blocks != 0:
+                    errors.append(
+                        "Unevaluated prepared protocol must have zero frozen comparison blocks"
+                    )
+                if benchmark_result.get("package_validation") != "separate_structural_check":
+                    errors.append("Package consistency must remain a separate evidence state")
+                if benchmark_manifest.get("benchmark_status") != "protocol_2_1_defined_not_evaluated":
+                    errors.append("Unevaluated result conflicts with manifest status")
+            elif scoring_status not in {
+                "complete",
+                "comparison_incomplete",
+                "invalid",
+                "invalidated",
+            }:
+                errors.append("Current benchmark result has invalid scoring_status")
             else:
                 for field in (
                     "scorer_version",
@@ -430,13 +534,7 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
                     "summary",
                 ):
                     if benchmark_result.get(field) in (None, "", [], {}):
-                        errors.append(f"Evaluated benchmark result is missing {field}")
-                for field in ("records_sha256", "evidence_index_sha256"):
-                    if not re.fullmatch(
-                        r"sha256:[0-9a-f]{64}",
-                        str(benchmark_result.get(field, "")),
-                    ):
-                        errors.append(f"Evaluated benchmark result has invalid {field}")
+                        errors.append(f"Evaluated result is missing {field}")
         except (OSError, json.JSONDecodeError, ValueError, TypeError) as exc:
             errors.append(f"Invalid current benchmark result: {exc}")
 

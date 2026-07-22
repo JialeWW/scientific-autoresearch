@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.8 - 2026-07-22
+
+- Kept the five research profiles, Decision Contract, adaptive selection-path rules, coverage search, and stopping logic unchanged while adding one general comparable-block principle for method and condition comparisons.
+- Upgraded the artifact schema and validator to 1.5.4 with conditional evidence binding for passed automated, decision-bearing project preflights; schema 1.5.3 retains its original domain-adapter checks and legacy assurance level.
+- Required preserved procedure, input-version, execution-status, and report bindings only for the applicable automated path; manual, semantic-review, and declarative evidence do not fabricate commands, and the validator never executes project procedures.
+- Upgraded repository benchmark infrastructure to protocol, record, scorer, and result schema 2.1 with comparison blocks, frozen estimands and estimable uncertainty levels, complete cross-condition pairing, closed shared execution configuration, harness binding, seeded balanced order schedules, routing/judge-protocol binding, attempt retention, and explicit Agent-versus-infrastructure failure handling.
+- Added paired case-cluster deltas, case-level win/loss/tie, critical-violation discordance, retry diagnostics and chronology, block-local invalidation, non-finite and case-schema rejection, evidence-level scoping, sealed-suite governance boundaries, and regression fixtures. No compute-specific block or real benchmark execution is reported; v0.2.8 remains `not_evaluated`.
+
 ## 0.2.7 - 2026-07-22
 
 - Required contemporaneous append-only or versioned recording from the first selection-influencing outcome while preserving risk-proportionate use of the structured machine-audited artifact tree.

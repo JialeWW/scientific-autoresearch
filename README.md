@@ -6,7 +6,7 @@
 
 `scientific-autoresearch` is a client-neutral-by-design [Agent Skill](https://agentskills.io) for auditable scientific investigation. It scales from prospective design and read-only audit through frozen analyses, adaptive candidate search, and coverage-based search over a finite, data-supported space. It matches procedural overhead to outcome adaptivity and requires safeguards for outcome-adaptive inference.
 
-Current version: **0.2.7**.
+Current version: **0.2.8**.
 
 The `metadata.version` value in `scientific-autoresearch/SKILL.md` is the release-version source of truth. Validator, artifact-schema, report-schema, and citation-format versions are independent compatibility versions.
 
@@ -28,13 +28,13 @@ Use the skill when the user requests scientific audit or provenance, when outcom
 
 Select the profile according to the requested action and outcome adaptivity. Use `design_only` for prospective design, `audit_only` for read-only inspection of completed work, `fixed_test` for a frozen single analysis or finite frozen family, `adaptive_search` when outcomes can change candidate selection, and `coverage_search` for systematic coverage of a versioned data-supported space. Scope and authorization gates govern sensitive, regulated, costly, prospective, physical, or external-system actions.
 
-## Version 0.2.7 Highlights
+## Version 0.2.8 Highlights
 
-- Requires a contemporaneous append-only or versioned record from the first selection-influencing outcome, while keeping the structured artifact tree proportional to handoff, consequence, and record-loss risk.
-- Freezes analysis and independence units, dependence handling, and partition or resampling units before decision-bearing results.
-- Adds an optional generic domain-adapter and project data-contract interface for identifier, join, count, tolerance, repeated-observation, and partition checks that can change scientific support.
-- Strengthens saturation provenance, auditable equivalence closure, and basis-specific coverage reporting without imposing a universal candidate or round limit.
-- Makes benchmark evidence hash-bound and case-registry-scored, while retaining an explicit `not_evaluated` release status until actual runs exist.
+- Keeps the five research profiles, Decision Contract, adaptive-path, coverage, and stopping logic unchanged.
+- Adds a concise, domain-neutral rule for attributing differences only within prospectively comparable blocks.
+- Adds schema 1.5.4 conditional evidence binding for passed automated, decision-bearing data preflights while preserving schema-1.5.3 behavior and avoiding fabricated commands for manual review.
+- Upgrades repository-only benchmark infrastructure to protocol 2.1 with complete cross-condition pairing, frozen estimands and uncertainty levels, evidence-bound configuration and routing/judge protocols, balanced execution schedules, explicit failure/retry semantics, and block-local invalidation.
+- Keeps the release `not_evaluated`: compute-specific comparison blocks, sealed evaluation, and empirical operating-characteristic studies have not been run.
 
 ## Choose the Smallest Valid Profile
 
@@ -88,7 +88,8 @@ Inventory saturation requires both a candidate-forward audit and a data-product-
 │   │   └── test_score.py
 │   └── results/
 │       ├── v0.2.6.json
-│       └── v0.2.7.json
+│       ├── v0.2.7.json
+│       └── v0.2.8.json
 └── scientific-autoresearch/
     ├── SKILL.md
     ├── scripts/
@@ -176,7 +177,7 @@ pause and save every unrun coverage cell in the open queue.
 
 Structured artifacts are created only in `machine_audited` mode and remain profile-proportionate. `fixed_test` records the frozen claim or finite family, versions, joint rule, results, uncertainty, falsifier, reproduction information, and consistency status. `adaptive_search` adds the bounded prior-exposure audit, selection families, candidate registry, and complete selection ledger. `coverage_search` uses the full structure below:
 
-Schema 1.5.2 introduced automatic `skill_provenance` in `run_manifest.json`, containing the skill name, release, deterministic behavior-package digest, capture time, and a repository revision when locally available. Schema 1.5.3 adds frozen unit and dependence fields, an explicit domain-adapter assessment, optional hash-bound adapter and preflight records, auditable equivalence closure, and a basis-specific coverage summary. The package digest covers `SKILL.md`, bundled references, scripts, and evaluation specifications; it excludes run outputs and rejects symbolic links on that surface. Before authorized execution or resume, the idempotent provenance command appends a record only when the installed skill identity changed. It does not make a scientific result confirmatory and does not prove that the skill was followed.
+Schema 1.5.2 introduced automatic `skill_provenance` in `run_manifest.json`, containing the skill name, release, deterministic behavior-package digest, capture time, and a repository revision when locally available. Schema 1.5.3 added frozen unit and dependence fields, an explicit domain-adapter assessment, optional hash-bound adapter and preflight records, auditable equivalence closure, and a basis-specific coverage summary. Schema 1.5.4 conditionally binds a passed automated, decision-bearing preflight to its preserved procedure, input versions and immutable bindings, execution outcome, and report; manual and semantic evidence do not imitate executable records. The package digest covers `SKILL.md`, bundled references, scripts, and evaluation specifications; it excludes run outputs and rejects symbolic links on that surface. Before authorized execution or resume, the idempotent provenance command appends a record only when the installed skill identity changed. It does not make a scientific result confirmatory and does not prove that the skill was followed.
 
 ```text
 runs/<run_id>/
@@ -254,7 +255,7 @@ These checks cannot detect choices that were never recorded and do not establish
 
 The bundled behavioral cases specify expected routing and safeguard behavior across all five profiles. They are evaluation specifications, not scored benchmark results. The trigger-query file contains positive and adjacent-task negative examples for use with an external evaluation harness; the cases themselves must not be described as passed or validated.
 
-The repository does not currently report empirical error control, detection power, component effects, cross-client or cross-model performance, or run-to-run reproducibility. The repository-level `benchmarks/` manifest separates these evidence classes and records the current release as `not_evaluated` until scored outputs exist. Behavioral benchmarks should run in isolated contexts and compare v0.2.7 with the previous version or a no-skill baseline; deterministic package checks may remain in continuous integration.
+The repository does not currently report empirical error control, detection power, component effects, cross-agent or cross-model performance, or run-to-run reproducibility. Protocol 2.1 freezes comparison estimands and estimable uncertainty levels and requires complete `condition × case × replicate` blocks, shared configuration, scheduled seeds and balanced execution order, attempt retention, and a frozen routing or judge protocol before condition deltas are computed. The current manifest contains no compute-specific frozen block, so v0.2.8 remains `not_evaluated`; deterministic package and scorer checks are separate evidence.
 
 ## Scientific Interpretation Standard
 

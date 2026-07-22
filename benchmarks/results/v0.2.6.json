@@ -1,0 +1,10 @@
+{
+  "benchmark_result_schema_version": "1.0.0",
+  "skill_release": "0.2.6",
+  "status": "not_evaluated",
+  "scored_behavioral_runs": 0,
+  "scored_trigger_runs": 0,
+  "empirical_method_runs": 0,
+  "summary": null,
+  "statement": "Behavioral specifications and deterministic consistency checks exist, but no scored behavioral or empirical operating-characteristic benchmark is reported for this release."
+}

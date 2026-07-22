@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.6 - 2026-07-22
+
+- Clarified the evidence boundaries among package consistency checks, behavioral evaluation specifications, same-condition reruns, empirical operating-characteristic benchmarks, and independent scientific verification.
+- Added a conditional Method Validation contract with frozen task families, comparators, metrics, repetition or precision rules, sealed evaluation cases, and scope-limited claims.
+- Upgraded the validator and artifact schema to 1.5.2 and the additive consistency-report schema to 1.1, with automatically captured skill release and behavior-package provenance for new machine-audited runs, bounded schema writes, symlink rejection, and older-schema compatibility.
+- Added a repository-only benchmark manifest, vendor-neutral score aggregator, and explicit unevaluated release record without adding benchmark steps to ordinary skill execution.
+- Preserved the five risk-proportionate profiles and the adaptive-path, prior-exposure, comparability, transport, sensitivity, and coverage-closure safeguards from 0.2.5.
+
 ## 0.2.5 - 2026-07-21
 
 - Added non-executing `audit_only` and separated the default conceptual record from optional machine-audited artifacts.

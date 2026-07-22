@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate this repository's Agent Skill package."""
+"""Check this repository's Agent Skill package for internal consistency."""
 
 from __future__ import annotations
 
@@ -80,6 +80,10 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
         evals = json.loads(evals_path.read_text(encoding="utf-8"))
         if evals.get("skill_name") != name:
             errors.append("evals/evals.json skill_name does not match frontmatter name")
+        if evals.get("evaluation_kind") != "behavioral_specification":
+            errors.append("evals/evals.json must identify itself as a behavioral specification")
+        if evals.get("contains_scored_results") is not False:
+            errors.append("evals/evals.json must not claim to contain scored results")
         if len(evals.get("evals", [])) < 3:
             errors.append("evals/evals.json must contain at least 3 cases")
         ids = [case.get("id") for case in evals.get("evals", [])]
@@ -100,12 +104,80 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
     except (OSError, json.JSONDecodeError) as exc:
         errors.append(f"Invalid evals/eval_queries.json: {exc}")
 
+    benchmark_root = repo_root / "benchmarks"
+    benchmark_manifest_path = benchmark_root / "manifest.json"
+    benchmark_scorer_path = benchmark_root / "score.py"
+    if not benchmark_scorer_path.is_file():
+        errors.append("Missing repository benchmark scorer: benchmarks/score.py")
+    try:
+        benchmark_manifest = json.loads(
+            benchmark_manifest_path.read_text(encoding="utf-8")
+        )
+        if benchmark_manifest.get("release_under_test") != version:
+            errors.append("benchmarks/manifest.json release does not match SKILL.md")
+        if benchmark_manifest.get("benchmark_status") != "specification_only":
+            errors.append(
+                "Benchmark manifest must remain specification_only until scored results are published"
+            )
+        suites = benchmark_manifest.get("suites")
+        if not isinstance(suites, list) or len(suites) < 3:
+            errors.append("benchmarks/manifest.json must define the evidence suites")
+        else:
+            suite_ids = [suite.get("suite_id") for suite in suites if isinstance(suite, dict)]
+            if len(suite_ids) != len(suites) or len(suite_ids) != len(set(suite_ids)):
+                errors.append("Benchmark suite IDs must be present and unique")
+            for suite in suites:
+                if not isinstance(suite, dict):
+                    continue
+                for field in (
+                    "suite_id",
+                    "evidence_type",
+                    "target",
+                    "metrics",
+                    "execution_status",
+                ):
+                    if suite.get(field) in (None, "", []):
+                        errors.append(
+                            f"Benchmark suite {suite.get('suite_id')!r} is missing {field}"
+                        )
+                source = suite.get("case_source")
+                if source and not (repo_root / str(source)).is_file():
+                    errors.append(
+                        f"Benchmark suite {suite.get('suite_id')!r} references missing {source}"
+                    )
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(f"Invalid benchmarks/manifest.json: {exc}")
+
+    if version:
+        benchmark_result_path = benchmark_root / "results" / f"v{version}.json"
+        try:
+            benchmark_result = json.loads(
+                benchmark_result_path.read_text(encoding="utf-8")
+            )
+            if benchmark_result.get("skill_release") != version:
+                errors.append("Current benchmark result release does not match SKILL.md")
+            if benchmark_result.get("status") == "not_evaluated":
+                for field in (
+                    "scored_behavioral_runs",
+                    "scored_trigger_runs",
+                    "empirical_method_runs",
+                ):
+                    if benchmark_result.get(field) != 0:
+                        errors.append(
+                            f"Unevaluated benchmark result must keep {field}=0"
+                        )
+                if benchmark_result.get("summary") is not None:
+                    errors.append("Unevaluated benchmark result must keep summary=null")
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"Invalid current benchmark result: {exc}")
+
     cff = repo_root / "CITATION.cff"
     bib = repo_root / "CITATION.bib"
     readme = repo_root / "README.md"
     changelog = repo_root / "CHANGELOG.md"
     if version:
         release_tag = f"/releases/tag/v{version}"
+        release_dates: dict[str, str] = {}
 
         if not cff.is_file():
             errors.append("Missing CITATION.cff")
@@ -116,6 +188,11 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
                 errors.append("CITATION.cff version does not match SKILL.md metadata version")
             if release_tag not in cff_text:
                 errors.append("CITATION.cff release URL does not match the current version")
+            cff_date_match = re.search(
+                r'(?m)^date-released:\s*["\']?(\d{4}-\d{2}-\d{2})', cff_text
+            )
+            if cff_date_match:
+                release_dates["CITATION.cff"] = cff_date_match.group(1)
 
         if not bib.is_file():
             errors.append("Missing CITATION.bib")
@@ -126,6 +203,11 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
                 errors.append("CITATION.bib version does not match SKILL.md metadata version")
             if release_tag not in bib_text:
                 errors.append("CITATION.bib release URL does not match the current version")
+            bib_date_match = re.search(
+                r"(?m)^\s*date\s*=\s*\{(\d{4}-\d{2}-\d{2})\}", bib_text
+            )
+            if bib_date_match:
+                release_dates["CITATION.bib"] = bib_date_match.group(1)
 
         if not readme.is_file():
             errors.append("Missing README.md")
@@ -143,6 +225,18 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
             release_match = re.search(r"(?m)^##\s+([0-9]+\.[0-9]+\.[0-9]+)\s+-", changelog_text)
             if not release_match or release_match.group(1) != version:
                 errors.append("Latest CHANGELOG.md release does not match SKILL.md metadata version")
+            changelog_date_match = re.search(
+                rf"(?m)^##\s+{re.escape(version)}\s+-\s+(\d{{4}}-\d{{2}}-\d{{2}})\s*$",
+                changelog_text,
+            )
+            if changelog_date_match:
+                release_dates["CHANGELOG.md"] = changelog_date_match.group(1)
+
+        if len(set(release_dates.values())) > 1:
+            details = ", ".join(
+                f"{source}={date}" for source, date in sorted(release_dates.items())
+            )
+            errors.append(f"Current release dates are inconsistent: {details}")
 
         figures = repo_root / "figures"
         for suffix in ("pdf", "png", "svg"):
@@ -164,11 +258,11 @@ def main() -> int:
     skill_dir = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else repo_root / "scientific-autoresearch"
     errors = validate(skill_dir, repo_root)
     if errors:
-        print("Validation failed:")
+        print("Package consistency checks failed:")
         for error in errors:
             print(f"- {error}")
         return 1
-    print("Skill validation passed")
+    print("Package consistency checks passed")
     return 0
 
 

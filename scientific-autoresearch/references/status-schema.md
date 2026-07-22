@@ -1,6 +1,6 @@
 # Canonical Status Schema
 
-This is an audit and validator-diagnosis reference, not default Agent context. For schema `1.5.1`, the initializer and `scripts/validate_run.py` are authoritative for fields, enums, and transition checks. Do not copy this page into every run.
+This is an audit and validator-diagnosis reference, not default Agent context. For schema `1.5.2`, the initializer and `scripts/validate_run.py` are authoritative for fields, enums, and transition checks. Do not copy this page into every run.
 
 ## Profile and Stage
 
@@ -11,6 +11,8 @@ This is an audit and validator-diagnosis reference, not default Agent context. F
 - `coverage_search`: the run additionally claims systematic coverage of a finite, versioned, data-supported candidate space.
 
 Profiles are ordered `fixed_test < adaptive_search < coverage_search`. A frozen family remains `fixed_test` unless outcomes change its membership, methods, thresholds, sample, multiplicity or joint rule, or reporting rule. `profile_history` is append-only and its offset-aware `started_at` values are strictly increasing. Before an upgrade, validate the source and run `scripts/validate_run.py --snapshot-upgrade RUN_DIR --to-profile PROFILE`. The returned upgrade entry records `preservation_snapshot_path` and `preservation_snapshot_sha256`; append it only after reviewing the non-overwriting copy. A preservation snapshot declares the prior profile, capture time, target profile, and an artifact list whose entries contain `logical_path`, internal nonsymlink `snapshot_path`, and verified `sha256`. It must include the prior manifest, that profile's required artifacts, and every round report and reproduction record indexed by the prior manifest. Boolean preservation attestations alone are insufficient. A downgrade is invalid. A changed sample, codebase, model, tool, workflow, or skill version never restores confirmatory status.
+
+Schema 1.5.2 `skill_provenance` is an ordered history automatically seeded by initialization. Before authorized execution or resume, use `scripts/validate_run.py --record-skill-provenance RUN_DIR`; unchanged identity is a no-op and changed identity appends a new entry. Read-only validation never edits it. Each entry records the skill name, release version, deterministic behavior-package SHA-256, offset-aware capture time, and an optional source revision. The digest binds `SKILL.md`, bundled references, scripts, and evaluation specifications while excluding run outputs; symbolic links on that surface are invalid. It identifies content but does not prove compliance or independent timing.
 
 Use `stage_status` independently of scientific completion:
 
@@ -124,4 +126,4 @@ A completed round, promoted candidate, stage report, exhausted resource envelope
 - Preserve weak, null, invalid, failed, abandoned, blocked, and unfavorable branches.
 - Use the validator before resume and before any stage, pause, or completion report. Metadata consistency and numerical reproduction are separate claims.
 
-Schema `<=1.4` remains readable under its legacy full-run behavior. Schema `1.5.0` profile runs remain readable, with a missing fixed-test `analysis_scope` interpreted as `single_test`. Do not relabel a legacy run; initialize or migrate profile metadata and artifacts explicitly.
+Schema `<=1.4` remains readable under its legacy full-run behavior. Schema `1.5.0` profile runs remain readable, with a missing fixed-test `analysis_scope` interpreted as `single_test`; schema `1.5.0` and `1.5.1` may omit skill provenance. Do not relabel a legacy run; initialize or migrate profile metadata and artifacts explicitly.

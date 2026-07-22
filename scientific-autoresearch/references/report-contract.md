@@ -1,6 +1,6 @@
 # Report and Artifact Contract
 
-This reference applies to `machine_audited` mode and validator diagnosis. Under the default `conceptual_record` mode, keep the same scientific content in a compact working report or existing project records without creating prescribed filenames. Conceptual coverage work may issue a bounded stage or pause report, but a `complete_within_scope` claim requires migration to a validated machine-audited record. The validator, not prose copied from this page, is authoritative for schema `1.5.1` fields.
+This reference applies to `machine_audited` mode and validator diagnosis. Under the default `conceptual_record` mode, keep the same scientific content in a compact working report or existing project records without creating prescribed filenames. Conceptual coverage work may issue a bounded stage or pause report, but a `complete_within_scope` claim requires migration to a validated machine-audited record. The validator, not prose copied from this page, is authoritative for schema `1.5.2` fields.
 
 `design_only` creates no run directory or artifacts by default. `audit_only` inspects existing material and may validate an existing run read-only; it does not initialize an execution run. When machine-audited execution is requested and authorized, initialize an empty path with:
 
@@ -45,7 +45,9 @@ Schema `<=1.4` remains readable with its legacy full-run behavior. Do not change
 
 ## Shared Manifest and Versioned Rounds
 
-Every schema-1.5.x run manifest records at least run identity, question, scientific scope, `artifact_schema_version`, `research_profile`, `stage_status`, ordered `profile_history`, execution mode, governance status, data-version-set ID, and `round_artifacts`. Adaptive and coverage profiles add their contract and audit versions; coverage adds its inventory and search fields.
+Every schema-1.5.x run manifest records at least run identity, question, scientific scope, `artifact_schema_version`, `research_profile`, `stage_status`, ordered `profile_history`, execution mode, governance status, data-version-set ID, and `round_artifacts`. Schema 1.5.2 additionally records ordered `skill_provenance`; each entry contains the skill name, release version, deterministic behavior-package SHA-256, capture time, and a source revision when locally available. The digest covers `SKILL.md`, bundled Markdown references, Python scripts, and JSON evaluation specifications. Run outputs are excluded so a run nested under the skill root cannot change its own skill identity; symbolic links on the hashed surface are rejected. The initializer creates the first entry automatically. Before authorized execution or resume, run `scripts/validate_run.py --record-skill-provenance RUN_DIR`; it makes no change when the identity is unchanged and appends rather than overwrites when it changed. Ordinary validation and `audit_only` remain read-only. Adaptive and coverage profiles add their contract and audit versions; coverage adds its inventory and search fields.
+
+The package digest identifies the installed skill content; it does not prove that the instructions were followed or externally timestamp the run. A newer validator may read a run recorded under an older skill identity. Such a mismatch is a warning for read-only audit and must be recorded before new authorized outcomes are produced. Schema 1.5.0 and 1.5.1 runs remain readable without `skill_provenance`; do not fabricate retrospective identity for an old run.
 
 Profiles may only upgrade:
 
@@ -55,7 +57,12 @@ fixed_test -> adaptive_search -> coverage_search
 
 Append the transition and preserve prior exposure, weak results, failures, selections, and earlier artifacts. Never reinitialize or downgrade to erase history.
 
-For an existing machine-audited execution run, first validate the current profile, then create the upgrade evidence without overwriting it:
+For an existing schema-1.5.2-or-later machine-audited execution run, first record the current skill identity, validate the current profile, then create the upgrade evidence without overwriting it:
+
+```text
+python scientific-autoresearch/scripts/validate_run.py \
+  --record-skill-provenance RUN_DIR
+```
 
 ```text
 python scientific-autoresearch/scripts/validate_run.py \
@@ -128,7 +135,7 @@ Use a profile-proportional report:
 
 The reproduction record gives exact secret-free commands or equivalent steps, code state, environment or dependency lock, hardware/precision when material, actual seeds, expected outputs, and tolerances. Report metadata consistency separately from numerical reproduction. Matching SHA-256 values demonstrate byte identity only for the checked files under matched conditions; they do not repair an incomplete ledger or invalid scientific design.
 
-Before resume and before a bounded, pause, or completion report, run:
+Before authorized resume, record the current skill identity for schema 1.5.2 or later. Before a bounded, pause, or completion report, run the read-only consistency check:
 
 ```text
 python scientific-autoresearch/scripts/validate_run.py RUN_DIR --output RUN_DIR/consistency_report.json

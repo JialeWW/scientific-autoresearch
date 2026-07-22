@@ -14,3 +14,4 @@ jobs:
           python-version: "3.12"
       - run: python scripts/validate_skill.py scientific-autoresearch
       - run: python scientific-autoresearch/scripts/validate_run.py --self-test
+      - run: python benchmarks/score.py --self-test

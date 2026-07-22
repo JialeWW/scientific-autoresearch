@@ -1,9 +1,9 @@
 ---
 name: scientific-autoresearch
-description: "Use this skill when scientific work requires formal audit or provenance, when outcome-informed choices generate, modify, screen, compare, rank, or promote data-supported candidates, or when systematic coverage of a finite data-supported candidate space is requested. It provides proportionate profiles for research design, read-only audit, frozen analyses, adaptive search, and coverage search, with conservative inference across the actual selection path."
+description: "Use this skill when scientific work requires formal audit or provenance, when outcome-informed choices generate, modify, screen, compare, rank, or promote data-supported candidates, or when systematic coverage of a finite data-supported candidate space is requested. It provides proportionate profiles for research design, read-only audit, frozen analyses, adaptive search, and coverage search, with safeguards requiring inference to account for the actual selection path."
 license: MIT
 metadata:
-  version: "0.2.5"
+  version: "0.2.6"
 ---
 
 # Scientific Autoresearch
@@ -29,6 +29,8 @@ Choose record mode separately from research profile:
 
 `audit_only` may validate an existing machine-audited run read-only, but it does not initialize or upgrade an execution run unless new analysis is separately authorized.
 
+For an authorized execution or resume of a schema-1.5.2-or-later run, call `scripts/validate_run.py --record-skill-provenance RUN_DIR` before producing new outcomes. The command is idempotent and appends only a changed skill identity; ordinary validation remains read-only.
+
 ## 2. Preserve History When the Profile Changes
 
 Upgrade the profile before continuing whenever the work exceeds its frozen boundary.
@@ -41,7 +43,7 @@ Upgrade the profile before continuing whenever the work exceeds its frozen bound
 
 Record each profile transition, reason, timing, and prior outcome access. Changing data subsets, code, models, tools, workflows, or skill versions does not restore confirmatory status after overlapping data were inspected.
 
-For a `machine_audited` execution run, validate the current profile and use `scripts/validate_run.py --snapshot-upgrade RUN_DIR --to-profile PROFILE` before migration. Review its non-overwriting, hash-bound preservation snapshot, add the returned `profile_history` entry, create only the newly required profile artifacts, and validate again. A preservation attestation without the referenced evidence is insufficient.
+For a `machine_audited` execution run, record any changed skill identity, validate the current profile, and use `scripts/validate_run.py --snapshot-upgrade RUN_DIR --to-profile PROFILE` before migration. Review its non-overwriting, hash-bound preservation snapshot, add the returned `profile_history` entry, create only the newly required profile artifacts, and validate again. A preservation attestation without the referenced evidence is insufficient.
 
 ## 3. Pass Scope and Governance Gates
 
@@ -128,6 +130,8 @@ AND prior_exposure_audit_adequate_for_claim
 AND consistency_validator_passed
 ```
 
+A passing consistency report establishes only that the recorded artifacts satisfy applicable schema and cross-record checks. It does not establish numerical correctness, completeness of unrecorded history, empirical operating characteristics, or independent scientific verification.
+
 If authorization, compute, cost, time, storage, or a user limit ends first, preserve the open queue and report a bounded pause. Do not relabel open cells as covered. Scope conclusions to the versioned candidate space supported by the available data; never claim exhaustion of all scientific possibilities.
 
 Apply the frozen Decision Contract. Report a tie or inconclusive result when evidence does not separate eligible candidates, and `no_eligible_candidate` when none qualify. Summarize branch classes and link the complete registry or ledger rather than expanding every branch into final-report prose. Do not default to the smallest nominal p-value or force a winner.
@@ -154,6 +158,7 @@ Apply the frozen Decision Contract. Report a tie or inconclusive result when evi
 - For a full `coverage_search` artifact audit or validator diagnosis: additionally read `references/status-schema.md` and `references/round-gate-checklist.md`.
 - For sensitive, regulated, costly, prospective, physical, or external-system work: read `references/governance-safety.md`.
 - When the required falsifier or robustness check is unclear: read `references/falsification-toolkit.md`.
+- For validation or benchmarking of a method, estimator, pipeline, workflow, or this skill: read `references/claim-types.md`; also read `references/ml-simulation.md` when the benchmark is computational.
 - When the scientific claim type or its minimum evidentiary requirements are unclear: read `references/claim-types.md`.
 - For observational support, censoring, geometry, or background contrast: read `references/observational-data.md`.
 - For machine learning, benchmark optimization, or simulation: read `references/ml-simulation.md`.

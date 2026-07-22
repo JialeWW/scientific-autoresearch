@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
-"""Validate the profile-proportionate consistency of an autoresearch run.
+"""Check the profile-proportionate consistency of an autoresearch run.
 
 The validator uses only the Python standard library. It checks the frozen
 claim and provenance for fixed tests, adds complete adaptive-path artifacts
 for adaptive search, and adds inventory, coverage, saturation, and queue
 consistency for coverage search.
 
+It does not establish numerical correctness, detect omitted unrecorded choices,
+or validate scientific conclusions.
+
 Usage:
     python validate_run.py RUN_DIR
     python validate_run.py RUN_DIR --output RUN_DIR/consistency_report.json
     python validate_run.py --init RUN_DIR --profile PROFILE
+    python validate_run.py --record-skill-provenance RUN_DIR
     python validate_run.py --snapshot-upgrade RUN_DIR --to-profile PROFILE
     python validate_run.py --self-test
 """
@@ -31,12 +35,13 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 
-VALIDATOR_VERSION = "1.5.1"
-ARTIFACT_SCHEMA_VERSION = "1.5.1"
+VALIDATOR_VERSION = "1.5.2"
+ARTIFACT_SCHEMA_VERSION = "1.5.2"
 PROFILE_SCHEMA_VERSION = "1.5.0"
 FIXED_FAMILY_SCHEMA_VERSION = "1.5.1"
+SKILL_PROVENANCE_SCHEMA_VERSION = "1.5.2"
 STRICT_BASELINE_SCHEMA_VERSION = "1.4.0"
-REPORT_SCHEMA_VERSION = "1.0"
+REPORT_SCHEMA_VERSION = "1.1"
 REQUIRED_SENTINEL = "__REQUIRED__"
 
 RESEARCH_PROFILES = {"fixed_test", "adaptive_search", "coverage_search"}
@@ -46,6 +51,12 @@ STAGE_STATUSES = {"planned", "in_progress", "completed_as_scoped", "blocked", "a
 CANDIDATE_TYPES = {"mechanism", "model", "feature", "simulation", "design", "other"}
 SUBSTANTIVE_ELIGIBILITY_STATUSES = {"eligible", "ineligible", "not_assessed"}
 PROFILE_HISTORY_REQUIRED_FIELDS = {"profile", "started_at"}
+SKILL_PROVENANCE_REQUIRED_FIELDS = {
+    "skill_name",
+    "release_version",
+    "package_sha256",
+    "captured_at",
+}
 ROUND_RECORD_STATUSES = {"planned", "completed", "failed", "blocked", "abandoned"}
 
 GOVERNANCE_STATUSES = {"not_assessed", "cleared", "restricted", "blocked"}
@@ -964,6 +975,224 @@ def _parse_timestamp(value: Any) -> datetime | None:
     return parsed.astimezone(timezone.utc)
 
 
+def _skill_root() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
+def _skill_metadata() -> tuple[str, str]:
+    """Read the installed skill name and release without a YAML dependency."""
+
+    skill_md = _skill_root() / "SKILL.md"
+    try:
+        content = skill_md.read_text(encoding="utf-8")
+    except OSError:
+        return "scientific-autoresearch", "unknown"
+    frontmatter_match = re.match(r"^---\n(.*?)\n---\n", content, re.DOTALL)
+    frontmatter = frontmatter_match.group(1) if frontmatter_match else ""
+    name_match = re.search(r"(?m)^name:\s*[\"']?([^\"'\s]+)", frontmatter)
+    version_match = re.search(r"(?m)^\s*version:\s*[\"']?([^\"'\s]+)", frontmatter)
+    return (
+        name_match.group(1) if name_match else "scientific-autoresearch",
+        version_match.group(1) if version_match else "unknown",
+    )
+
+
+def _skill_package_sha256(root: Path | None = None) -> str:
+    """Hash the fixed behavior-bearing package surface without run artifacts."""
+
+    root = (root or _skill_root()).resolve()
+    skill_md = root / "SKILL.md"
+    resource_specs = (
+        (root / "references", "*.md"),
+        (root / "scripts", "*.py"),
+        (root / "evals", "*.json"),
+    )
+    if skill_md.is_symlink() or not skill_md.is_file():
+        raise RuntimeError("SKILL.md must be a regular, nonsymlink file for provenance hashing.")
+    files = [skill_md]
+    for directory, pattern in resource_specs:
+        if directory.is_symlink() or not directory.is_dir():
+            raise RuntimeError(
+                f"{directory.relative_to(root)} must be a regular, nonsymlink directory for provenance hashing."
+            )
+        resources = sorted(directory.glob(pattern), key=lambda item: item.name)
+        if not resources:
+            raise RuntimeError(
+                f"No behavior-bearing files matched {directory.relative_to(root) / pattern}."
+            )
+        for path in resources:
+            if path.is_symlink() or not path.is_file():
+                raise RuntimeError(
+                    f"{path.relative_to(root)} must be a regular, nonsymlink file for provenance hashing."
+                )
+        files.extend(resources)
+
+    digest = hashlib.sha256()
+    digest.update(b"scientific-autoresearch-behavior-package-v1\0")
+    for path in sorted(files, key=lambda item: item.relative_to(root).as_posix()):
+        relative = path.relative_to(root).as_posix().encode("utf-8")
+        file_digest = hashlib.sha256(path.read_bytes()).digest()
+        digest.update(relative)
+        digest.update(b"\0")
+        digest.update(file_digest)
+    return digest.hexdigest()
+
+
+def _git_source_revision(start: Path) -> str | None:
+    """Read a nearby Git revision when available without invoking a client."""
+
+    for parent in (start, *start.parents):
+        marker = parent / ".git"
+        git_dir = marker
+        try:
+            if marker.is_file():
+                marker_text = marker.read_text(encoding="utf-8").strip()
+                if not marker_text.startswith("gitdir:"):
+                    continue
+                git_dir = (parent / marker_text.split(":", 1)[1].strip()).resolve()
+            if not git_dir.is_dir():
+                continue
+            head = (git_dir / "HEAD").read_text(encoding="utf-8").strip()
+            if re.fullmatch(r"[0-9a-fA-F]{40,64}", head):
+                return head.lower()
+            if not head.startswith("ref:"):
+                continue
+            reference = head.split(":", 1)[1].strip()
+            loose_ref = git_dir / reference
+            if loose_ref.is_file():
+                value = loose_ref.read_text(encoding="utf-8").strip()
+                if re.fullmatch(r"[0-9a-fA-F]{40,64}", value):
+                    return value.lower()
+            packed_refs = git_dir / "packed-refs"
+            if packed_refs.is_file():
+                for line in packed_refs.read_text(encoding="utf-8").splitlines():
+                    if line.startswith(("#", "^")) or " " not in line:
+                        continue
+                    value, packed_reference = line.split(" ", 1)
+                    if packed_reference == reference and re.fullmatch(
+                        r"[0-9a-fA-F]{40,64}", value
+                    ):
+                        return value.lower()
+        except OSError:
+            continue
+    return None
+
+
+def _capture_skill_provenance(captured_at: str) -> dict[str, Any]:
+    skill_name, release_version = _skill_metadata()
+    return {
+        "skill_name": skill_name,
+        "release_version": release_version,
+        "package_sha256": _skill_package_sha256(),
+        "source_revision": _git_source_revision(_skill_root()),
+        "captured_at": captured_at,
+    }
+
+
+def _skill_provenance_history_issues(
+    raw: Any,
+    location: str = "run_manifest.json#skill_provenance",
+) -> list[Issue]:
+    issues: list[Issue] = []
+    if not isinstance(raw, list) or not raw:
+        return [
+            Issue(
+                "invalid_skill_provenance",
+                location,
+                "Schema 1.5.2 skill_provenance must be a nonempty ordered list.",
+            )
+        ]
+    previous_captured_at: datetime | None = None
+    previous_identity: tuple[str, str, str] | None = None
+    for index, entry in enumerate(raw, start=1):
+        entry_location = f"{location}[{index}]"
+        if not isinstance(entry, Mapping):
+            issues.append(
+                Issue(
+                    "invalid_skill_provenance",
+                    entry_location,
+                    "Skill provenance entry must be an object.",
+                )
+            )
+            continue
+        for field in sorted(SKILL_PROVENANCE_REQUIRED_FIELDS):
+            if _blank(entry.get(field)):
+                issues.append(
+                    Issue(
+                        "missing_required_field",
+                        entry_location,
+                        f"Required field {field!r} is missing or blank.",
+                    )
+                )
+        skill_name = str(entry.get("skill_name", "")).strip()
+        release_version = str(entry.get("release_version", "")).strip()
+        package_sha256 = str(entry.get("package_sha256", "")).strip().lower()
+        if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", skill_name):
+            issues.append(
+                Issue(
+                    "invalid_skill_provenance_name",
+                    entry_location,
+                    "skill_name must use lowercase letters, digits, and hyphens.",
+                )
+            )
+        if not re.fullmatch(r"\d+\.\d+\.\d+", release_version):
+            issues.append(
+                Issue(
+                    "invalid_skill_provenance_release",
+                    entry_location,
+                    "release_version must be a three-part semantic version.",
+                )
+            )
+        if not re.fullmatch(r"[0-9a-f]{64}", package_sha256):
+            issues.append(
+                Issue(
+                    "invalid_skill_provenance_digest",
+                    entry_location,
+                    "package_sha256 must be a lowercase 64-character SHA-256 digest.",
+                )
+            )
+        source_revision = entry.get("source_revision")
+        if not _blank(source_revision) and not re.fullmatch(
+            r"[0-9a-fA-F]{40,64}", str(source_revision).strip()
+        ):
+            issues.append(
+                Issue(
+                    "invalid_skill_source_revision",
+                    entry_location,
+                    "source_revision must be null or a 40- to 64-character hexadecimal revision.",
+                )
+            )
+        captured_at = _parse_timestamp(entry.get("captured_at"))
+        if captured_at is None:
+            issues.append(
+                Issue(
+                    "invalid_skill_provenance_timestamp",
+                    entry_location,
+                    "captured_at must be an offset-aware ISO-8601 timestamp.",
+                )
+            )
+        elif previous_captured_at is not None and captured_at <= previous_captured_at:
+            issues.append(
+                Issue(
+                    "unordered_skill_provenance",
+                    entry_location,
+                    "skill_provenance captured_at values must be strictly increasing.",
+                )
+            )
+        identity = (skill_name, release_version, package_sha256)
+        if previous_identity == identity:
+            issues.append(
+                Issue(
+                    "duplicate_skill_provenance",
+                    entry_location,
+                    "Append a provenance entry only when the skill identity changes.",
+                )
+            )
+        previous_captured_at = captured_at or previous_captured_at
+        previous_identity = identity
+    return issues
+
+
 def _lens(value: Any) -> str:
     return re.sub(r"[^a-z0-9]+", "_", str(value or "").strip().lower()).strip("_")
 
@@ -1000,6 +1229,7 @@ class RunValidator:
         self.strict_schema = False
         self.profile_schema = False
         self.schema_1_5_1 = False
+        self.skill_provenance_schema = False
         self.research_profile = ""
         self.generic_inventory_schema = False
         self.active_version = ""
@@ -1295,6 +1525,14 @@ class RunValidator:
         return self.report()
 
     def report(self) -> dict[str, Any]:
+        provenance = self.manifest.get("skill_provenance")
+        latest_provenance = (
+            provenance[-1]
+            if isinstance(provenance, list)
+            and provenance
+            and isinstance(provenance[-1], Mapping)
+            else {}
+        )
         return {
             "report_schema_version": REPORT_SCHEMA_VERSION,
             "validator_version": VALIDATOR_VERSION,
@@ -1303,8 +1541,11 @@ class RunValidator:
             "run_id": self.manifest.get("run_id"),
             "research_profile": self.research_profile or None,
             "inventory_version": self.manifest.get("inventory_version"),
+            "skill_provenance": provenance if isinstance(provenance, list) else [],
             "artifact_versions": {
                 "artifact_schema": self.manifest.get("artifact_schema_version"),
+                "skill_release": latest_provenance.get("release_version"),
+                "skill_package_sha256": latest_provenance.get("package_sha256"),
                 "inventory": self.manifest.get("inventory_version"),
                 "decision_contract": _first(
                     self.manifest,
@@ -1378,6 +1619,9 @@ class RunValidator:
         self.schema_1_5_1 = _schema_at_least(
             schema_value, FIXED_FAMILY_SCHEMA_VERSION
         )
+        self.skill_provenance_schema = _schema_at_least(
+            schema_value, SKILL_PROVENANCE_SCHEMA_VERSION
+        )
         supported_schema = _parse_schema_version(ARTIFACT_SCHEMA_VERSION)
         if not _blank(schema_value) and parsed_schema is None:
             self.error(
@@ -1415,7 +1659,11 @@ class RunValidator:
                 "profile_history",
                 "round_artifacts",
             }
+        if self.skill_provenance_schema:
+            common_fields.add("skill_provenance")
         self._required(self.manifest, location, common_fields)
+        if self.skill_provenance_schema:
+            self._validate_skill_provenance()
         if self.profile_schema:
             self.research_profile = str(
                 self.manifest.get("research_profile", "")
@@ -1504,6 +1752,44 @@ class RunValidator:
             self._status(self.manifest.get("decision_status"), DECISION_STATUSES, location, "decision_status")
             self._manifest_bool("search_ledger_audited")
             self._manifest_bool("decision_contract_applied")
+
+    def _validate_skill_provenance(self) -> None:
+        location = "run_manifest.json#skill_provenance"
+        raw = self.manifest.get("skill_provenance")
+        issues = _skill_provenance_history_issues(raw, location)
+        self.errors.extend(issues)
+        if not isinstance(raw, list) or not raw:
+            return
+
+        if raw and isinstance(raw[-1], Mapping):
+            try:
+                current = _capture_skill_provenance(
+                    datetime.now(timezone.utc).isoformat()
+                )
+            except (OSError, RuntimeError) as exc:
+                self.warn(
+                    "current_skill_identity_unavailable",
+                    location,
+                    f"Could not compute the current installed skill identity: {exc}",
+                )
+            else:
+                latest = raw[-1]
+                recorded_identity = (
+                    str(latest.get("skill_name", "")).strip(),
+                    str(latest.get("release_version", "")).strip(),
+                    str(latest.get("package_sha256", "")).strip().lower(),
+                )
+                current_identity = (
+                    current["skill_name"],
+                    current["release_version"],
+                    current["package_sha256"],
+                )
+                if recorded_identity != current_identity:
+                    self.warn(
+                        "skill_provenance_not_current",
+                        location,
+                        "The run records a different skill identity. Read-only validation remains valid; before authorized execution or resume, run --record-skill-provenance for this run.",
+                    )
 
     def _validate_profile_history(self) -> None:
         location = "run_manifest.json#profile_history"
@@ -5386,6 +5672,125 @@ def _write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def _write_json_atomic(path: Path, value: Any) -> None:
+    payload = json.dumps(value, ensure_ascii=False, indent=2) + "\n"
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            newline="",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as handle:
+            handle.write(payload)
+            temporary_path = Path(handle.name)
+        temporary_path.replace(path)
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            temporary_path.unlink()
+
+
+def record_skill_provenance(run_dir: Path) -> dict[str, Any]:
+    """Append the current skill identity without altering scientific records."""
+
+    root = run_dir.resolve()
+    manifest_path = root / "run_manifest.json"
+    if not root.is_dir() or not manifest_path.is_file() or manifest_path.is_symlink():
+        return {
+            "skill_provenance": "refused",
+            "run_directory": str(root),
+            "reason": "A regular run_manifest.json is required inside an existing run directory.",
+        }
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {
+            "skill_provenance": "failed",
+            "run_directory": str(root),
+            "reason": f"Cannot parse run_manifest.json: {exc}",
+        }
+    if not isinstance(manifest, dict):
+        return {
+            "skill_provenance": "refused",
+            "run_directory": str(root),
+            "reason": "run_manifest.json must be an object.",
+        }
+    schema_value = manifest.get("artifact_schema_version")
+    parsed_schema = _parse_schema_version(schema_value)
+    minimum_schema = _parse_schema_version(SKILL_PROVENANCE_SCHEMA_VERSION)
+    supported_schema = _parse_schema_version(ARTIFACT_SCHEMA_VERSION)
+    if (
+        parsed_schema is None
+        or minimum_schema is None
+        or supported_schema is None
+        or parsed_schema < minimum_schema
+        or parsed_schema > supported_schema
+    ):
+        return {
+            "skill_provenance": "refused",
+            "run_directory": str(root),
+            "reason": f"Automatic skill provenance requires a supported artifact schema from {SKILL_PROVENANCE_SCHEMA_VERSION} through {ARTIFACT_SCHEMA_VERSION}; leave older or future-schema runs unchanged.",
+        }
+    history = manifest.get("skill_provenance")
+    history_issues = _skill_provenance_history_issues(history)
+    if history_issues:
+        return {
+            "skill_provenance": "refused",
+            "run_directory": str(root),
+            "reason": "Existing skill_provenance is invalid; preserve it and repair through an explicit amendment before execution.",
+            "errors": [issue.as_dict() for issue in history_issues],
+        }
+    captured_at = datetime.now(timezone.utc).isoformat()
+    try:
+        current = _capture_skill_provenance(captured_at)
+    except (OSError, RuntimeError) as exc:
+        return {
+            "skill_provenance": "failed",
+            "run_directory": str(root),
+            "reason": f"Cannot compute the installed skill identity: {exc}",
+        }
+    identity_fields = ("skill_name", "release_version", "package_sha256")
+    if history and all(
+        str(history[-1].get(field, "")).strip().lower()
+        == str(current.get(field, "")).strip().lower()
+        for field in identity_fields
+    ):
+        return {
+            "skill_provenance": "unchanged",
+            "run_directory": str(root),
+            "entry_count": len(history),
+            "current_entry": history[-1],
+        }
+    if history:
+        previous_time = _parse_timestamp(history[-1].get("captured_at"))
+        current_time = _parse_timestamp(captured_at)
+        if previous_time is None or current_time is None or current_time <= previous_time:
+            return {
+                "skill_provenance": "refused",
+                "run_directory": str(root),
+                "reason": "Existing provenance time is invalid or not earlier than the current capture time.",
+            }
+    manifest["skill_provenance"] = [*history, current]
+    try:
+        _write_json_atomic(manifest_path, manifest)
+    except OSError as exc:
+        return {
+            "skill_provenance": "failed",
+            "run_directory": str(root),
+            "reason": f"Could not update run_manifest.json atomically: {exc}",
+        }
+    return {
+        "skill_provenance": "recorded",
+        "run_directory": str(root),
+        "entry_count": len(manifest["skill_provenance"]),
+        "current_entry": current,
+        "next_command": f"{Path(__file__).name} {root}",
+    }
+
+
 def create_upgrade_snapshot(run_dir: Path, to_profile: str) -> dict[str, Any]:
     """Create a non-overwriting, hash-bound snapshot for a profile upgrade.
 
@@ -5428,6 +5833,37 @@ def create_upgrade_snapshot(run_dir: Path, to_profile: str) -> dict[str, Any]:
             "run_directory": str(root),
             "reason": "run_manifest.json must be an object.",
         }
+    if _schema_at_least(
+        manifest.get("artifact_schema_version"), SKILL_PROVENANCE_SCHEMA_VERSION
+    ):
+        recorded = manifest.get("skill_provenance")
+        try:
+            current_skill = _capture_skill_provenance(
+                datetime.now(timezone.utc).isoformat()
+            )
+        except (OSError, RuntimeError) as exc:
+            return {
+                "snapshot": "refused",
+                "run_directory": str(root),
+                "reason": f"Cannot compute the current installed skill identity: {exc}",
+            }
+        identity_fields = ("skill_name", "release_version", "package_sha256")
+        if (
+            not isinstance(recorded, list)
+            or not recorded
+            or not isinstance(recorded[-1], Mapping)
+            or any(
+                str(recorded[-1].get(field, "")).strip().lower()
+                != str(current_skill.get(field, "")).strip().lower()
+                for field in identity_fields
+            )
+        ):
+            return {
+                "snapshot": "refused",
+                "run_directory": str(root),
+                "reason": "Record the current skill identity before sealing an upgrade snapshot.",
+                "next_command": f"{Path(__file__).name} --record-skill-provenance {root}",
+            }
     current_profile = str(manifest.get("research_profile", "")).strip()
     if current_profile not in RESEARCH_PROFILES or to_profile not in RESEARCH_PROFILES:
         return {
@@ -5627,6 +6063,15 @@ def initialize_run(run_dir: Path, profile: str) -> dict[str, Any]:
     run_id = root.name or "TODO-run-id"
     todo = REQUIRED_SENTINEL
     created: list[str] = []
+    try:
+        initial_skill_provenance = _capture_skill_provenance(created_at)
+    except (OSError, RuntimeError) as exc:
+        return {
+            "init": "failed",
+            "run_directory": str(root),
+            "reason": f"Cannot capture the installed skill identity: {exc}",
+            "created_files": [],
+        }
 
     def write_text(relative: str, payload: str) -> None:
         path = root / relative
@@ -5666,6 +6111,7 @@ def initialize_run(run_dir: Path, profile: str) -> dict[str, Any]:
     manifest: dict[str, Any] = {
         "run_id": run_id,
         "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
+        "skill_provenance": [initial_skill_provenance],
         "research_profile": profile,
         "profile_history": [{"profile": profile, "started_at": created_at}],
         "stage_status": "planned",
@@ -5845,8 +6291,11 @@ def initialize_run(run_dir: Path, profile: str) -> dict[str, Any]:
         "run_directory_label": root.name,
         "run_id": run_id,
         "inventory_version": "v001",
+        "skill_provenance": manifest["skill_provenance"],
         "artifact_versions": {
             "artifact_schema": ARTIFACT_SCHEMA_VERSION,
+            "skill_release": manifest["skill_provenance"][-1]["release_version"],
+            "skill_package_sha256": manifest["skill_provenance"][-1]["package_sha256"],
             "data_version_set": "data-v001",
         },
         "valid": False,
@@ -5947,6 +6396,9 @@ def _build_self_test_fixture(root: Path) -> None:
     manifest = {
         "run_id": "self-test-run",
         "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
+        "skill_provenance": [
+            _capture_skill_provenance("2000-01-01T00:00:00Z")
+        ],
         "research_profile": "coverage_search",
         "profile_history": [
             {"profile": "coverage_search", "started_at": "2000-01-01T00:00:00Z"}
@@ -7812,10 +8264,27 @@ def run_self_test() -> dict[str, Any]:
         init_consistency_placeholder = json.loads(
             (init_root / "consistency_report.json").read_text(encoding="utf-8")
         )
+        init_manifest = json.loads(
+            (init_root / "run_manifest.json").read_text(encoding="utf-8")
+        )
+        initialized_provenance = init_manifest.get("skill_provenance")
+        expected_skill_name, expected_skill_release = _skill_metadata()
+        auto_provenance_valid = (
+            isinstance(initialized_provenance, list)
+            and len(initialized_provenance) == 1
+            and initialized_provenance[0].get("skill_name") == expected_skill_name
+            and initialized_provenance[0].get("release_version")
+            == expected_skill_release
+            and initialized_provenance[0].get("package_sha256")
+            == _skill_package_sha256()
+            and _parse_timestamp(initialized_provenance[0].get("captured_at"))
+            is not None
+        )
         init_structure_valid = (
             init_report.get("init") == "created"
             and initialized_files == COVERAGE_INIT_FILES
             and init_headers_valid
+            and auto_provenance_valid
             and not init_validation_report["valid"]
             and "missing_required_field" in init_validation_codes
             and init_consistency_placeholder.get("valid") is False
@@ -7848,6 +8317,207 @@ def run_self_test() -> dict[str, Any]:
             == initialized_files
             and init_file_refusal_report.get("init") == "refused"
             and init_file_target.read_text(encoding="utf-8") == "preserve me\n"
+        )
+
+        provenance_record_root = temp_root / "skill-provenance-record-run"
+        _build_fixed_profile_fixture(provenance_record_root)
+        provenance_record_path = provenance_record_root / "run_manifest.json"
+        provenance_record_manifest = json.loads(
+            provenance_record_path.read_text(encoding="utf-8")
+        )
+        provenance_record_manifest["skill_provenance"][-1][
+            "package_sha256"
+        ] = "0" * 64
+        provenance_record_manifest["skill_provenance"][-1][
+            "captured_at"
+        ] = "2000-01-01T00:00:00Z"
+        _write_json(provenance_record_path, provenance_record_manifest)
+        provenance_snapshot_refusal = create_upgrade_snapshot(
+            provenance_record_root, "adaptive_search"
+        )
+        provenance_record_report = record_skill_provenance(provenance_record_root)
+        provenance_repeat_report = record_skill_provenance(provenance_record_root)
+        provenance_snapshot_report = create_upgrade_snapshot(
+            provenance_record_root, "adaptive_search"
+        )
+        recorded_manifest = json.loads(
+            provenance_record_path.read_text(encoding="utf-8")
+        )
+        provenance_record_valid = (
+            provenance_record_report.get("skill_provenance") == "recorded"
+            and provenance_repeat_report.get("skill_provenance") == "unchanged"
+            and provenance_snapshot_refusal.get("snapshot") == "refused"
+            and provenance_snapshot_report.get("snapshot") == "created"
+            and len(recorded_manifest.get("skill_provenance", [])) == 2
+            and recorded_manifest["skill_provenance"][-1]["package_sha256"]
+            == _skill_package_sha256()
+            and validate_run(provenance_record_root)["valid"]
+        )
+
+        missing_provenance_root = temp_root / "missing-skill-provenance-run"
+        _build_fixed_profile_fixture(missing_provenance_root)
+        missing_provenance_path = missing_provenance_root / "run_manifest.json"
+        missing_provenance_manifest = json.loads(
+            missing_provenance_path.read_text(encoding="utf-8")
+        )
+        missing_provenance_manifest.pop("skill_provenance", None)
+        _write_json(missing_provenance_path, missing_provenance_manifest)
+        missing_provenance_report = validate_run(missing_provenance_root)
+        missing_provenance_codes = {
+            item["code"] for item in missing_provenance_report["errors"]
+        }
+        missing_provenance_detected = (
+            "invalid_skill_provenance" in missing_provenance_codes
+            and not missing_provenance_report["valid"]
+        )
+
+        legacy_provenance_root = temp_root / "legacy-no-skill-provenance-run"
+        _build_fixed_profile_fixture(legacy_provenance_root)
+        legacy_provenance_path = legacy_provenance_root / "run_manifest.json"
+        legacy_provenance_manifest = json.loads(
+            legacy_provenance_path.read_text(encoding="utf-8")
+        )
+        legacy_provenance_manifest["artifact_schema_version"] = "1.5.1"
+        legacy_provenance_manifest.pop("skill_provenance", None)
+        _write_json(legacy_provenance_path, legacy_provenance_manifest)
+        legacy_provenance_report = validate_run(legacy_provenance_root)
+        legacy_provenance_valid = legacy_provenance_report["valid"]
+
+        malformed_provenance_root = temp_root / "malformed-skill-provenance-run"
+        _build_fixed_profile_fixture(malformed_provenance_root)
+        malformed_provenance_path = malformed_provenance_root / "run_manifest.json"
+        malformed_provenance_manifest = json.loads(
+            malformed_provenance_path.read_text(encoding="utf-8")
+        )
+        malformed_provenance_manifest["skill_provenance"][-1][
+            "package_sha256"
+        ] = "not-a-digest"
+        _write_json(malformed_provenance_path, malformed_provenance_manifest)
+        malformed_provenance_report = validate_run(malformed_provenance_root)
+        malformed_provenance_codes = {
+            item["code"] for item in malformed_provenance_report["errors"]
+        }
+        malformed_provenance_before_record = malformed_provenance_path.read_bytes()
+        malformed_provenance_record = record_skill_provenance(
+            malformed_provenance_root
+        )
+        malformed_provenance_detected = (
+            "invalid_skill_provenance_digest" in malformed_provenance_codes
+            and not malformed_provenance_report["valid"]
+            and malformed_provenance_record.get("skill_provenance") == "refused"
+            and malformed_provenance_path.read_bytes()
+            == malformed_provenance_before_record
+        )
+
+        mismatch_provenance_root = temp_root / "mismatch-skill-provenance-run"
+        _build_fixed_profile_fixture(mismatch_provenance_root)
+        mismatch_provenance_path = mismatch_provenance_root / "run_manifest.json"
+        mismatch_provenance_manifest = json.loads(
+            mismatch_provenance_path.read_text(encoding="utf-8")
+        )
+        mismatch_provenance_manifest["skill_provenance"][-1][
+            "package_sha256"
+        ] = "f" * 64
+        _write_json(mismatch_provenance_path, mismatch_provenance_manifest)
+        mismatch_before = mismatch_provenance_path.read_bytes()
+        mismatch_provenance_report = validate_run(mismatch_provenance_root)
+        mismatch_warning_codes = {
+            item["code"] for item in mismatch_provenance_report["warnings"]
+        }
+        provenance_validation_read_only = (
+            mismatch_provenance_report["valid"]
+            and "skill_provenance_not_current" in mismatch_warning_codes
+            and mismatch_provenance_path.read_bytes() == mismatch_before
+        )
+
+        digest_fixture_root = temp_root / "behavior-package-digest"
+        for directory in ("references", "scripts", "evals"):
+            (digest_fixture_root / directory).mkdir(parents=True, exist_ok=True)
+        (digest_fixture_root / "SKILL.md").write_text(
+            "---\nname: scientific-autoresearch\ndescription: test\n---\n",
+            encoding="utf-8",
+        )
+        (digest_fixture_root / "references" / "test.md").write_text(
+            "reference\n", encoding="utf-8"
+        )
+        (digest_fixture_root / "scripts" / "test.py").write_text(
+            "VALUE = 1\n", encoding="utf-8"
+        )
+        (digest_fixture_root / "evals" / "test.json").write_text(
+            "{}\n", encoding="utf-8"
+        )
+        digest_before_nested_run = _skill_package_sha256(digest_fixture_root)
+        nested_run = digest_fixture_root / "runs" / "nested"
+        nested_run.mkdir(parents=True)
+        (nested_run / "run_manifest.json").write_text(
+            "{\"state\": \"changed\"}\n", encoding="utf-8"
+        )
+        digest_after_nested_run = _skill_package_sha256(digest_fixture_root)
+        nested_run_digest_stable = digest_before_nested_run == digest_after_nested_run
+
+        symlink_fixture_root = temp_root / "symlink-behavior-package"
+        for directory in ("references", "scripts", "evals"):
+            (symlink_fixture_root / directory).mkdir(parents=True, exist_ok=True)
+        (symlink_fixture_root / "SKILL.md").write_text(
+            "---\nname: scientific-autoresearch\ndescription: test\n---\n",
+            encoding="utf-8",
+        )
+        (symlink_fixture_root / "scripts" / "test.py").write_text(
+            "VALUE = 1\n", encoding="utf-8"
+        )
+        (symlink_fixture_root / "evals" / "test.json").write_text(
+            "{}\n", encoding="utf-8"
+        )
+        external_reference = temp_root / "external-reference.md"
+        external_reference.write_text("external\n", encoding="utf-8")
+        (symlink_fixture_root / "references" / "linked.md").symlink_to(
+            external_reference
+        )
+        try:
+            _skill_package_sha256(symlink_fixture_root)
+        except RuntimeError:
+            behavior_symlink_rejected = True
+        else:
+            behavior_symlink_rejected = False
+
+        future_provenance_root = temp_root / "future-schema-provenance-run"
+        _build_fixed_profile_fixture(future_provenance_root)
+        future_provenance_path = future_provenance_root / "run_manifest.json"
+        future_provenance_manifest = json.loads(
+            future_provenance_path.read_text(encoding="utf-8")
+        )
+        future_provenance_manifest["artifact_schema_version"] = "9.0.0"
+        future_provenance_manifest["skill_provenance"][-1][
+            "package_sha256"
+        ] = "e" * 64
+        _write_json(future_provenance_path, future_provenance_manifest)
+        future_provenance_before = future_provenance_path.read_bytes()
+        future_provenance_record = record_skill_provenance(future_provenance_root)
+        future_schema_record_refused = (
+            future_provenance_record.get("skill_provenance") == "refused"
+            and future_provenance_path.read_bytes() == future_provenance_before
+        )
+
+        malformed_history_root = temp_root / "malformed-history-provenance-run"
+        _build_fixed_profile_fixture(malformed_history_root)
+        malformed_history_path = malformed_history_root / "run_manifest.json"
+        malformed_history_manifest = json.loads(
+            malformed_history_path.read_text(encoding="utf-8")
+        )
+        current_history_entry = malformed_history_manifest["skill_provenance"][0]
+        malformed_earlier_entry = dict(current_history_entry)
+        malformed_earlier_entry["release_version"] = "invalid"
+        malformed_earlier_entry["captured_at"] = "2000-01-01T00:00:00Z"
+        malformed_history_manifest["skill_provenance"] = [
+            malformed_earlier_entry,
+            current_history_entry,
+        ]
+        _write_json(malformed_history_path, malformed_history_manifest)
+        malformed_history_before = malformed_history_path.read_bytes()
+        malformed_history_record = record_skill_provenance(malformed_history_root)
+        malformed_history_record_refused = (
+            malformed_history_record.get("skill_provenance") == "refused"
+            and malformed_history_path.read_bytes() == malformed_history_before
         )
 
         family_root = temp_root / "broken-family-run"
@@ -8762,6 +9432,15 @@ def run_self_test() -> dict[str, Any]:
                 legacy_valid,
                 init_structure_valid,
                 init_overwrite_refused,
+                provenance_record_valid,
+                missing_provenance_detected,
+                legacy_provenance_valid,
+                malformed_provenance_detected,
+                provenance_validation_read_only,
+                nested_run_digest_stable,
+                behavior_symlink_rejected,
+                future_schema_record_refused,
+                malformed_history_record_refused,
                 transition_detected,
                 strict_transition_detected,
                 family_transition_mismatch_detected,
@@ -8835,6 +9514,15 @@ def run_self_test() -> dict[str, Any]:
                     "legacy_schema_positive": legacy_valid,
                     "init_canonical_structure": init_structure_valid,
                     "init_overwrite_refused": init_overwrite_refused,
+                    "skill_provenance_recording": provenance_record_valid,
+                    "missing_skill_provenance": missing_provenance_detected,
+                    "legacy_skill_provenance_compatibility": legacy_provenance_valid,
+                    "malformed_skill_provenance": malformed_provenance_detected,
+                    "skill_provenance_validation_read_only": provenance_validation_read_only,
+                    "nested_run_excluded_from_skill_digest": nested_run_digest_stable,
+                    "behavior_symlink_rejected": behavior_symlink_rejected,
+                    "future_schema_provenance_write_refused": future_schema_record_refused,
+                    "malformed_provenance_history_write_refused": malformed_history_record_refused,
                     "illegal_status_transition": transition_detected,
                     "strict_status_transition_fields": strict_transition_detected,
                     "family_transition_final_state_mismatch": family_transition_mismatch_detected,
@@ -8905,6 +9593,17 @@ def run_self_test() -> dict[str, Any]:
                 "init_validation_report": init_validation_report,
                 "init_refusal_report": init_refusal_report,
                 "init_file_refusal_report": init_file_refusal_report,
+                "provenance_record_report": provenance_record_report,
+                "provenance_repeat_report": provenance_repeat_report,
+                "provenance_snapshot_refusal": provenance_snapshot_refusal,
+                "provenance_snapshot_report": provenance_snapshot_report,
+                "missing_provenance_report": missing_provenance_report,
+                "legacy_provenance_report": legacy_provenance_report,
+                "malformed_provenance_report": malformed_provenance_report,
+                "malformed_provenance_record": malformed_provenance_record,
+                "mismatch_provenance_report": mismatch_provenance_report,
+                "future_provenance_record": future_provenance_record,
+                "malformed_history_record": malformed_history_record,
                 "transition_fixture_report": transition_report,
                 "strict_transition_fixture_report": strict_transition_report,
                 "family_transition_mismatch_fixture_report": family_transition_mismatch_report,
@@ -8997,6 +9696,15 @@ def run_self_test() -> dict[str, Any]:
                 "legacy_schema_positive": True,
                 "init_canonical_structure": True,
                 "init_overwrite_refused": True,
+                "skill_provenance_recording": True,
+                "missing_skill_provenance": True,
+                "legacy_skill_provenance_compatibility": True,
+                "malformed_skill_provenance": True,
+                "skill_provenance_validation_read_only": True,
+                "nested_run_excluded_from_skill_digest": True,
+                "behavior_symlink_rejected": True,
+                "future_schema_provenance_write_refused": True,
+                "malformed_provenance_history_write_refused": True,
                 "illegal_status_transition": True,
                 "strict_status_transition_fields": True,
                 "family_transition_final_state_mismatch": True,
@@ -9097,6 +9805,8 @@ def run_self_test() -> dict[str, Any]:
                     not_applicable_collision_codes
                 ),
                 "malformed_artifact_schema_version": sorted(malformed_schema_codes),
+                "missing_skill_provenance": sorted(missing_provenance_codes),
+                "malformed_skill_provenance": sorted(malformed_provenance_codes),
             },
         }
 
@@ -9120,7 +9830,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--init",
         metavar="RUN_DIR",
         type=Path,
-        help="Create a non-overwriting schema-1.5.1 profile-aware Round-0 draft skeleton.",
+        help="Create a non-overwriting schema-1.5.2 profile-aware Round-0 draft skeleton.",
+    )
+    modes.add_argument(
+        "--record-skill-provenance",
+        metavar="RUN_DIR",
+        type=Path,
+        help="Idempotently record the current installed skill identity before authorized execution or resume.",
     )
     modes.add_argument(
         "--snapshot-upgrade",
@@ -9147,10 +9863,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.run_dir is not None or args.output is not None or args.to_profile is not None:
             parser.error("--init cannot be combined with run_dir, --output, or --to-profile")
         if args.profile is None:
-            parser.error("--profile is required with --init for schema 1.5.1")
+            parser.error("--profile is required with --init for schema 1.5.2")
         report = initialize_run(args.init, args.profile)
         _emit(report, None)
         return 0 if report.get("init") == "created" else 1
+    if args.record_skill_provenance is not None:
+        if (
+            args.run_dir is not None
+            or args.output is not None
+            or args.profile is not None
+            or args.to_profile is not None
+        ):
+            parser.error(
+                "--record-skill-provenance cannot be combined with run_dir, --output, --profile, or --to-profile"
+            )
+        report = record_skill_provenance(args.record_skill_provenance)
+        _emit(report, None)
+        return 0 if report.get("skill_provenance") in {"recorded", "unchanged"} else 1
     if args.snapshot_upgrade is not None:
         if args.run_dir is not None or args.output is not None or args.profile is not None:
             parser.error("--snapshot-upgrade cannot be combined with run_dir, --output, or --profile")

@@ -58,6 +58,12 @@ Question: Does a measurement, model, estimator, pipeline, or experimental proced
 
 Require known-truth cases, simulations, standards, positive and negative controls, injection/recovery when applicable, failure examples, calibration, and sensitivity to assumptions.
 
+Distinguish structural conformance, behavioral conformance, empirical operating characteristics, and independent or cross-executor validation. A schema check or behavioral specification does not by itself establish error control, power, calibration, or scientific validity.
+
+Before evaluation outcomes, freeze the benchmark task family, comparison conditions, evaluation unit, primary metrics, repetition count or Monte Carlo precision, stopping rule, and pass or interpretation rule. Separate development cases from sealed evaluation cases. If sealed outcomes motivate a method change, treat that split as development evidence and evaluate the changed method on a new sealed split.
+
+Support claims about false-positive or false-promotion rates, power, interval coverage, or generalization across executors only with end-to-end known-truth evaluations that reproduce the relevant selection path. Scope conclusions to the tested tasks, conditions, executors, and method version.
+
 ## Anomaly Discovery
 
 Question: Which cases violate the current model, and are the deviations real?

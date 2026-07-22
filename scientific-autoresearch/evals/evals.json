@@ -1,5 +1,7 @@
 {
   "skill_name": "scientific-autoresearch",
+  "evaluation_kind": "behavioral_specification",
+  "contains_scored_results": false,
   "evals": [
     {
       "id": 1,

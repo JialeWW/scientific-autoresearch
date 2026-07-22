@@ -1,0 +1,87 @@
+{
+  "benchmark_schema_version": "1.0.0",
+  "release_under_test": "0.2.6",
+  "benchmark_status": "specification_only",
+  "suites": [
+    {
+      "suite_id": "trigger-routing",
+      "evidence_type": "behavioral_conformance",
+      "target": "skill activation and adjacent-task nonactivation",
+      "case_source": "scientific-autoresearch/evals/eval_queries.json",
+      "metrics": [
+        "precision",
+        "recall",
+        "specificity",
+        "balanced_accuracy"
+      ],
+      "baseline_conditions": [
+        "no_skill",
+        "previous_release"
+      ],
+      "repetitions": null,
+      "seed_policy": null,
+      "pass_rule": null,
+      "execution_status": "not_run"
+    },
+    {
+      "suite_id": "behavioral-profile-routing",
+      "evidence_type": "behavioral_conformance",
+      "target": "profile selection and safeguard behavior",
+      "case_source": "scientific-autoresearch/evals/evals.json",
+      "metrics": [
+        "assertion_pass_rate",
+        "case_all_pass_rate",
+        "critical_violation_rate"
+      ],
+      "baseline_conditions": [
+        "no_skill",
+        "previous_release"
+      ],
+      "repetitions": null,
+      "seed_policy": null,
+      "pass_rule": null,
+      "execution_status": "not_run"
+    },
+    {
+      "suite_id": "empirical-operating-characteristics",
+      "evidence_type": "empirical_method_validation",
+      "target": "end-to-end behavior under known truth",
+      "case_source": null,
+      "metrics": [
+        "false_promotion_rate",
+        "detection_power",
+        "interval_coverage",
+        "false_completion_rate",
+        "run_reproducibility",
+        "record_completeness"
+      ],
+      "baseline_conditions": [
+        "no_skill",
+        "previous_release",
+        "component_ablations"
+      ],
+      "repetitions": null,
+      "seed_policy": null,
+      "pass_rule": null,
+      "execution_status": "not_evaluated"
+    }
+  ],
+  "required_record_fields": [
+    "suite_id",
+    "release",
+    "condition",
+    "case_id",
+    "replicate",
+    "agent",
+    "model",
+    "runtime",
+    "output_hash",
+    "record_type"
+  ],
+  "result_policy": {
+    "development_and_sealed_cases_separate": true,
+    "raw_outputs_required": true,
+    "uncertainty_required_for_repeated_metrics": true,
+    "scope_claims_to_tested_conditions": true
+  }
+}

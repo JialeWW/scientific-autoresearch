@@ -1,12 +1,14 @@
 # Scientific Autoresearch
 
-![Coverage-guided scientific autoresearch workflow](figures/scientific-autoresearch-workflow-v0.2.1.png)
+![Coverage-guided scientific autoresearch workflow](figures/scientific-autoresearch-workflow.png)
 
-[Vector PDF](figures/scientific-autoresearch-workflow-v0.2.1.pdf) · [Vector SVG](figures/scientific-autoresearch-workflow-v0.2.1.svg)
+[Vector PDF](figures/scientific-autoresearch-workflow.pdf) · [Vector SVG](figures/scientific-autoresearch-workflow.svg)
 
 `scientific-autoresearch` is an agent-independent [Agent Skill](https://agentskills.io) for auditable scientific investigation. It scales from prospective design and read-only audit through frozen analyses, adaptive candidate search, and coverage-based search over a finite, data-supported space. It matches procedural overhead to outcome adaptivity while preserving conservative inference.
 
 Current version: **0.2.5**.
+
+The `metadata.version` value in `scientific-autoresearch/SKILL.md` is the release-version source of truth. Validator, artifact-schema, report-schema, and citation-format versions are independent compatibility versions.
 
 ## Scope
 
@@ -73,9 +75,9 @@ Inventory saturation requires both a candidate-forward audit and a data-product-
 ├── CITATION.bib
 ├── LICENSE
 ├── figures/
-│   ├── scientific-autoresearch-workflow-v0.2.1.pdf
-│   ├── scientific-autoresearch-workflow-v0.2.1.png
-│   └── scientific-autoresearch-workflow-v0.2.1.svg
+│   ├── scientific-autoresearch-workflow.pdf
+│   ├── scientific-autoresearch-workflow.png
+│   └── scientific-autoresearch-workflow.svg
 ├── scripts/
 │   └── validate_skill.py
 └── scientific-autoresearch/

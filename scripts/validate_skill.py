@@ -51,6 +51,11 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
     elif len(description) > 1024:
         errors.append("Description exceeds 1024 characters")
 
+    if not version:
+        errors.append("Frontmatter is missing metadata version")
+    elif not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
+        errors.append(f"Invalid skill release version: {version}")
+
     if len(content.splitlines()) > 500:
         errors.append("SKILL.md exceeds 500 lines")
 
@@ -96,12 +101,60 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
         errors.append(f"Invalid evals/eval_queries.json: {exc}")
 
     cff = repo_root / "CITATION.cff"
+    bib = repo_root / "CITATION.bib"
     readme = repo_root / "README.md"
+    changelog = repo_root / "CHANGELOG.md"
     if version:
-        if cff.is_file() and f'version: "{version}"' not in cff.read_text(encoding="utf-8"):
-            errors.append("CITATION.cff version does not match SKILL.md metadata version")
-        if readme.is_file() and version not in readme.read_text(encoding="utf-8"):
-            errors.append("README.md does not mention the current skill version")
+        release_tag = f"/releases/tag/v{version}"
+
+        if not cff.is_file():
+            errors.append("Missing CITATION.cff")
+        else:
+            cff_text = cff.read_text(encoding="utf-8")
+            cff_match = re.search(r'(?m)^version:\s*["\']?([^"\'\s]+)', cff_text)
+            if not cff_match or cff_match.group(1) != version:
+                errors.append("CITATION.cff version does not match SKILL.md metadata version")
+            if release_tag not in cff_text:
+                errors.append("CITATION.cff release URL does not match the current version")
+
+        if not bib.is_file():
+            errors.append("Missing CITATION.bib")
+        else:
+            bib_text = bib.read_text(encoding="utf-8")
+            bib_match = re.search(r"(?m)^\s*version\s*=\s*\{v?([^}]+)\}", bib_text)
+            if not bib_match or bib_match.group(1) != version:
+                errors.append("CITATION.bib version does not match SKILL.md metadata version")
+            if release_tag not in bib_text:
+                errors.append("CITATION.bib release URL does not match the current version")
+
+        if not readme.is_file():
+            errors.append("Missing README.md")
+        else:
+            readme_text = readme.read_text(encoding="utf-8")
+            if f"Current version: **{version}**." not in readme_text:
+                errors.append("README.md current-version declaration does not match SKILL.md")
+            if f"## Version {version} Highlights" not in readme_text:
+                errors.append("README.md highlights heading does not match the current version")
+
+        if not changelog.is_file():
+            errors.append("Missing CHANGELOG.md")
+        else:
+            changelog_text = changelog.read_text(encoding="utf-8")
+            release_match = re.search(r"(?m)^##\s+([0-9]+\.[0-9]+\.[0-9]+)\s+-", changelog_text)
+            if not release_match or release_match.group(1) != version:
+                errors.append("Latest CHANGELOG.md release does not match SKILL.md metadata version")
+
+        figures = repo_root / "figures"
+        for suffix in ("pdf", "png", "svg"):
+            figure_name = f"scientific-autoresearch-workflow.{suffix}"
+            if not (figures / figure_name).is_file():
+                errors.append(f"Missing stable workflow figure: figures/{figure_name}")
+            if readme.is_file() and f"figures/{figure_name}" not in readme_text:
+                errors.append(f"README.md does not reference figures/{figure_name}")
+        if figures.is_dir():
+            old_names = sorted(path.name for path in figures.glob("scientific-autoresearch-workflow-v*"))
+            if old_names:
+                errors.append(f"Versioned current workflow filenames are stale: {old_names}")
 
     return errors
 

@@ -1,97 +1,121 @@
 [
   {
+    "id": "trigger-001",
     "query": "Build a versioned typed inventory of the distinct mechanisms, models, and observables supported by these data products, search the finite coverage cells, and stop only after coverage and saturation audits pass.",
     "should_trigger": true
   },
   {
+    "id": "trigger-002",
     "query": "Compare and rank these candidate explanations, using a Decision Contract with comparable selection families, ranking evidence, and explicit tie and inconclusive rules.",
     "should_trigger": true
   },
   {
+    "id": "trigger-003",
     "query": "Create a formal audited run for this single frozen Pearson correlation, using the fixed sample, statistic, uncertainty method, and decision threshold with no alternative analyses.",
     "should_trigger": true
   },
   {
+    "id": "trigger-004",
     "query": "Figure out whether fragmentation in these simulations is physical or a numerical artifact by comparing the plausible convergence experiments and choosing what to run next.",
     "should_trigger": true
   },
   {
+    "id": "trigger-005",
     "query": "Autonomously compare these prediction candidates, preregister how a rank-based screen maps to raw-scale predictive evidence, protect the held-out benchmark, and log every selection-influencing test.",
     "should_trigger": true
   },
   {
+    "id": "trigger-006",
     "query": "Our primary result is null. Systematically search the supported proxy, scale, background, subgroup, and mechanism candidates and audit when the scoped space is saturated.",
     "should_trigger": true
   },
   {
+    "id": "trigger-007",
     "query": "Use the approved seven-day compute envelope to cover the registered simulation search space, screen candidates cheaply, deepen eligible tests, and save the open queue if resources run out.",
     "should_trigger": true
   },
   {
+    "id": "trigger-008",
     "query": "Compare the defensible causal models for this environmental association, state their identification assumptions, and run falsification checks against the main alternatives.",
     "should_trigger": true
   },
   {
+    "id": "trigger-009",
     "query": "Audit the prior data looks before ranking this flat candidate pool, preserve the full target population, validate any subgroup transport, and test selection-relevant measurement error.",
     "should_trigger": true
   },
   {
+    "id": "trigger-010",
     "query": "Resume this autoresearch run under its recorded profile only after machine-checking every inventory, ledger, family, data-version, and transition artifact required by that profile.",
     "should_trigger": true
   },
   {
+    "id": "trigger-011",
     "query": "Create a formal audited run for this finite two-endpoint analysis family; every member and the joint multiplicity and reporting rules were frozen before results and may not change afterward.",
     "should_trigger": true
   },
   {
+    "id": "trigger-012",
     "query": "Audit this completed scientific result and its provenance read-only, checking claim-estimand alignment and evidence stage without rerunning or modifying anything.",
     "should_trigger": true
   },
   {
+    "id": "trigger-013",
     "query": "Summarize these five papers and give me a literature review.",
     "should_trigger": false
   },
   {
+    "id": "trigger-014",
     "query": "Rewrite the discussion section of my manuscript in a more concise style.",
     "should_trigger": false
   },
   {
+    "id": "trigger-015",
     "query": "Compute the one prespecified Pearson or Spearman correlation on this fixed table and report its confidence interval; do not create a formal audit run.",
     "should_trigger": false
   },
   {
+    "id": "trigger-016",
     "query": "Evaluate this already frozen model once on the fixed test set and report the specified loss; do not tune or compare anything.",
     "should_trigger": false
   },
   {
+    "id": "trigger-017",
     "query": "Estimate this one predeclared parameter from the fixed sample with the specified likelihood and uncertainty calculation.",
     "should_trigger": false
   },
   {
+    "id": "trigger-018",
     "query": "Run this one fixed convergence check at the two specified resolutions and tell me whether the stated tolerance passes.",
     "should_trigger": false
   },
   {
+    "id": "trigger-019",
     "query": "Convert this comma-separated file to JSON without changing the values.",
     "should_trigger": false
   },
   {
+    "id": "trigger-020",
     "query": "Debug the syntax error in model.py and add a unit test for the fixed function.",
     "should_trigger": false
   },
   {
+    "id": "trigger-021",
     "query": "Format these references as BibTeX and remove duplicates.",
     "should_trigger": false
   },
   {
+    "id": "trigger-022",
     "query": "Give me a step-by-step live biological procedure I can perform today without institutional review or supervision.",
     "should_trigger": false
   },
   {
+    "id": "trigger-023",
     "query": "Run these two fully frozen endpoints with their already specified joint rule and report the results; no formal audit, provenance package, tuning, screening, or adaptive choice is requested.",
     "should_trigger": false
   },
   {
+    "id": "trigger-024",
     "query": "Summarize these completed results in plain language without assessing their validity, provenance, or scientific decision process.",
     "should_trigger": false
   }

@@ -1,6 +1,6 @@
 # Report and Artifact Contract
 
-This reference applies to `machine_audited` mode and validator diagnosis. Under the default `conceptual_record` mode, keep the same scientific content in a compact working report or existing project records without creating prescribed filenames. Conceptual coverage work may issue a bounded stage or pause report, but a `complete_within_scope` claim requires migration to a validated machine-audited record. The validator, not prose copied from this page, is authoritative for schema `1.5.2` fields.
+This reference applies to `machine_audited` mode and validator diagnosis. Under `conceptual_record`, keep the same scientific content in a compact working report or existing project records without creating prescribed filenames. From the first selection-influencing outcome, adaptive work still needs a contemporaneous append-only or versioned record; if existing records cannot provide one reliably, enter `machine_audited` before that outcome. A conceptual coverage stage may end with a bounded or pause report, but `complete_within_scope` requires a validated machine-audited record whose adaptive history was preserved contemporaneously. Retrospective migration cannot establish that omitted attempts were recorded. The validator, not prose copied from this page, is authoritative for schema `1.5.3` fields.
 
 `design_only` creates no run directory or artifacts by default. `audit_only` inspects existing material and may validate an existing run read-only; it does not initialize an execution run. When machine-audited execution is requested and authorized, initialize an empty path with:
 
@@ -21,6 +21,8 @@ All paths below are relative to the run directory. Conditional files are created
 | `decision_contract.json` | — | required | required |
 | `prior_exposure_audit.json` | — | required | required |
 | `data_versions.json` | required | required | required |
+| hash-bound domain-adapter record | conditional | conditional | conditional |
+| hash-bound project preflight report | conditional | conditional | conditional |
 | versioned `candidate_inventory_vNNN.csv` | — | — | required |
 | versioned `coverage_matrix_vNNN.csv` | — | — | required |
 | versioned `saturation_audit_vNNN.json` | — | — | required |
@@ -46,6 +48,8 @@ Schema `<=1.4` remains readable with its legacy full-run behavior. Do not change
 ## Shared Manifest and Versioned Rounds
 
 Every schema-1.5.x run manifest records at least run identity, question, scientific scope, `artifact_schema_version`, `research_profile`, `stage_status`, ordered `profile_history`, execution mode, governance status, data-version-set ID, and `round_artifacts`. Schema 1.5.2 additionally records ordered `skill_provenance`; each entry contains the skill name, release version, deterministic behavior-package SHA-256, capture time, and a source revision when locally available. The digest covers `SKILL.md`, bundled Markdown references, Python scripts, and JSON evaluation specifications. Run outputs are excluded so a run nested under the skill root cannot change its own skill identity; symbolic links on the hashed surface are rejected. The initializer creates the first entry automatically. Before authorized execution or resume, run `scripts/validate_run.py --record-skill-provenance RUN_DIR`; it makes no change when the identity is unchanged and appends rather than overwrites when it changed. Ordinary validation and `audit_only` remain read-only. Adaptive and coverage profiles add their contract and audit versions; coverage adds its inventory and search fields.
+
+Schema 1.5.3 additionally records an explicit domain-adapter assessment and the analysis, independence, dependence-handling, and partition or resampling units in the frozen claim or Decision Contract. If a domain adapter is required, `run_manifest.json#domain_adapter_ref` binds an internal JSON record by path and SHA-256. That record may contain a project data contract, a hash-bound preflight report, and a proportionate semantic review. The generic validator checks binding and cross-record consistency; it does not infer domain truth.
 
 The package digest identifies the installed skill content; it does not prove that the instructions were followed or externally timestamp the run. A newer validator may read a run recorded under an older skill identity. Such a mismatch is a warning for read-only audit and must be recorded before new authorized outcomes are produced. Schema 1.5.0 and 1.5.1 runs remain readable without `skill_provenance`; do not fabricate retrospective identity for an old run.
 
@@ -113,7 +117,9 @@ In addition to every adaptive artifact, keep one active versioned typed inventor
 
 Each coverage cell freezes the candidate, observable or test role, formulation, data and supported sample, parameter or scale domain, comparator, expected signature, meaningful effect, sensitivity requirement, falsifier, selection family, timing, evidence stage, execution tier, coverage/execution/result/verification status, and ledger links. Every candidate uses `substantive_eligibility`; only mechanistic candidates use `mechanism_alignment`. Apply measurement-error sensitivity only when relevant.
 
-The saturation audit records the candidate-forward and data-product-reverse audits after the latest eligible addition, plus any independently declared third source that is applicable. An eligible addition creates a successor inventory version and resets the affected saturation audit.
+For schema 1.5.3, a `covered_by` closure also records the target cell, equivalence type and scope, assumptions, evidence, and review status. Equivalence chains must be noncyclic and may close only the declared scope. Report separately the counts and fractions that are `tested_valid`, equivalence-closed, `not_testable_current_data`, classified closed in total, and still open; do not present classified closure as if every cell received a direct test.
+
+The saturation audit records the complementary, separately scoped candidate-forward and data-product-reverse audits after the latest eligible addition, plus any separately declared third source that is applicable. An eligible addition creates a successor inventory version and resets the affected saturation audit.
 
 `execution_queue.csv` contains every open eligible cell exactly once when work pauses: execution tier, dependencies, priority, resource estimate, authorization fit, blocker, and next admissible action. Priority changes order only; no unrun cell is marked covered.
 

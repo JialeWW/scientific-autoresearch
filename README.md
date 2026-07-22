@@ -6,7 +6,7 @@
 
 `scientific-autoresearch` is a client-neutral-by-design [Agent Skill](https://agentskills.io) for auditable scientific investigation. It scales from prospective design and read-only audit through frozen analyses, adaptive candidate search, and coverage-based search over a finite, data-supported space. It matches procedural overhead to outcome adaptivity and requires safeguards for outcome-adaptive inference.
 
-Current version: **0.2.6**.
+Current version: **0.2.7**.
 
 The `metadata.version` value in `scientific-autoresearch/SKILL.md` is the release-version source of truth. Validator, artifact-schema, report-schema, and citation-format versions are independent compatibility versions.
 
@@ -28,13 +28,13 @@ Use the skill when the user requests scientific audit or provenance, when outcom
 
 Select the profile according to the requested action and outcome adaptivity. Use `design_only` for prospective design, `audit_only` for read-only inspection of completed work, `fixed_test` for a frozen single analysis or finite frozen family, `adaptive_search` when outcomes can change candidate selection, and `coverage_search` for systematic coverage of a versioned data-supported space. Scope and authorization gates govern sensitive, regulated, costly, prospective, physical, or external-system actions.
 
-## Version 0.2.6 Highlights
+## Version 0.2.7 Highlights
 
-- Clarifies that structural consistency checks, behavioral specifications, numerical reruns, and empirical method validation support different claims.
-- Adds conditional method-validation requirements without changing ordinary scientific profiles.
-- Records the exact skill release and package digest automatically in newly initialized machine-audited runs.
-- Adds a repository-only benchmark manifest and explicit `not_evaluated` status without imposing benchmark work on normal skill use.
-- Retains the risk-proportionate profiles and all adaptive-path and coverage-closure safeguards from 0.2.5.
+- Requires a contemporaneous append-only or versioned record from the first selection-influencing outcome, while keeping the structured artifact tree proportional to handoff, consequence, and record-loss risk.
+- Freezes analysis and independence units, dependence handling, and partition or resampling units before decision-bearing results.
+- Adds an optional generic domain-adapter and project data-contract interface for identifier, join, count, tolerance, repeated-observation, and partition checks that can change scientific support.
+- Strengthens saturation provenance, auditable equivalence closure, and basis-specific coverage reporting without imposing a universal candidate or round limit.
+- Makes benchmark evidence hash-bound and case-registry-scored, while retaining an explicit `not_evaluated` release status until actual runs exist.
 
 ## Choose the Smallest Valid Profile
 
@@ -46,7 +46,7 @@ Select the profile according to the requested action and outcome adaptivity. Use
 
 The number of tests alone does not determine the profile. A fully frozen comparison remains `fixed_test`; an inspected outcome that spawns a new threshold, model, subgroup, or formulation requires `adaptive_search`. A search becomes `coverage_search` only when it attempts systematic scoped coverage or makes a scientific-completion claim.
 
-Record mode is separate. `conceptual_record` is the default and keeps the required content in the working report or existing project records. `machine_audited` creates the structured run directory only when requested, when resuming an existing structured run, when a formal machine handoff requires it, or before `coverage_search` claims `complete_within_scope`.
+Record mode is separate. `conceptual_record` is the default for design, audit, and bounded frozen work. Outcome-adaptive execution requires a contemporaneous append-only or versioned record from the first selection-influencing outcome; an existing reliable ledger may satisfy that requirement without prescribed filenames. Use `machine_audited` when the user requests structured audit, an existing run already uses it, reliable adaptive recording is otherwise unavailable, or handoff, resume, consequence, or record-loss risk warrants early escalation. `coverage_search` requires a validated machine-audited record before claiming `complete_within_scope`.
 
 Conditional gates remain strict when applicable. Require transport analysis only when evidence is carried across materially different target or reporting populations; measurement-error sensitivity only when uncertainty can affect support, eligibility, selection, ranking, or the conclusion; and a screening-to-decision mapping only when a selection-influencing screen and the final evidence use different statistics, estimands, or scales.
 
@@ -63,7 +63,7 @@ The workflow figure at the top depicts `coverage_search`, the most expansive pro
 
 A `stage_report` may validly close the work authorized for the current checkpoint: it states what ran, what was learned, which safeguards applied, and what remains open, while leaving candidate-space saturation and coverage unresolved. A `fixed_test` can finish when its frozen single analysis or family and joint rule are complete; an `adaptive_search` can report its current decision state while leaving exhaustive coverage open. Scientific completion (`complete_within_scope`) is reserved for `coverage_search` and requires a machine-audited record, inventory saturation, closure of every eligible coverage cell, an audited complete selection ledger, application of the frozen Decision Contract with a terminal decision, an adequate prior-exposure audit for the claim, and a passing consistency check.
 
-Inventory saturation requires both a candidate-forward audit and a data-product-reverse audit to produce no unresolved additions. A third independent audit source—such as literature, theory, expert knowledge, or known failure modes—is added when the scientific question makes it informative. Literature review is therefore conditional, not mandatory for every run.
+Inventory saturation requires both a candidate-forward audit and a data-product-reverse audit to produce no unresolved additions. Treat them as complementary, separately scoped audits and disclose shared context rather than calling them statistically independent. Add a third declared lens—such as literature, theory, expert knowledge, or known failure modes—when the scientific question makes it informative. Literature review is therefore conditional, not mandatory for every run.
 
 ## Repository Layout
 
@@ -84,8 +84,11 @@ Inventory saturation requires both a candidate-forward audit and a data-product-
 │   ├── README.md
 │   ├── manifest.json
 │   ├── score.py
+│   ├── tests/
+│   │   └── test_score.py
 │   └── results/
-│       └── v0.2.6.json
+│       ├── v0.2.6.json
+│       └── v0.2.7.json
 └── scientific-autoresearch/
     ├── SKILL.md
     ├── scripts/
@@ -96,6 +99,7 @@ Inventory saturation requires both a candidate-forward audit and a data-product-
     └── references/
         ├── coverage-search.md
         ├── decision-selection.md
+        ├── domain-adapter.md
         ├── governance-safety.md
         ├── report-contract.md
         ├── statistical-discipline.md
@@ -172,7 +176,7 @@ pause and save every unrun coverage cell in the open queue.
 
 Structured artifacts are created only in `machine_audited` mode and remain profile-proportionate. `fixed_test` records the frozen claim or finite family, versions, joint rule, results, uncertainty, falsifier, reproduction information, and consistency status. `adaptive_search` adds the bounded prior-exposure audit, selection families, candidate registry, and complete selection ledger. `coverage_search` uses the full structure below:
 
-Schema 1.5.2 initializes `run_manifest.json` with an automatic `skill_provenance` history containing the skill name, release, deterministic behavior-package digest, capture time, and a repository revision when locally available. The digest covers `SKILL.md`, the bundled references, scripts, and evaluation specifications; it excludes run outputs and rejects symbolic links on that surface. Before authorized execution or resume, the idempotent provenance command appends a record only when the installed skill identity changed. It does not make a scientific result confirmatory and does not prove that the skill was followed.
+Schema 1.5.2 introduced automatic `skill_provenance` in `run_manifest.json`, containing the skill name, release, deterministic behavior-package digest, capture time, and a repository revision when locally available. Schema 1.5.3 adds frozen unit and dependence fields, an explicit domain-adapter assessment, optional hash-bound adapter and preflight records, auditable equivalence closure, and a basis-specific coverage summary. The package digest covers `SKILL.md`, bundled references, scripts, and evaluation specifications; it excludes run outputs and rejects symbolic links on that surface. Before authorized execution or resume, the idempotent provenance command appends a record only when the installed skill identity changed. It does not make a scientific result confirmatory and does not prove that the skill was followed.
 
 ```text
 runs/<run_id>/
@@ -250,7 +254,7 @@ These checks cannot detect choices that were never recorded and do not establish
 
 The bundled behavioral cases specify expected routing and safeguard behavior across all five profiles. They are evaluation specifications, not scored benchmark results. The trigger-query file contains positive and adjacent-task negative examples for use with an external evaluation harness; the cases themselves must not be described as passed or validated.
 
-The repository does not currently report empirical error control, detection power, component effects, cross-client or cross-model performance, or run-to-run reproducibility. The repository-level `benchmarks/` manifest separates these evidence classes and records the current release as `not_evaluated` until scored outputs exist. Behavioral benchmarks should run in isolated contexts and compare v0.2.6 with the previous version or a no-skill baseline; deterministic package checks may remain in continuous integration.
+The repository does not currently report empirical error control, detection power, component effects, cross-client or cross-model performance, or run-to-run reproducibility. The repository-level `benchmarks/` manifest separates these evidence classes and records the current release as `not_evaluated` until scored outputs exist. Behavioral benchmarks should run in isolated contexts and compare v0.2.7 with the previous version or a no-skill baseline; deterministic package checks may remain in continuous integration.
 
 ## Scientific Interpretation Standard
 

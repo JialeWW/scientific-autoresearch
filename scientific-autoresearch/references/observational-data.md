@@ -20,6 +20,8 @@ Treat availability, support, exposure, footprint, quality, and missingness class
 
 If measurement uncertainty can change support, matching, subgroup membership, thresholds, eligibility, or candidate ranking, propagate or perturb it through the relevant selection path before that quantity can control promotion. A recovery study, measurement model, resampling scheme, calibration analysis, or another domain-appropriate sensitivity design may satisfy the gate. Until it passes, keep quality-defined strata diagnostic or support limited. This conditional gate is method- and execution-context agnostic.
 
+When aliases, multi-table joins, repeated rows, numerical tolerances, expected counts, or grouped partitions determine the supported sample, use `domain-adapter.md` to freeze a project data-contract preflight. Keep related independent units together across partitions and resample or permute at that level unless their dependence is modeled explicitly.
+
 ## 2. Match the Observable to the Mechanism
 
 - For nearest-neighbor or triggering mechanisms, test proximity, minimum distance, or presence within a predeclared scale.

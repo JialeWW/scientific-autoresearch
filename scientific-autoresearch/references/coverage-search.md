@@ -42,14 +42,16 @@ Freeze the inventory-audit protocol before outcomes. Use complementary lenses ra
 - measurement, calibration, selection, support, confounding, leakage, and numerical-artifact alternatives;
 - residual and failure-mode review after each closed round, with any additions marked adaptive.
 
-The saturation audit always has two independent directions:
+The saturation audit always has two complementary, separately scoped directions:
 
 1. candidate-forward: start from the declared candidate classes and enumerate distinct roles and predictions;
 2. data-product-reverse: start from every authorized data product and ask which pathways, alternatives, and artifacts it can distinguish.
 
 For a mechanistic search, candidate-forward is specifically a mechanism-forward audit; for other declared classes, use the corresponding model-, feature-, simulation-, or design-forward audit rather than forcing mechanistic language.
 
-At Round 0, decide whether the problem warrants a third independent source, such as a targeted literature audit, formal theory or model enumeration, structured expert elicitation, or a failure-mode catalogue. If declared applicable, freeze its scope and completion rule and require it for saturation. Literature review is conditional: use it when premise, novelty, or inventory coverage depends on literature, not as a ritual for every run.
+These directions are different enumeration procedures, not automatically statistically independent reviews. Freeze their starting bases and scopes separately, and disclose shared executor, context, prior-inventory visibility, or source material. A high-consequence run may add separated contexts or reviewers, but different people or models are not a universal minimum.
+
+At Round 0, decide whether the problem warrants a third separately declared source, such as a targeted literature audit, formal theory or model enumeration, structured expert elicitation, or a failure-mode catalogue. If declared applicable, freeze its scope and completion rule and require it for saturation. Literature review is conditional: use it when premise, novelty, or inventory coverage depends on literature, not as a ritual for every run.
 
 Track mechanisms separately from measurement, selection, quality, model, feature, simulation, design, and method candidates. Merge semantic duplicates within the appropriate type and record the surviving ID and justification.
 
@@ -120,11 +122,11 @@ Set `inventory_saturated=true` only when all conditions hold:
 
 1. the question, scope, authorized data products, support rules, and eligibility rules have remained unchanged;
 2. after the most recent eligible addition, one complete candidate-forward audit and one complete data-product-reverse audit have each covered every in-scope regime and data product;
-3. every additional independent source declared applicable at Round 0 has completed its frozen audit;
+3. every additional source or lens declared applicable at the audit checkpoint has completed its frozen audit;
 4. all required audits produced zero new eligible, nonredundant, data-supported candidates;
 5. every proposed addition, duplicate, exclusion, and needs-data decision is recorded with a reason.
 
-The required audits must be distinct, prespecified inventory passes; ordinary execution rounds that happen not to suggest a new candidate do not count. Record each source, reviewer or procedure, search scope, date, inventory version, additions, duplicate decisions, and unresolved gaps.
+The required audits must be distinct, prespecified inventory passes; ordinary execution rounds that happen not to suggest a new candidate do not count. Record each audit ID, source, starting basis, procedure, scope, prior-inventory visibility, shared-context disclosure, date, inventory version, additions, duplicate decisions, and unresolved gaps. Do not call the audits independent unless their actual separation supports that description.
 
 A batch containing one or more new eligible candidates increments `inventory_version`, expands the coverage denominator, and resets the saturation sequence. Carry forward still-valid closed cells with explicit predecessor links; reopen only cells or families whose scientific meaning, support, formulation, or inference changed. New data products or a changed scientific question require a new inventory version and a recorded affected-scope assessment.
 
@@ -133,19 +135,22 @@ A batch containing one or more new eligible candidates increments `inventory_ver
 A coverage cell closes only as:
 
 - `tested_valid`: a valid test was completed and its result status recorded;
-- `covered_by:<cell_id>`: another cell provides equivalent coverage, with an explicit nonredundancy argument;
+- `covered_by:<cell_id>`: another cell provides equivalent coverage under a recorded equivalence type, scope, assumptions, supporting evidence, and passing review; equivalence chains must terminate at a non-equivalence closure and may not cycle;
 - `not_testable_current_data`: support, sensitivity, or identifiability was assessed and current data cannot test it.
 
 `eligible_untested`, `scheduled`, `in_progress`, `invalid_open`, `resource_blocked`, and `governance_blocked` are open. An invalid test stays open whenever a feasible valid replacement exists.
 
-Compute:
+Report closure by basis rather than one ambiguous coverage percentage:
 
 ```text
-coverage_fraction =
-closed eligible cells / all eligible cells in the same inventory version
+tested_valid_fraction
+equivalence_closed_fraction
+not_testable_fraction
+classified_closed_fraction
+open_fraction
 ```
 
-Declare `coverage_complete=true` only when every eligible cell in that version is closed and the ledger and family-level inference are audited.
+Use the same eligible-cell denominator and active inventory version for every fraction. `classified_closed_fraction` is the legacy overall closure concept; it is not empirical testing coverage. Declare `coverage_complete=true` only when every eligible cell in that version is closed and the ledger and family-level inference are audited.
 
 Scientific completion requires a validated `machine_audited` record and:
 
@@ -161,7 +166,7 @@ AND consistency_validator_passed
 
 Resource, time, cost, authorization, or user-limit exhaustion does not close cells. Use `resource_limited_pause`, `governance_blocked`, or `user_limited_stop`, report every open cell, and preserve an exact resume point.
 
-A `conceptual_record` may support design, execution, and bounded stage or pause reporting. Before claiming `complete_within_scope`, migrate the complete history into the machine-audited schema and pass its consistency checks; do not recreate only the favorable terminal state.
+For adaptive bounded work under `conceptual_record`, an existing append-only or versioned record must capture every selection-influencing event contemporaneously. Otherwise enter `machine_audited` before the first adaptive outcome. Before claiming `complete_within_scope`, migrate only preserved complete history into the machine-audited schema and pass its consistency checks; retrospective reconstruction cannot supply omitted attempts or create pre-result status.
 
 ## 7. Schedule Without Shrinking Coverage
 

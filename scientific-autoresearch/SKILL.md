@@ -3,7 +3,7 @@ name: scientific-autoresearch
 description: "Use this skill when scientific work requires formal audit or provenance, when outcome-informed choices generate, modify, screen, compare, rank, or promote data-supported candidates, or when systematic coverage of a finite data-supported candidate space is requested. It provides proportionate profiles for research design, read-only audit, frozen analyses, adaptive search, and coverage search, with safeguards requiring inference to account for the actual selection path."
 license: MIT
 metadata:
-  version: "0.2.6"
+  version: "0.2.7"
 ---
 
 # Scientific Autoresearch
@@ -24,8 +24,11 @@ The number of frozen analyses does not by itself create adaptivity. Keep a presp
 
 Choose record mode separately from research profile:
 
-- `conceptual_record` is the default. Preserve required decisions and provenance in the working report or existing project records; prescribed JSON and CSV filenames are not required.
-- `machine_audited` applies when the user requests structured machine audit, an existing run already uses the schema, a formal handoff or resume requires it, or `coverage_search` is ready to claim `complete_within_scope`. Initialize an empty run path with `scripts/validate_run.py --init RUN_DIR --profile PROFILE`, complete only generated profile artifacts, and validate before a machine-audited bounded, pause, or completion report.
+- `conceptual_record` is the default for design, read-only audit, and bounded frozen work. Preserve required decisions and provenance in the working report or existing project records; prescribed JSON and CSV filenames are not required.
+- Outcome-adaptive execution requires a contemporaneous append-only or versioned record from the first selection-influencing outcome. An existing project ledger may satisfy this under `conceptual_record`; otherwise use `machine_audited` before that outcome. Retrospective migration may encode preserved history, but it cannot reconstruct omitted attempts or restore pre-result status.
+- `machine_audited` also applies when the user requests structured machine audit, an existing run already uses the schema, or a formal handoff, resume, or `complete_within_scope` claim requires it. Initialize an empty run path with `scripts/validate_run.py --init RUN_DIR --profile PROFILE`, complete only generated profile artifacts, and validate before a machine-audited bounded, pause, or completion report.
+
+Escalate to `machine_audited` or an existing hash-bound equivalent early when a formal handoff or resume is anticipated, multiple autonomous outcome-dependent iterations are authorized, sealed evidence will be opened, or the decision has substantial scientific, financial, regulatory, safety, or operational consequence. Base escalation on consequence and record-loss risk, not on a publication label alone.
 
 `audit_only` may validate an existing machine-audited run read-only, but it does not initialize or upgrade an execution run unless new analysis is separately authorized.
 
@@ -91,7 +94,7 @@ Complete the `adaptive_search` requirements, then:
 
 1. Build and version a typed candidate inventory. Admit a new candidate only when it has a distinct substantive role, a distinct data-testable signature, and a possible effect on the frozen decision; otherwise classify it as a formulation or duplicate.
 2. Map eligible entries into finite cells through `candidate -> observable or test role -> formulation`. Let one cell represent a frozen finite parameter domain or integration rule when scientifically coherent; do not split trivial parameter values into separate scientific candidates or create an unrelated Cartesian ranking pool.
-3. Generate inventory through candidate-forward and data-product-reverse audits. Add an independent third lens such as theory, literature, expert knowledge, or failure modes only when informative for the question.
+3. Generate inventory through separately scoped candidate-forward and data-product-reverse audits. Add a complementary third lens such as theory, literature, expert knowledge, or failure modes only when informative for the question; do not call the lenses independent unless their information and generation paths justify that claim.
 4. Separate scientific coverage from scheduling. Permit uniform low-cost screening before deeper tests, but let priority change only execution order. Keep every unrun eligible cell open and preserve the queue when resources end.
 5. Batch additions found in one audit checkpoint into a successor inventory version. Reopen only affected families and cells, retain valid closure of unaffected cells, then repeat the required saturation audits after the latest batch. Do not impose a universal round or candidate cap.
 
@@ -105,12 +108,15 @@ Record one reason when a gate is not applicable; do not manufacture repeated pla
 - Apply measurement-error sensitivity only when uncertainty could change support, matching, thresholds, subgroup membership, eligibility, ranking, or interpretation. Complete the frozen perturbation, propagation, recovery, or equivalent check before using that variable for selection or promotion.
 - Apply transportability requirements only when evidence is used beyond its analysis or selection population, or when target, analysis, selection, and reporting populations differ materially. Keep unsupported populations parallel rather than silently generalizing.
 - Apply screening-to-decision mapping only when screening and final evidence differ in statistic, estimand, scale, or role. Freeze the mapping, validation or calibration, and discordance rule. A rank association does not establish raw-scale prediction.
+- Apply a bounded, reproducible literature audit before promoting a premise or novelty claim that depends on prior work. Preserve the search boundary and conflicting or null evidence; absence from a narrow search does not establish novelty.
 - Apply a prespecified joint or multiplicity rule when a frozen finite family informs one decision. Apply complete-selection-path inference when outcome-informed generation, modification, screening, ranking, or repeated looks can influence a decision. Choose a domain-appropriate method; do not force unrelated families into one universal null.
 - Apply a frozen common seed or realization design when stochastic variation could change ranking or interpretation. Never select favorable seeds, checkpoints, or realizations.
 
 ## 6. Execute, Falsify, and Preserve
 
-Freeze inputs, code or procedure state, parameters, exclusions, sample, statistic or model, seed policy, decision rule, and falsifier before each decision-bearing result. Verify that the available data can test the claim. Distinguish unavailable, unsupported, missing, censored, ineligible, invalid, and true-zero cases when relevant.
+Freeze inputs, code or procedure state, parameters, exclusions, sample, statistic or model, seed policy, decision rule, and falsifier before each decision-bearing result. Also freeze the scientifically independent unit, dependence handling, and any partition or resampling unit. Keep related observations together across partitions and resample or permute at that level unless dependence is modeled explicitly.
+
+Verify that the available data can test the claim. When identifiers, aliases, joins, repeated rows, numerical reconciliation, expected counts, or group-wise splits can change the supported sample or independence structure, complete a frozen data-integrity preflight before affected outcomes. Unresolved identity, cardinality, tolerance, or leakage failures block that analysis; use a project adapter when domain semantics cannot be inferred generically. Distinguish unavailable, unsupported, missing, censored, ineligible, invalid, and true-zero cases when relevant.
 
 Estimate effects and relevant uncertainty, run the frozen check capable of weakening the claim, and preserve diagnostics sufficient to reconstruct reported results. A prespecified check does not create adaptivity; an outcome-motivated new check does. Use only the applicable references listed in the Reference Router.
 
@@ -157,6 +163,7 @@ Apply the frozen Decision Contract. Report a tie or inconclusive result when evi
 - For `machine_audited` implementation at any executed profile: use `scripts/validate_run.py`; read `references/report-contract.md` only when the initialized schema or an error needs explanation.
 - For a full `coverage_search` artifact audit or validator diagnosis: additionally read `references/status-schema.md` and `references/round-gate-checklist.md`.
 - For sensitive, regulated, costly, prospective, physical, or external-system work: read `references/governance-safety.md`.
+- When independent units, joins, identifiers, tolerances, admissible estimands, or other domain semantics require a project-specific contract or review: read `references/domain-adapter.md`.
 - When the required falsifier or robustness check is unclear: read `references/falsification-toolkit.md`.
 - For validation or benchmarking of a method, estimator, pipeline, workflow, or this skill: read `references/claim-types.md`; also read `references/ml-simulation.md` when the benchmark is computational.
 - When the scientific claim type or its minimum evidentiary requirements are unclear: read `references/claim-types.md`.

@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.7 - 2026-07-22
+
+- Required contemporaneous append-only or versioned recording from the first selection-influencing outcome while preserving risk-proportionate use of the structured machine-audited artifact tree.
+- Added frozen analysis and independence units, dependence handling, and partition or resampling units to decision-bearing contracts.
+- Added an optional generic domain-adapter and project data-contract interface for scientifically material identity, join, tolerance, count, repeated-observation, measurement-support, and partition checks.
+- Strengthened saturation provenance, noncyclic equivalence closure, and separate reporting of directly tested, equivalence-closed, not-testable, classified-closed, and open coverage.
+- Upgraded the artifact schema and validator to 1.5.3 and the additive consistency-report schema to 1.2 while retaining older-schema compatibility.
+- Upgraded the repository benchmark protocol and scorer to schema 2.0 with frozen case registries, stable assertion IDs, evidence hashes, complete-matrix checks, case-macro behavioral aggregation, balanced trigger accuracy, provenance-separated summaries, and regression tests. The release remains explicitly `not_evaluated` until actual benchmark executions exist.
+
 ## 0.2.6 - 2026-07-22
 
 - Clarified the evidence boundaries among package consistency checks, behavioral evaluation specifications, same-condition reruns, empirical operating-characteristic benchmarks, and independent scientific verification.
@@ -49,7 +58,7 @@ All notable changes to this project are documented here.
 - Added a Prior-exposure Audit and made confirmatory status persistent across overlapping data, sample changes, code changes, and skill upgrades.
 - Added selection-family comparability gates and parallel reporting for incomparable or support-limited candidates.
 - Required inference to cover the complete candidate-generation, modification, screening, and promotion path while allowing sealed holdouts, end-to-end null procedures, selective or sequential inference, hierarchical multiplicity control, and Bayesian model comparison or averaging.
-- Strengthened inventory saturation with mechanism-forward and data-product-reverse audits plus a conditional independent audit source.
+- Strengthened inventory saturation with mechanism-forward and data-product-reverse audits plus a conditional complementary audit source.
 - Separated scientific coverage from compute scheduling, added low-cost screening followed by deeper testing, and preserved unrun cells in a resource-limited open queue.
 - Added machine consistency checks across inventories, coverage matrices, ledgers, selection families, candidate decisions, data versions, decision artifacts, and status transitions.
 - Preserved conservative evidence labels, complete search ledgers, stochastic-seed discipline, and weak or failed results.

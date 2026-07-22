@@ -35,13 +35,14 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 
-VALIDATOR_VERSION = "1.5.2"
-ARTIFACT_SCHEMA_VERSION = "1.5.2"
+VALIDATOR_VERSION = "1.5.3"
+ARTIFACT_SCHEMA_VERSION = "1.5.3"
 PROFILE_SCHEMA_VERSION = "1.5.0"
 FIXED_FAMILY_SCHEMA_VERSION = "1.5.1"
 SKILL_PROVENANCE_SCHEMA_VERSION = "1.5.2"
+DOMAIN_ADAPTER_SCHEMA_VERSION = "1.5.3"
 STRICT_BASELINE_SCHEMA_VERSION = "1.4.0"
-REPORT_SCHEMA_VERSION = "1.1"
+REPORT_SCHEMA_VERSION = "1.2"
 REQUIRED_SENTINEL = "__REQUIRED__"
 
 RESEARCH_PROFILES = {"fixed_test", "adaptive_search", "coverage_search"}
@@ -235,6 +236,51 @@ EVIDENCE_SCALE_MAPPING_FIELDS = {
     "validation_or_calibration_rule",
     "discordance_rule",
 }
+UNIT_CONTRACT_FIELDS = {
+    "analysis_unit",
+    "independence_unit",
+    "dependence_handling",
+    "partition_or_resampling_unit",
+}
+DOMAIN_ADAPTER_REQUIRED_FIELDS = {
+    "adapter_name",
+    "adapter_version",
+    "applicable_scope",
+    "analysis_unit",
+    "independence_unit",
+    "dependence_handling",
+    "partition_or_resampling_unit",
+    "admissible_estimands",
+    "domain_specific_gates",
+    "validation_procedures",
+    "falsification_requirements",
+    "completion_additions",
+    "required_human_review",
+    "project_data_contract",
+    "semantic_review",
+}
+DATA_CONTRACT_CHECK_TYPES = {
+    "identifier_integrity",
+    "alias_resolution",
+    "join_cardinality",
+    "numeric_consistency",
+    "expected_count",
+    "independent_unit_count",
+    "partition_group_leakage",
+    "measurement_support",
+    "other",
+}
+PREFLIGHT_STATUSES = {"not_required", "planned", "passed", "failed", "inconclusive"}
+PREFLIGHT_CHECK_STATUSES = {"passed", "failed", "inconclusive", "not_run"}
+SEMANTIC_REVIEW_STATUSES = {
+    "not_required",
+    "pending",
+    "passed",
+    "passed_with_reservations",
+    "failed",
+    "inconclusive",
+}
+DOMAIN_ADAPTER_ASSESSMENTS = {"not_assessed", "required", "not_required"}
 
 STATUS_VALUES = {
     "governance_status": GOVERNANCE_STATUSES,
@@ -647,6 +693,20 @@ GENERIC_COVERAGE_REQUIRED_COLUMNS = (
         "measurement_error_sensitivity",
     }
 )
+COVERAGE_EQUIVALENCE_COLUMNS = {
+    "covered_by_cell_id",
+    "equivalence_type",
+    "equivalence_scope",
+    "equivalence_assumptions",
+    "equivalence_evidence",
+    "equivalence_review_status",
+}
+EQUIVALENCE_REVIEW_STATUSES = {
+    "passed",
+    "passed_with_reservations",
+    "failed",
+    "inconclusive",
+}
 STRICT_DECISION_CONTRACT_FIELDS = {
     "target_population",
     "analysis_population",
@@ -898,6 +958,10 @@ def _bool(value: Any) -> bool | None:
         if normalized in {"false", "no", "0"}:
             return False
     return None
+
+
+def _ratio(numerator: int, denominator: int) -> float | None:
+    return numerator / denominator if denominator else None
 
 
 def _list(value: Any) -> list[Any]:
@@ -1230,11 +1294,13 @@ class RunValidator:
         self.profile_schema = False
         self.schema_1_5_1 = False
         self.skill_provenance_schema = False
+        self.domain_adapter_schema = False
         self.research_profile = ""
         self.generic_inventory_schema = False
         self.active_version = ""
         self.active_inventory: list[dict[str, str]] = []
         self.active_coverage: list[dict[str, str]] = []
+        self.active_coverage_location = ""
         self.all_inventory: list[dict[str, str]] = []
         self.all_coverage: list[dict[str, str]] = []
         self.ledger: list[dict[str, Any]] = []
@@ -1243,6 +1309,7 @@ class RunValidator:
         self.all_family_records: list[dict[str, Any]] = []
         self.family_registry: dict[str, Any] = {}
         self.decision_contract: dict[str, Any] = {}
+        self.fixed_claim: dict[str, Any] = {}
         self.prior_exposure: dict[str, Any] = {}
         self.prior_audit_status = ""
         self.prior_exposure_status = ""
@@ -1250,6 +1317,8 @@ class RunValidator:
         self.data_versions: list[dict[str, Any]] = []
         self.saturation_audit: dict[str, Any] = {}
         self.candidate_registry: list[dict[str, str]] = []
+        self.domain_adapter: dict[str, Any] = {}
+        self.coverage_summary: dict[str, Any] = {}
 
     def error(self, code: str, location: str, message: str) -> None:
         self.errors.append(Issue(code, location, message))
@@ -1483,6 +1552,7 @@ class RunValidator:
             self._validate_inventory()
             self._validate_coverage()
             self._validate_data_versions()
+            self._validate_domain_adapter()
             self._validate_ledger()
             self._validate_selection_families()
             self._validate_decision_contract()
@@ -1533,6 +1603,14 @@ class RunValidator:
             and isinstance(provenance[-1], Mapping)
             else {}
         )
+        adapter_ref = self.manifest.get("domain_adapter_ref")
+        adapter_ref = adapter_ref if isinstance(adapter_ref, Mapping) else {}
+        project_contract = self.domain_adapter.get("project_data_contract")
+        project_contract = project_contract if isinstance(project_contract, Mapping) else {}
+        preflight = project_contract.get("preflight")
+        preflight = preflight if isinstance(preflight, Mapping) else {}
+        semantic_review = self.domain_adapter.get("semantic_review")
+        semantic_review = semantic_review if isinstance(semantic_review, Mapping) else {}
         return {
             "report_schema_version": REPORT_SCHEMA_VERSION,
             "validator_version": VALIDATOR_VERSION,
@@ -1562,6 +1640,12 @@ class RunValidator:
                     "data_version_set_id",
                     "data_versions_version",
                 ),
+                "domain_adapter_sha256": adapter_ref.get("sha256"),
+                "domain_adapter_version": self.domain_adapter.get("adapter_version"),
+                "project_data_contract": project_contract.get("contract_version"),
+                "data_preflight_status": preflight.get("status"),
+                "data_preflight_report_sha256": preflight.get("report_sha256"),
+                "semantic_review_status": semantic_review.get("status"),
             },
             "valid": not self.errors,
             "error_count": len(self.errors),
@@ -1569,6 +1653,7 @@ class RunValidator:
             "errors": [issue.as_dict() for issue in self.errors],
             "warnings": [issue.as_dict() for issue in self.warnings],
             "counts": dict(sorted(self.counts.items())),
+            "coverage_summary": self.coverage_summary,
             "checked_files": dict(sorted(self.checked_files.items())),
         }
 
@@ -1622,6 +1707,9 @@ class RunValidator:
         self.skill_provenance_schema = _schema_at_least(
             schema_value, SKILL_PROVENANCE_SCHEMA_VERSION
         )
+        self.domain_adapter_schema = _schema_at_least(
+            schema_value, DOMAIN_ADAPTER_SCHEMA_VERSION
+        )
         supported_schema = _parse_schema_version(ARTIFACT_SCHEMA_VERSION)
         if not _blank(schema_value) and parsed_schema is None:
             self.error(
@@ -1661,6 +1749,8 @@ class RunValidator:
             }
         if self.skill_provenance_schema:
             common_fields.add("skill_provenance")
+        if self.domain_adapter_schema:
+            common_fields |= {"domain_adapter_required", "domain_adapter_assessment"}
         self._required(self.manifest, location, common_fields)
         if self.skill_provenance_schema:
             self._validate_skill_provenance()
@@ -1740,6 +1830,48 @@ class RunValidator:
             "execution_mode",
         )
         self._status(self.manifest.get("governance_status"), GOVERNANCE_STATUSES, location, "governance_status")
+        if self.domain_adapter_schema:
+            adapter_required = self._manifest_bool("domain_adapter_required")
+            assessment = self._status(
+                self.manifest.get("domain_adapter_assessment"),
+                DOMAIN_ADAPTER_ASSESSMENTS,
+                location,
+                "domain_adapter_assessment",
+            )
+            adapter_ref = self.manifest.get("domain_adapter_ref")
+            if adapter_required is True and not isinstance(adapter_ref, Mapping):
+                self.error(
+                    "missing_domain_adapter_ref",
+                    location,
+                    "domain_adapter_required=true requires a hash-bound domain_adapter_ref object.",
+                )
+            if adapter_required is False and adapter_ref not in (None, {}):
+                self.error(
+                    "unexpected_domain_adapter_ref",
+                    location,
+                    "domain_adapter_ref must be null when domain_adapter_required=false.",
+                )
+            if adapter_required is True and assessment != "required":
+                self.error(
+                    "domain_adapter_assessment_mismatch",
+                    location,
+                    "domain_adapter_required=true requires domain_adapter_assessment='required'.",
+                )
+            if adapter_required is False and assessment == "required":
+                self.error(
+                    "domain_adapter_assessment_mismatch",
+                    location,
+                    "domain_adapter_assessment='required' requires domain_adapter_required=true.",
+                )
+            if (
+                assessment == "not_assessed"
+                and self.manifest.get("stage_status") != "planned"
+            ):
+                self.error(
+                    "domain_adapter_not_assessed",
+                    location,
+                    "Assess domain-adapter need before outcome-bearing or terminal execution states.",
+                )
         if not self.profile_schema or self.research_profile == "coverage_search":
             self._status(self.manifest.get("inventory_status"), INVENTORY_STATUSES, location, "inventory_status")
             self._status(self.manifest.get("search_status"), SEARCH_STATUSES, location, "search_status")
@@ -2409,8 +2541,11 @@ class RunValidator:
         self._validate_data_versions()
         claim = self.load_json(self.run_dir / "claim_card.json")
         if isinstance(claim, Mapping):
+            self.fixed_claim = dict(claim)
             location = "claim_card.json"
             self._required(claim, location, FIXED_CLAIM_REQUIRED_FIELDS)
+            if self.domain_adapter_schema:
+                self._required(claim, location, UNIT_CONTRACT_FIELDS)
             self._status(
                 claim.get("specification_timing"),
                 SPECIFICATION_TIMINGS,
@@ -2463,6 +2598,7 @@ class RunValidator:
         elif claim is not None:
             self.error("invalid_claim_card", "claim_card.json", "claim_card must be an object.")
         self._validate_round_artifacts()
+        self._validate_domain_adapter()
         self._validate_profile_underfit()
 
     def _load_adaptive_artifacts(self) -> None:
@@ -2501,6 +2637,7 @@ class RunValidator:
     def _validate_adaptive_profile(self) -> None:
         self._load_adaptive_artifacts()
         self._validate_data_versions()
+        self._validate_domain_adapter()
         self._validate_adaptive_ledger()
         self._validate_adaptive_families()
         self._validate_decision_contract()
@@ -2618,6 +2755,8 @@ class RunValidator:
                 }
                 | STRICT_SELECTION_FAMILY_FIELDS,
             )
+            if self.domain_adapter_schema:
+                self._required(family, item_location, {"analysis_unit", "independence_unit"})
             if (family_id, family_version) in seen_versions:
                 self.error("duplicate_selection_family_version", item_location, f"Duplicate family version {(family_id, family_version)!r}.")
             seen_versions.add((family_id, family_version))
@@ -2860,6 +2999,8 @@ class RunValidator:
         )
         inventory_path = self.select_versioned(inventory_prefix, ".csv")
         coverage_path = self.select_versioned("coverage_matrix_", ".csv")
+        if coverage_path is not None:
+            self.active_coverage_location = self.rel(coverage_path)
         saturation_path = self.select_versioned("saturation_audit_", ".json", required=False)
         self.all_inventory = self.load_all_versioned_csv(inventory_prefix)
         if self.generic_inventory_schema:
@@ -3110,6 +3251,16 @@ class RunValidator:
                 STRICT_COVERAGE_REQUIRED_FIELDS if self.strict_schema else set()
             )
         self._validate_versioned_headers("coverage_matrix_", required_columns)
+        if self.domain_adapter_schema:
+            active_location = self.active_coverage_location or "active coverage matrix"
+            active_headers = self.csv_headers.get(active_location, set())
+            missing_equivalence = COVERAGE_EQUIVALENCE_COLUMNS - active_headers
+            if missing_equivalence:
+                self.error(
+                    "missing_snapshot_columns",
+                    active_location,
+                    f"Active schema-1.5.3 coverage header is missing required columns {sorted(missing_equivalence)}.",
+                )
         mechanism_ids_by_version: dict[str, set[str]] = defaultdict(set)
         candidate_type_by_key: dict[tuple[str, str], str] = {}
         for row in self.all_inventory:
@@ -3367,6 +3518,57 @@ class RunValidator:
                         location,
                         "covered_by target must itself be closed.",
                     )
+                if self.domain_adapter_schema and file_version == self.active_version:
+                    self._required(
+                        row,
+                        location,
+                        {
+                            "equivalence_type",
+                            "equivalence_scope",
+                            "equivalence_assumptions",
+                            "equivalence_evidence",
+                            "equivalence_review_status",
+                        },
+                    )
+                    review_status = self._status(
+                        row.get("equivalence_review_status"),
+                        EQUIVALENCE_REVIEW_STATUSES,
+                        location,
+                        "equivalence_review_status",
+                    )
+                    if review_status not in {"passed", "passed_with_reservations"}:
+                        self.error(
+                            "equivalence_not_reviewed",
+                            location,
+                            "covered_by requires a passing, auditable equivalence review.",
+                        )
+
+            def visit(cell_id: str, path: list[str]) -> None:
+                row = rows_by_id.get(cell_id)
+                if row is None or row.get("coverage_status") != "covered_by":
+                    return
+                target_id = str(
+                    _first(
+                        row,
+                        "covered_by_cell_id",
+                        "coverage_equivalent_to",
+                        default="",
+                    )
+                ).strip()
+                if not target_id or target_id not in rows_by_id:
+                    return
+                if target_id in path:
+                    cycle = path[path.index(target_id) :] + [target_id]
+                    self.error(
+                        "covered_by_cycle",
+                        row.get("__source__", "coverage"),
+                        f"covered_by references form a cycle: {' -> '.join(cycle)}.",
+                    )
+                    return
+                visit(target_id, path + [target_id])
+
+            for cell_id in rows_by_id:
+                visit(cell_id, [cell_id])
 
     def _validate_data_versions(self) -> None:
         location = "data_versions.json"
@@ -3409,6 +3611,393 @@ class RunValidator:
                             self.error("unknown_data_version", location_row, f"data_version_id {version_id!r} is not registered for {product!r}.")
                 elif len(matches) > 1:
                     self.error("ambiguous_data_version", location_row, f"Multiple versions exist for {product!r}; coverage cell must pin data_version_id.")
+
+    def _validate_domain_adapter(self) -> None:
+        if not self.domain_adapter_schema:
+            return
+        required = _bool(self.manifest.get("domain_adapter_required"))
+        if required is not True:
+            return
+        ref = self.manifest.get("domain_adapter_ref")
+        if not isinstance(ref, Mapping):
+            return
+        self._required(
+            ref,
+            "run_manifest.json#domain_adapter_ref",
+            {"path", "sha256"},
+        )
+        adapter_path = self._safe_internal_file(
+            ref.get("path"),
+            "run_manifest.json#domain_adapter_ref",
+            expected_sha256=ref.get("sha256"),
+            kind="domain adapter",
+        )
+        if adapter_path is None:
+            return
+        raw = self.load_json(adapter_path)
+        if not isinstance(raw, dict):
+            if raw is not None:
+                self.error(
+                    "invalid_domain_adapter",
+                    self.rel(adapter_path),
+                    "Domain adapter must be a JSON object.",
+                )
+            return
+        self.domain_adapter = raw
+        location = self.rel(adapter_path)
+        self._required(raw, location, DOMAIN_ADAPTER_REQUIRED_FIELDS)
+
+        adapter_units = {
+            field: raw.get(field) for field in UNIT_CONTRACT_FIELDS
+        }
+        unit_contract = self.decision_contract or self.fixed_claim
+        for field, expected in adapter_units.items():
+            contract_value = _first(unit_contract, field)
+            if not _blank(contract_value) and not _blank(expected):
+                if _comparison_key_value(contract_value) != _comparison_key_value(expected):
+                    self.error(
+                        "domain_adapter_unit_mismatch",
+                        location,
+                        f"Adapter {field} conflicts with the Decision Contract.",
+                    )
+
+        contract = raw.get("project_data_contract")
+        if not isinstance(contract, Mapping):
+            self.error(
+                "invalid_project_data_contract",
+                location,
+                "project_data_contract must be an object.",
+            )
+        else:
+            contract_location = f"{location}#project_data_contract"
+            applicable = _bool(contract.get("applicable"))
+            if applicable is None:
+                self.error(
+                    "invalid_boolean",
+                    contract_location,
+                    "project_data_contract.applicable must be a boolean.",
+                )
+            if applicable is False:
+                self._required(contract, contract_location, {"reason"})
+                preflight = contract.get("preflight")
+                if isinstance(preflight, Mapping) and preflight.get("status") not in {
+                    None,
+                    "not_required",
+                }:
+                    self.error(
+                        "data_contract_applicability_mismatch",
+                        contract_location,
+                        "A nonapplicable project data contract cannot report an active preflight.",
+                    )
+            elif applicable is True:
+                self._required(
+                    contract,
+                    contract_location,
+                    {
+                        "contract_version",
+                        "input_data_version_ids",
+                        "rules",
+                        "preflight",
+                    },
+                )
+                registered_versions = {
+                    str(_first(item, "data_version_id", "version_id", default=""))
+                    for item in self.data_versions
+                }
+                input_versions = _ids(contract.get("input_data_version_ids"))
+                if not input_versions:
+                    self.error(
+                        "empty_data_contract_inputs",
+                        contract_location,
+                        "An applicable project data contract must bind registered input versions.",
+                    )
+                for version_id in input_versions:
+                    if version_id not in registered_versions:
+                        self.error(
+                            "unknown_data_contract_version",
+                            contract_location,
+                            f"Project data contract references unknown data version {version_id!r}.",
+                        )
+                rules = contract.get("rules")
+                rule_ids: set[str] = set()
+                rule_types: dict[str, str] = {}
+                if not isinstance(rules, list) or not rules:
+                    self.error(
+                        "empty_data_contract_rules",
+                        contract_location,
+                        "An applicable project data contract needs at least one frozen rule.",
+                    )
+                    rules = []
+                for index, rule in enumerate(rules, start=1):
+                    rule_location = f"{contract_location}.rules[{index}]"
+                    if not isinstance(rule, Mapping):
+                        self.error("invalid_data_contract_rule", rule_location, "Each rule must be an object.")
+                        continue
+                    self._required(
+                        rule,
+                        rule_location,
+                        {"check_id", "check_type", "rule", "failure_action"},
+                    )
+                    check_id = str(rule.get("check_id", "")).strip()
+                    if check_id in rule_ids:
+                        self.error("duplicate_data_contract_check", rule_location, f"Duplicate check_id {check_id!r}.")
+                    rule_ids.add(check_id)
+                    self._status(
+                        rule.get("check_type"),
+                        DATA_CONTRACT_CHECK_TYPES,
+                        rule_location,
+                        "check_type",
+                    )
+                    if check_id:
+                        rule_types[check_id] = str(rule.get("check_type", ""))
+                preflight = contract.get("preflight")
+                if not isinstance(preflight, Mapping):
+                    self.error("invalid_data_preflight", contract_location, "preflight must be an object.")
+                else:
+                    preflight_location = f"{contract_location}.preflight"
+                    self._required(
+                        preflight,
+                        preflight_location,
+                        {"status", "adapter_or_procedure", "failure_action"},
+                    )
+                    status = self._status(
+                        preflight.get("status"),
+                        PREFLIGHT_STATUSES,
+                        preflight_location,
+                        "preflight_status",
+                    )
+                    if (
+                        self.manifest.get("stage_status") in {"in_progress", "completed_as_scoped"}
+                        and status != "passed"
+                    ):
+                        self.error(
+                            "data_preflight_not_passed",
+                            preflight_location,
+                            "Outcome-bearing execution requires a passed applicable data preflight.",
+                        )
+                    if status in {"passed", "failed", "inconclusive"}:
+                        self._required(
+                            preflight,
+                            preflight_location,
+                            {"report_path", "report_sha256"},
+                        )
+                        report_path = self._safe_internal_file(
+                            preflight.get("report_path"),
+                            preflight_location,
+                            expected_sha256=preflight.get("report_sha256"),
+                            kind="data preflight report",
+                        )
+                        if report_path is not None:
+                            report = self.load_json(report_path)
+                            if not isinstance(report, Mapping):
+                                self.error(
+                                    "invalid_data_preflight_report",
+                                    self.rel(report_path),
+                                    "Data preflight report must be a JSON object.",
+                                )
+                            else:
+                                report_location = self.rel(report_path)
+                                self._required(
+                                    report,
+                                    report_location,
+                                    {
+                                        "contract_version",
+                                        "checked_data_version_ids",
+                                        "overall_status",
+                                        "checks",
+                                        "checked_at",
+                                    },
+                                )
+                                if report.get("contract_version") != contract.get("contract_version"):
+                                    self.error(
+                                        "data_preflight_contract_mismatch",
+                                        report_location,
+                                        "Preflight report contract version differs from the adapter contract.",
+                                    )
+                                if set(_ids(report.get("checked_data_version_ids"))) != set(input_versions):
+                                    self.error(
+                                        "data_preflight_input_mismatch",
+                                        report_location,
+                                        "Preflight report does not bind the contract's complete input-version set.",
+                                    )
+                                if report.get("overall_status") != status:
+                                    self.error(
+                                        "data_preflight_status_mismatch",
+                                        report_location,
+                                        "Preflight report status differs from the adapter contract.",
+                                    )
+                                checks = report.get("checks")
+                                report_ids: set[str] = set()
+                                failed_checks = False
+                                if not isinstance(checks, list):
+                                    self.error(
+                                        "invalid_data_preflight_checks",
+                                        report_location,
+                                        "Preflight checks must be a list.",
+                                    )
+                                    checks = []
+                                for index, check in enumerate(checks, start=1):
+                                    check_location = f"{report_location}#checks[{index}]"
+                                    if not isinstance(check, Mapping):
+                                        self.error("invalid_data_preflight_check", check_location, "Each check must be an object.")
+                                        continue
+                                    self._required(
+                                        check,
+                                        check_location,
+                                        {"check_id", "check_type", "status", "observed_summary"},
+                                    )
+                                    check_id = str(check.get("check_id", "")).strip()
+                                    if check_id in report_ids:
+                                        self.error("duplicate_data_preflight_check", check_location, f"Duplicate check_id {check_id!r}.")
+                                    report_ids.add(check_id)
+                                    check_type = self._status(
+                                        check.get("check_type"),
+                                        DATA_CONTRACT_CHECK_TYPES,
+                                        check_location,
+                                        "check_type",
+                                    )
+                                    check_status = self._status(
+                                        check.get("status"),
+                                        PREFLIGHT_CHECK_STATUSES,
+                                        check_location,
+                                        "check_status",
+                                    )
+                                    if check_id in rule_types and check_type != rule_types[check_id]:
+                                        self.error(
+                                            "data_preflight_check_type_mismatch",
+                                            check_location,
+                                            "Preflight check_type differs from the frozen rule.",
+                                        )
+                                    if check_status != "passed":
+                                        failed_checks = True
+                                if report_ids != rule_ids:
+                                    self.error(
+                                        "data_preflight_rule_coverage_mismatch",
+                                        report_location,
+                                        "Preflight report must contain exactly one result for every frozen rule.",
+                                    )
+                                if status == "passed" and failed_checks:
+                                    self.error(
+                                        "false_data_preflight_pass",
+                                        report_location,
+                                        "A passed preflight cannot contain a nonpassing frozen check.",
+                                    )
+
+        review = raw.get("semantic_review")
+        if not isinstance(review, Mapping):
+            self.error("invalid_semantic_review", location, "semantic_review must be an object.")
+            return
+        review_location = f"{location}#semantic_review"
+        self._required(review, review_location, {"required", "status", "reason"})
+        adapter_review_required = _bool(raw.get("required_human_review"))
+        if adapter_review_required is None:
+            self.error(
+                "invalid_boolean",
+                location,
+                "required_human_review must be a boolean.",
+            )
+        review_required = _bool(review.get("required"))
+        if review_required is None:
+            self.error("invalid_boolean", review_location, "semantic_review.required must be a boolean.")
+            return
+        if adapter_review_required is not None and adapter_review_required != review_required:
+            self.error(
+                "semantic_review_requirement_mismatch",
+                review_location,
+                "semantic_review.required must match required_human_review.",
+            )
+        status = self._status(
+            review.get("status"),
+            SEMANTIC_REVIEW_STATUSES,
+            review_location,
+            "semantic_review_status",
+        )
+        if review_required:
+            self._required(
+                review,
+                review_location,
+                {
+                    "review_scope",
+                    "reviewed_artifact_hashes",
+                    "reviewer_identity_or_procedure",
+                    "reviewer_relation_to_generation",
+                    "unresolved_objections",
+                    "human_signoff_required",
+                },
+            )
+            reviewed_hashes = review.get("reviewed_artifact_hashes")
+            if (
+                not isinstance(reviewed_hashes, list)
+                or not reviewed_hashes
+                or any(
+                    not isinstance(item, str)
+                    or not re.fullmatch(r"(?:sha256:)?[0-9a-f]{64}", item.lower())
+                    for item in reviewed_hashes
+                )
+            ):
+                self.error(
+                    "invalid_reviewed_artifact_hashes",
+                    review_location,
+                    "reviewed_artifact_hashes must be a nonempty list of SHA-256 digests.",
+                )
+            signoff_required = _bool(review.get("human_signoff_required"))
+            if signoff_required is None:
+                self.error(
+                    "invalid_boolean",
+                    review_location,
+                    "human_signoff_required must be a boolean.",
+                )
+            signoff_status = str(review.get("human_signoff_status", "")).strip()
+            if signoff_required:
+                self._required(
+                    review,
+                    review_location,
+                    {"human_signoff_status", "human_signoff_evidence"},
+                )
+                if signoff_status not in {"pending", "passed", "declined"}:
+                    self.error(
+                        "invalid_human_signoff_status",
+                        review_location,
+                        "human_signoff_status must be pending, passed, or declined.",
+                    )
+            elif signoff_status not in {"", "not_required"}:
+                self.error(
+                    "human_signoff_applicability_mismatch",
+                    review_location,
+                    "A nonrequired human signoff must be omitted or marked not_required.",
+                )
+            decision_bearing = self.manifest.get("decision_status") in PROMOTED_DECISION_STATUSES
+            if (
+                (
+                    self.manifest.get("stage_status") == "completed_as_scoped"
+                    or decision_bearing
+                )
+                and status not in {"passed", "passed_with_reservations"}
+            ):
+                self.error(
+                    "semantic_review_not_complete",
+                    review_location,
+                    "A required semantic review must pass, with reservations recorded if present, before stage completion.",
+                )
+            if (
+                signoff_required
+                and (
+                    self.manifest.get("stage_status") == "completed_as_scoped"
+                    or decision_bearing
+                )
+                and signoff_status != "passed"
+            ):
+                self.error(
+                    "human_signoff_not_complete",
+                    review_location,
+                    "A required human signoff must pass before a decision-bearing or completed state.",
+                )
+        elif status != "not_required":
+            self.error(
+                "semantic_review_applicability_mismatch",
+                review_location,
+                "A nonrequired semantic review must use status=not_required.",
+            )
 
     def _validate_ledger(self) -> None:
         all_cells = {
@@ -3642,6 +4231,8 @@ class RunValidator:
             self._status(status, COMPARISON_STATUSES, location, "comparison_status")
             if self.strict_schema:
                 self._required(family, location, STRICT_SELECTION_FAMILY_FIELDS)
+                if self.domain_adapter_schema and role == "current":
+                    self._required(family, location, {"analysis_unit", "independence_unit"})
                 self._status(
                     family.get("evidence_stage"),
                     EVIDENCE_STAGES,
@@ -3986,6 +4577,8 @@ class RunValidator:
             self._required(
                 self.decision_contract, location, STRICT_DECISION_CONTRACT_FIELDS
             )
+            if self.domain_adapter_schema:
+                self._required(self.decision_contract, location, UNIT_CONTRACT_FIELDS)
             scale_mapping = self.decision_contract.get("evidence_scale_mapping")
             if not _blank(scale_mapping):
                 if isinstance(scale_mapping, Mapping):
@@ -5061,7 +5654,16 @@ class RunValidator:
                 record.setdefault("source", source)
                 audits.append(record)
 
-        by_source = {_lens(_first(item, "source", "lens", "audit_type")): item for item in audits}
+        by_source: dict[str, dict[str, Any]] = {}
+        for record in audits:
+            source = _lens(_first(record, "source", "lens", "audit_type"))
+            if source in by_source:
+                self.error(
+                    "duplicate_saturation_source",
+                    location,
+                    f"Saturation source {source!r} appears more than once.",
+                )
+            by_source[source] = record
         if saturated:
             for source in sorted(required_sources):
                 record = by_source.get(source)
@@ -5071,6 +5673,34 @@ class RunValidator:
                 completed = _bool(_first(record, "completed", "passed", "audit_complete"))
                 if completed is not True:
                     self.error("incomplete_saturation_source", location, f"Saturation source {source!r} is not complete.")
+                if self.domain_adapter_schema:
+                    self._required(
+                        record,
+                        f"{location}#{source}",
+                        {
+                            "audit_id",
+                            "scope",
+                            "starting_basis",
+                            "procedure",
+                            "prior_inventory_visibility",
+                            "shared_context_disclosure",
+                            "unresolved_gaps",
+                        },
+                    )
+                    if not any(
+                        key in record
+                        for key in (
+                            "new_eligible_candidates",
+                            "new_eligible_mechanisms",
+                            "eligible_additions",
+                            "new_eligible_count",
+                        )
+                    ):
+                        self.error(
+                            "missing_saturation_addition_record",
+                            f"{location}#{source}",
+                            "Record the eligible additions explicitly, including an empty list or zero.",
+                        )
                 additions = _first(
                     record,
                     "new_eligible_candidates",
@@ -5402,10 +6032,39 @@ class RunValidator:
                 )
 
     def _validate_completion_and_pause(self) -> None:
-        closed = [row for row in self.active_coverage if row.get("coverage_status") in CLOSED_COVERAGE_STATUSES]
-        open_rows = [row for row in self.active_coverage if row.get("coverage_status") not in CLOSED_COVERAGE_STATUSES]
-        computed_complete = not open_rows and (
-            bool(self.active_coverage)
+        if self.generic_inventory_schema:
+            eligible_rows = [
+                row
+                for row in self.active_coverage
+                if row.get("substantive_eligibility") == "eligible"
+            ]
+            ineligible_rows = [
+                row
+                for row in self.active_coverage
+                if row.get("substantive_eligibility") == "ineligible"
+            ]
+            unassessed_rows = [
+                row
+                for row in self.active_coverage
+                if row.get("substantive_eligibility") == "not_assessed"
+            ]
+        else:
+            eligible_rows = list(self.active_coverage)
+            ineligible_rows = []
+            unassessed_rows = []
+        closed = [
+            row
+            for row in eligible_rows
+            if row.get("coverage_status") in CLOSED_COVERAGE_STATUSES
+        ]
+        open_rows = [
+            row
+            for row in eligible_rows
+            if row.get("coverage_status") not in CLOSED_COVERAGE_STATUSES
+        ]
+        pending_rows = open_rows + unassessed_rows
+        computed_complete = not open_rows and not unassessed_rows and (
+            bool(eligible_rows)
             or self.manifest.get("inventory_status") == "saturated"
         )
         manifest_complete = _bool(self.manifest.get("coverage_complete"))
@@ -5416,6 +6075,52 @@ class RunValidator:
         search_status = self.manifest.get("search_status")
         self.counts["closed_coverage_cells"] = len(closed)
         self.counts["open_coverage_cells"] = len(open_rows)
+        self.counts["ineligible_coverage_rows"] = len(ineligible_rows)
+        self.counts["unassessed_coverage_rows"] = len(unassessed_rows)
+        denominator = len(eligible_rows)
+        tested_count = sum(
+            row.get("coverage_status") == "tested_valid" for row in eligible_rows
+        )
+        equivalence_count = sum(
+            row.get("coverage_status") == "covered_by" for row in eligible_rows
+        )
+        untestable_count = sum(
+            row.get("coverage_status") == "not_testable_current_data"
+            for row in eligible_rows
+        )
+        self.counts.update(
+            {
+                "tested_valid_coverage_cells": tested_count,
+                "equivalence_closed_coverage_cells": equivalence_count,
+                "not_testable_coverage_cells": untestable_count,
+            }
+        )
+        self.coverage_summary = {
+            "denominator": "active substantively eligible coverage cells in the current inventory version",
+            "total": denominator,
+            "excluded_ineligible_rows": len(ineligible_rows),
+            "eligibility_not_assessed_rows": len(unassessed_rows),
+            "tested_valid": {
+                "count": tested_count,
+                "fraction": _ratio(tested_count, denominator),
+            },
+            "equivalence_closed": {
+                "count": equivalence_count,
+                "fraction": _ratio(equivalence_count, denominator),
+            },
+            "not_testable_current_data": {
+                "count": untestable_count,
+                "fraction": _ratio(untestable_count, denominator),
+            },
+            "classified_closed": {
+                "count": len(closed),
+                "fraction": _ratio(len(closed), denominator),
+            },
+            "open": {
+                "count": len(open_rows),
+                "fraction": _ratio(len(open_rows), denominator),
+            },
+        }
 
         if (
             self.strict_schema
@@ -5424,7 +6129,7 @@ class RunValidator:
         ):
             covered_mechanism_ids = {
                 str(row.get("mechanism_id", "")).strip()
-                for row in self.active_coverage
+                for row in eligible_rows
                 if not _blank(row.get("mechanism_id"))
             }
             preserved_coverage_by_key = {
@@ -5529,7 +6234,7 @@ class RunValidator:
             self.error(
                 "coverage_completion_mismatch",
                 "run_manifest.json",
-                f"coverage_complete={manifest_complete} but active matrix has {len(open_rows)} open cell(s).",
+                f"coverage_complete={manifest_complete} but the active matrix has {len(open_rows)} open eligible cell(s) and {len(unassessed_rows)} cell(s) with unassessed eligibility.",
             )
         if self.manifest.get("inventory_status") == "saturated" and inventory_saturated is not True:
             self.error("inventory_saturation_mismatch", "run_manifest.json", "inventory_status=saturated requires inventory_saturated=true.")
@@ -5586,18 +6291,18 @@ class RunValidator:
             "governance_blocked",
             "human_decision_required",
         }
-        if search_status in {"resource_limited_pause", "user_limited_stop"} and not open_rows:
+        if search_status in {"resource_limited_pause", "user_limited_stop"} and not pending_rows:
             self.error(
                 "pause_without_open_work",
                 "run_manifest.json",
                 "Resource- or user-limited stop requires at least one open coverage cell.",
             )
-        if search_status in open_stop_statuses and open_rows:
-            self._validate_open_execution_queue(open_rows)
+        if search_status in open_stop_statuses and pending_rows:
+            self._validate_open_execution_queue(pending_rows)
             if search_status == "resource_limited_pause":
                 resource_blocked = any(
                     row.get("coverage_status") == "resource_blocked"
-                    for row in open_rows
+                    for row in pending_rows
                 )
                 envelope_exhausted = (
                     _bool(self.manifest.get("resource_envelope_exhausted")) is True
@@ -5611,7 +6316,7 @@ class RunValidator:
             if search_status == "governance_blocked":
                 governance_condition = any(
                     row.get("coverage_status") == "governance_blocked"
-                    for row in open_rows
+                    for row in pending_rows
                 ) or self.manifest.get("governance_status") == "blocked"
                 if not governance_condition:
                     self.error(
@@ -6131,6 +6836,9 @@ def initialize_run(run_dir: Path, profile: str) -> dict[str, Any]:
         "safety_boundary": todo,
         "consistency_validator_version": VALIDATOR_VERSION,
         "last_consistency_check": None,
+        "domain_adapter_required": False,
+        "domain_adapter_assessment": "not_assessed",
+        "domain_adapter_ref": None,
     }
     if profile in {"adaptive_search", "coverage_search"}:
         manifest.update(
@@ -6175,6 +6883,10 @@ def initialize_run(run_dir: Path, profile: str) -> dict[str, Any]:
         "analysis_population": todo,
         "selection_population": todo,
         "reporting_population": todo,
+        "analysis_unit": todo,
+        "independence_unit": todo,
+        "dependence_handling": todo,
+        "partition_or_resampling_unit": todo,
         "eligible_candidate_classes": [todo],
         "substantive_eligibility_rule": todo,
         "measurement_error_policy": todo,
@@ -6240,6 +6952,10 @@ def initialize_run(run_dir: Path, profile: str) -> dict[str, Any]:
         "analysis_scope": "single_test",
         "target_population": todo,
         "analysis_population": todo,
+        "analysis_unit": todo,
+        "independence_unit": todo,
+        "dependence_handling": todo,
+        "partition_or_resampling_unit": todo,
         "supported_sample_id": todo,
         "estimand": todo,
         "minimum_meaningful_effect": todo,
@@ -6297,6 +7013,12 @@ def initialize_run(run_dir: Path, profile: str) -> dict[str, Any]:
             "skill_release": manifest["skill_provenance"][-1]["release_version"],
             "skill_package_sha256": manifest["skill_provenance"][-1]["package_sha256"],
             "data_version_set": "data-v001",
+            "domain_adapter_sha256": None,
+            "domain_adapter_version": None,
+            "project_data_contract": None,
+            "data_preflight_status": None,
+            "data_preflight_report_sha256": None,
+            "semantic_review_status": None,
         },
         "valid": False,
         "error_count": 1,
@@ -6310,6 +7032,7 @@ def initialize_run(run_dir: Path, profile: str) -> dict[str, Any]:
         ],
         "warnings": [],
         "counts": {},
+        "coverage_summary": {},
         "checked_files": {},
     }
     if profile in {"adaptive_search", "coverage_search"}:
@@ -6342,7 +7065,7 @@ def initialize_run(run_dir: Path, profile: str) -> dict[str, Any]:
                 )
                 write_csv(
                     "inventories/coverage_matrix_v001.csv",
-                    sorted(GENERIC_COVERAGE_REQUIRED_COLUMNS),
+                    sorted(GENERIC_COVERAGE_REQUIRED_COLUMNS | COVERAGE_EQUIVALENCE_COLUMNS),
                 )
                 write_json("inventories/saturation_audit_v001.json", saturation_audit)
                 write_csv("execution_queue.csv", tuple(EXECUTION_QUEUE_COLUMN_ALIASES))
@@ -6364,7 +7087,7 @@ def initialize_run(run_dir: Path, profile: str) -> dict[str, Any]:
             write_csv("rounds/round_000/summary.csv", GENERIC_ROUND_SUMMARY_COLUMNS)
             write_text(
                 "rounds/round_000/round_gate.md",
-                "# Round 000 gate\n\n- [ ] Freeze scope and governance.\n- [ ] Complete the Decision Contract and prior-exposure audit.\n- [ ] Freeze candidate inventory, coverage, selection-family, and evidence-scale rules.\n- [ ] Run the consistency validator before execution.\n",
+                "# Round 000 gate\n\n- [ ] Freeze scope and governance.\n- [ ] Complete the Decision Contract and prior-exposure audit.\n- [ ] Assess whether a domain adapter or project data preflight is required.\n- [ ] Freeze candidate inventory, coverage, selection-family, and evidence-scale rules.\n- [ ] Run the consistency validator before execution.\n",
             )
         write_json("consistency_report.json", consistency_placeholder)
     except (OSError, csv.Error, ValueError) as exc:
@@ -6431,6 +7154,9 @@ def _build_self_test_fixture(root: Path) -> None:
         "prior_exposure_audit_version": "pe-v001",
         "data_version_set_id": "data-v001",
         "saturation_required_sources": ["mechanism_forward", "data_product_reverse"],
+        "domain_adapter_required": False,
+        "domain_adapter_assessment": "not_required",
+        "domain_adapter_ref": None,
     }
     _write_json(root / "run_manifest.json", manifest)
 
@@ -6504,6 +7230,11 @@ def _build_self_test_fixture(root: Path) -> None:
         "ledger_entry_ids",
         "blocker",
         "covered_by_cell_id",
+        "equivalence_type",
+        "equivalence_scope",
+        "equivalence_assumptions",
+        "equivalence_evidence",
+        "equivalence_review_status",
     ]
     _write_csv(
         root / "inventories" / "coverage_matrix_v001.csv",
@@ -6541,6 +7272,11 @@ def _build_self_test_fixture(root: Path) -> None:
                 "ledger_entry_ids": "L001",
                 "blocker": "",
                 "covered_by_cell_id": "",
+                "equivalence_type": "",
+                "equivalence_scope": "",
+                "equivalence_assumptions": "",
+                "equivalence_evidence": "",
+                "equivalence_review_status": "",
             }
         ],
     )
@@ -6582,8 +7318,30 @@ def _build_self_test_fixture(root: Path) -> None:
             "inventory_version": "v001",
             "inventory_saturated": True,
             "audits": [
-                {"source": "mechanism_forward", "completed": True, "new_eligible_mechanisms": []},
-                {"source": "data_product_reverse", "completed": True, "new_eligible_mechanisms": []},
+                {
+                    "audit_id": "SAT-MECH-001",
+                    "source": "mechanism_forward",
+                    "scope": "all synthetic candidate pathways",
+                    "starting_basis": "frozen synthetic mechanism classes",
+                    "procedure": "mechanism-forward enumeration",
+                    "prior_inventory_visibility": "current frozen inventory visible",
+                    "shared_context_disclosure": "same synthetic fixture; distinct enumeration direction",
+                    "unresolved_gaps": [],
+                    "completed": True,
+                    "new_eligible_mechanisms": [],
+                },
+                {
+                    "audit_id": "SAT-DATA-001",
+                    "source": "data_product_reverse",
+                    "scope": "all registered synthetic data products",
+                    "starting_basis": "data_versions.json",
+                    "procedure": "data-product-reverse enumeration",
+                    "prior_inventory_visibility": "current frozen inventory visible",
+                    "shared_context_disclosure": "same synthetic fixture; distinct enumeration direction",
+                    "unresolved_gaps": [],
+                    "completed": True,
+                    "new_eligible_mechanisms": [],
+                },
             ],
         },
     )
@@ -6629,6 +7387,8 @@ def _build_self_test_fixture(root: Path) -> None:
         "comparability_status": "comparable_within_family",
         "comparison_key": "synthetic-population|S001|registered-effect|clean|exploratory",
         "target_population": "synthetic-population",
+        "analysis_unit": "synthetic observation",
+        "independence_unit": "synthetic observation",
         "supported_sample_id": "S001",
         "estimand": "registered synthetic effect",
         "data_quality_regime": "clean",
@@ -6665,6 +7425,10 @@ def _build_self_test_fixture(root: Path) -> None:
             "analysis_population": "synthetic-population",
             "selection_population": "synthetic-population",
             "reporting_population": "synthetic-population",
+            "analysis_unit": "synthetic observation",
+            "independence_unit": "synthetic observation",
+            "dependence_handling": "independent synthetic observations",
+            "partition_or_resampling_unit": "synthetic observation",
             "substantive_eligibility_rule": "candidate must address the registered target population",
             "measurement_error_policy": "promotion requires a passed registered sensitivity analysis",
             "transportability_requirement": "same_population",
@@ -6934,6 +7698,9 @@ def _seal_initialized_round(root: Path) -> None:
     manifest_path = root / "run_manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest["stage_status"] = "completed_as_scoped"
+    manifest["domain_adapter_required"] = False
+    manifest["domain_adapter_assessment"] = "not_required"
+    manifest["domain_adapter_ref"] = None
     manifest["round_artifacts"] = [
         {
             "round_id": "round_000",
@@ -6979,6 +7746,10 @@ def _build_fixed_profile_fixture(root: Path) -> None:
             "analysis_scope": "single_test",
             "target_population": "synthetic population",
             "analysis_population": "synthetic population",
+            "analysis_unit": "synthetic observation",
+            "independence_unit": "synthetic observation",
+            "dependence_handling": "independent synthetic observations",
+            "partition_or_resampling_unit": "not_applicable",
             "supported_sample_id": "S001",
             "estimand": "synthetic mean difference",
             "minimum_meaningful_effect": 0.1,
@@ -7079,6 +7850,10 @@ def _build_adaptive_profile_fixture(root: Path) -> None:
             "analysis_population": "synthetic population",
             "selection_population": "synthetic population",
             "reporting_population": "synthetic population",
+            "analysis_unit": "synthetic observation",
+            "independence_unit": "synthetic observation",
+            "dependence_handling": "independent synthetic observations",
+            "partition_or_resampling_unit": "synthetic observation",
             "substantive_eligibility_rule": "candidate addresses the frozen target",
             "measurement_error_policy": "not applicable to this synthetic candidate",
             "transportability_requirement": "same_population",
@@ -7161,6 +7936,8 @@ def _build_adaptive_profile_fixture(root: Path) -> None:
                     "comparability_status": "comparable_within_family",
                     "comparison_key": "synthetic-population|S001|prediction-error|clean|exploratory",
                     "target_population": "synthetic population",
+                    "analysis_unit": "synthetic observation",
+                    "independence_unit": "synthetic observation",
                     "supported_sample_id": "S001",
                     "estimand": "prediction error",
                     "data_quality_regime": "clean",
@@ -7250,7 +8027,11 @@ def _convert_fixture_to_generic_inventory(root: Path) -> None:
             row["candidate_id"] = row.pop("mechanism_id")
             row["substantive_eligibility"] = "eligible"
             generic_rows.append(row)
-        fields = sorted(set(GENERIC_COVERAGE_REQUIRED_COLUMNS) | {"covered_by_cell_id"})
+        fields = sorted(
+            set(GENERIC_COVERAGE_REQUIRED_COLUMNS)
+            | {"covered_by_cell_id"}
+            | COVERAGE_EQUIVALENCE_COLUMNS
+        )
         _write_csv(coverage_path, fields, generic_rows)
     registry_path = root / "candidate_registry.csv"
     with registry_path.open("r", encoding="utf-8", newline="") as handle:
@@ -7618,6 +8399,250 @@ def _run_hardening_self_tests(temp_root: Path) -> dict[str, bool]:
     else:
         results["hash_bound_upgrade_snapshot_positive"] = False
         results["upgrade_snapshot_requires_round_evidence"] = False
+
+    def build_required_adapter_fixture(
+        root: Path,
+        *,
+        review_required: bool = False,
+        review_status: str = "not_required",
+        signoff_status: str = "not_required",
+    ) -> tuple[Path, Path]:
+        _build_adaptive_profile_fixture(root)
+        preflight_path = root / "data_preflight_report.json"
+        preflight = {
+            "contract_version": "data-contract-v001",
+            "checked_data_version_ids": ["DV001"],
+            "overall_status": "passed",
+            "checks": [
+                {
+                    "check_id": "unit-count",
+                    "check_type": "independent_unit_count",
+                    "status": "passed",
+                    "observed_summary": "synthetic unit count matched",
+                }
+            ],
+            "checked_at": "2000-01-01T00:00:00Z",
+        }
+        _write_json(preflight_path, preflight)
+        semantic_review: dict[str, Any] = {
+            "required": review_required,
+            "status": review_status,
+            "reason": "synthetic semantic-review fixture",
+        }
+        if review_required:
+            semantic_review.update(
+                {
+                    "review_scope": "synthetic decision",
+                    "reviewed_artifact_hashes": [hashlib.sha256(preflight_path.read_bytes()).hexdigest()],
+                    "reviewer_identity_or_procedure": "synthetic review procedure",
+                    "reviewer_relation_to_generation": "separate fixture role",
+                    "unresolved_objections": [],
+                    "human_signoff_required": True,
+                    "human_signoff_status": signoff_status,
+                    "human_signoff_evidence": "synthetic signoff record",
+                }
+            )
+        adapter = {
+            "adapter_name": "synthetic-domain-adapter",
+            "adapter_version": "adapter-v001",
+            "applicable_scope": "entire synthetic run",
+            "analysis_unit": "synthetic observation",
+            "independence_unit": "synthetic observation",
+            "dependence_handling": "independent synthetic observations",
+            "partition_or_resampling_unit": "synthetic observation",
+            "admissible_estimands": ["synthetic prediction error"],
+            "domain_specific_gates": [],
+            "validation_procedures": ["frozen synthetic data preflight"],
+            "falsification_requirements": [],
+            "completion_additions": [],
+            "required_human_review": review_required,
+            "project_data_contract": {
+                "applicable": True,
+                "contract_version": "data-contract-v001",
+                "input_data_version_ids": ["DV001"],
+                "rules": [
+                    {
+                        "check_id": "unit-count",
+                        "check_type": "independent_unit_count",
+                        "rule": "synthetic count must match",
+                        "failure_action": "block affected outcome",
+                    }
+                ],
+                "preflight": {
+                    "status": "passed",
+                    "adapter_or_procedure": "synthetic preflight",
+                    "failure_action": "block affected outcome",
+                    "report_path": preflight_path.name,
+                    "report_sha256": hashlib.sha256(preflight_path.read_bytes()).hexdigest(),
+                },
+            },
+            "semantic_review": semantic_review,
+        }
+        adapter_path = root / "domain_adapter.json"
+        _write_json(adapter_path, adapter)
+        manifest_path = root / "run_manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest.update(
+            {
+                "domain_adapter_required": True,
+                "domain_adapter_assessment": "required",
+                "domain_adapter_ref": {
+                    "path": adapter_path.name,
+                    "sha256": hashlib.sha256(adapter_path.read_bytes()).hexdigest(),
+                },
+            }
+        )
+        _write_json(manifest_path, manifest)
+        return adapter_path, manifest_path
+
+    adapter_positive_root = temp_root / "required-domain-adapter-positive-run"
+    adapter_path, adapter_manifest_path = build_required_adapter_fixture(
+        adapter_positive_root
+    )
+    adapter_positive_report = validate_run(adapter_positive_root)
+    results["required_domain_adapter_positive"] = (
+        adapter_positive_report["valid"]
+        and adapter_positive_report["artifact_versions"].get("domain_adapter_version")
+        == "adapter-v001"
+    )
+
+    adapter_hash_root = temp_root / "required-domain-adapter-missing-hash-run"
+    _, adapter_hash_manifest_path = build_required_adapter_fixture(adapter_hash_root)
+    adapter_hash_manifest = json.loads(
+        adapter_hash_manifest_path.read_text(encoding="utf-8")
+    )
+    adapter_hash_manifest["domain_adapter_ref"].pop("sha256")
+    _write_json(adapter_hash_manifest_path, adapter_hash_manifest)
+    adapter_hash_report = validate_run(adapter_hash_root)
+    results["required_domain_adapter_hash_binding"] = any(
+        item["code"] == "missing_required_field"
+        and "domain_adapter_ref" in item["location"]
+        for item in adapter_hash_report["errors"]
+    )
+
+    adapter_unit_root = temp_root / "required-domain-adapter-unit-mismatch-run"
+    adapter_unit_path, adapter_unit_manifest_path = build_required_adapter_fixture(
+        adapter_unit_root
+    )
+    adapter_unit = json.loads(adapter_unit_path.read_text(encoding="utf-8"))
+    adapter_unit["independence_unit"] = "synthetic cluster"
+    _write_json(adapter_unit_path, adapter_unit)
+    adapter_unit_manifest = json.loads(
+        adapter_unit_manifest_path.read_text(encoding="utf-8")
+    )
+    adapter_unit_manifest["domain_adapter_ref"]["sha256"] = hashlib.sha256(
+        adapter_unit_path.read_bytes()
+    ).hexdigest()
+    _write_json(adapter_unit_manifest_path, adapter_unit_manifest)
+    adapter_unit_report = validate_run(adapter_unit_root)
+    results["required_domain_adapter_unit_match"] = any(
+        item["code"] == "domain_adapter_unit_mismatch"
+        for item in adapter_unit_report["errors"]
+    )
+
+    preflight_type_root = temp_root / "data-preflight-type-mismatch-run"
+    _, _ = build_required_adapter_fixture(preflight_type_root)
+    preflight_type_path = preflight_type_root / "data_preflight_report.json"
+    preflight_type = json.loads(preflight_type_path.read_text(encoding="utf-8"))
+    preflight_type["checks"][0]["check_type"] = "join_cardinality"
+    _write_json(preflight_type_path, preflight_type)
+    preflight_adapter_path = preflight_type_root / "domain_adapter.json"
+    preflight_adapter = json.loads(preflight_adapter_path.read_text(encoding="utf-8"))
+    preflight_adapter["project_data_contract"]["preflight"]["report_sha256"] = hashlib.sha256(
+        preflight_type_path.read_bytes()
+    ).hexdigest()
+    _write_json(preflight_adapter_path, preflight_adapter)
+    preflight_manifest_path = preflight_type_root / "run_manifest.json"
+    preflight_manifest = json.loads(preflight_manifest_path.read_text(encoding="utf-8"))
+    preflight_manifest["domain_adapter_ref"]["sha256"] = hashlib.sha256(
+        preflight_adapter_path.read_bytes()
+    ).hexdigest()
+    _write_json(preflight_manifest_path, preflight_manifest)
+    preflight_type_report = validate_run(preflight_type_root)
+    results["data_preflight_rule_type_binding"] = any(
+        item["code"] == "data_preflight_check_type_mismatch"
+        for item in preflight_type_report["errors"]
+    )
+
+    signoff_root = temp_root / "required-human-signoff-pending-run"
+    build_required_adapter_fixture(
+        signoff_root,
+        review_required=True,
+        review_status="passed",
+        signoff_status="pending",
+    )
+    signoff_report = validate_run(signoff_root)
+    results["required_human_signoff_gate"] = any(
+        item["code"] == "human_signoff_not_complete"
+        for item in signoff_report["errors"]
+    )
+
+    review_hash_root = temp_root / "semantic-review-malformed-hash-run"
+    review_adapter_path, review_manifest_path = build_required_adapter_fixture(
+        review_hash_root,
+        review_required=True,
+        review_status="passed",
+        signoff_status="passed",
+    )
+    review_adapter = json.loads(review_adapter_path.read_text(encoding="utf-8"))
+    review_adapter["semantic_review"]["reviewed_artifact_hashes"] = []
+    _write_json(review_adapter_path, review_adapter)
+    review_manifest = json.loads(review_manifest_path.read_text(encoding="utf-8"))
+    review_manifest["domain_adapter_ref"]["sha256"] = hashlib.sha256(
+        review_adapter_path.read_bytes()
+    ).hexdigest()
+    _write_json(review_manifest_path, review_manifest)
+    review_hash_report = validate_run(review_hash_root)
+    results["semantic_review_hash_binding"] = any(
+        item["code"] == "invalid_reviewed_artifact_hashes"
+        for item in review_hash_report["errors"]
+    )
+
+    denominator_validator = RunValidator(temp_root / "coverage-denominator-fixture")
+    denominator_validator.generic_inventory_schema = True
+    denominator_validator.active_coverage = [
+        {
+            "coverage_cell_id": "eligible-cell",
+            "substantive_eligibility": "eligible",
+            "coverage_status": "tested_valid",
+        },
+        {
+            "coverage_cell_id": "ineligible-row",
+            "substantive_eligibility": "ineligible",
+            "coverage_status": "eligible_untested",
+        },
+    ]
+    denominator_validator.manifest = {
+        "coverage_complete": True,
+        "inventory_status": "frozen",
+        "inventory_saturated": False,
+        "search_ledger_audited": False,
+        "decision_contract_applied": False,
+        "decision_status": "not_evaluated",
+        "search_status": "coverage_in_progress",
+    }
+    denominator_validator._validate_completion_and_pause()
+    results["coverage_summary_eligible_denominator"] = (
+        not denominator_validator.errors
+        and denominator_validator.coverage_summary.get("total") == 1
+        and denominator_validator.coverage_summary.get("excluded_ineligible_rows") == 1
+    )
+
+    unassessed_validator = RunValidator(temp_root / "unassessed-denominator-fixture")
+    unassessed_validator.generic_inventory_schema = True
+    unassessed_validator.active_coverage = [
+        {
+            "coverage_cell_id": "unassessed-cell",
+            "substantive_eligibility": "not_assessed",
+            "coverage_status": "tested_valid",
+        }
+    ]
+    unassessed_validator.manifest = dict(denominator_validator.manifest)
+    unassessed_validator._validate_completion_and_pause()
+    results["unassessed_eligibility_blocks_completion"] = any(
+        item.code == "coverage_completion_mismatch"
+        for item in unassessed_validator.errors
+    )
 
     generic_root = temp_root / "generic-completion-diagnostics-run"
     generic_root.mkdir()
@@ -8246,7 +9271,7 @@ def run_self_test() -> dict[str, Any]:
             initialized_header("inventories/candidate_inventory_v001.csv")
             == GENERIC_INVENTORY_REQUIRED_COLUMNS
             and initialized_header("inventories/coverage_matrix_v001.csv")
-            == GENERIC_COVERAGE_REQUIRED_COLUMNS
+            == GENERIC_COVERAGE_REQUIRED_COLUMNS | COVERAGE_EQUIVALENCE_COLUMNS
             and initialized_header("candidate_registry.csv")
             == (
                 (CANDIDATE_REQUIRED_FIELDS - {"mechanism_id"})
@@ -9830,7 +10855,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--init",
         metavar="RUN_DIR",
         type=Path,
-        help="Create a non-overwriting schema-1.5.2 profile-aware Round-0 draft skeleton.",
+        help="Create a non-overwriting schema-1.5.3 profile-aware Round-0 draft skeleton.",
     )
     modes.add_argument(
         "--record-skill-provenance",
@@ -9863,7 +10888,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.run_dir is not None or args.output is not None or args.to_profile is not None:
             parser.error("--init cannot be combined with run_dir, --output, or --to-profile")
         if args.profile is None:
-            parser.error("--profile is required with --init for schema 1.5.2")
+            parser.error("--profile is required with --init for schema 1.5.3")
         report = initialize_run(args.init, args.profile)
         _emit(report, None)
         return 0 if report.get("init") == "created" else 1

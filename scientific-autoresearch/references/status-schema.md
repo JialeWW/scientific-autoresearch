@@ -1,6 +1,6 @@
 # Canonical Status Schema
 
-This is an audit and validator-diagnosis reference, not default Agent context. For schema `1.5.2`, the initializer and `scripts/validate_run.py` are authoritative for fields, enums, and transition checks. Do not copy this page into every run.
+This is an audit and validator-diagnosis reference, not default Agent context. For schema `1.5.3`, the initializer and `scripts/validate_run.py` are authoritative for fields, enums, and transition checks. Do not copy this page into every run.
 
 ## Profile and Stage
 
@@ -13,6 +13,8 @@ This is an audit and validator-diagnosis reference, not default Agent context. F
 Profiles are ordered `fixed_test < adaptive_search < coverage_search`. A frozen family remains `fixed_test` unless outcomes change its membership, methods, thresholds, sample, multiplicity or joint rule, or reporting rule. `profile_history` is append-only and its offset-aware `started_at` values are strictly increasing. Before an upgrade, validate the source and run `scripts/validate_run.py --snapshot-upgrade RUN_DIR --to-profile PROFILE`. The returned upgrade entry records `preservation_snapshot_path` and `preservation_snapshot_sha256`; append it only after reviewing the non-overwriting copy. A preservation snapshot declares the prior profile, capture time, target profile, and an artifact list whose entries contain `logical_path`, internal nonsymlink `snapshot_path`, and verified `sha256`. It must include the prior manifest, that profile's required artifacts, and every round report and reproduction record indexed by the prior manifest. Boolean preservation attestations alone are insufficient. A downgrade is invalid. A changed sample, codebase, model, tool, workflow, or skill version never restores confirmatory status.
 
 Schema 1.5.2 `skill_provenance` is an ordered history automatically seeded by initialization. Before authorized execution or resume, use `scripts/validate_run.py --record-skill-provenance RUN_DIR`; unchanged identity is a no-op and changed identity appends a new entry. Read-only validation never edits it. Each entry records the skill name, release version, deterministic behavior-package SHA-256, offset-aware capture time, and an optional source revision. The digest binds `SKILL.md`, bundled references, scripts, and evaluation specifications while excluding run outputs; symbolic links on that surface are invalid. It identifies content but does not prove compliance or independent timing.
+
+Schema 1.5.3 adds a one-time domain-adapter assessment, unit and dependence fields in claim or decision records, an optional hash-bound adapter and project data-preflight interface, auditable equivalence closure, and a basis-specific coverage summary. Keep `domain_adapter_required=false` for tasks whose relevant semantics fit directly in the frozen claim or Decision Contract, but assess rather than assume this state before outcome-bearing execution.
 
 Use `stage_status` independently of scientific completion:
 
@@ -99,6 +101,8 @@ Priority changes execution order only. Unrun or blocked cells remain open and st
 
 `execution_tier` = `uniform_screen`, `deep_test`, `verification`, or `diagnostic`.
 
+Report `tested_valid`, `covered_by`, `not_testable_current_data`, all classified-closed, and open counts and fractions separately. `coverage_complete` means every eligible cell was classified closed; it does not mean every cell received an empirical test. Schema 1.5.3 `covered_by` records equivalence type, scope, assumptions, evidence, review status, and a noncyclic target.
+
 ### Search
 
 `search_status` = `inventory_building`, `coverage_in_progress`, `verification_ready`, `resource_limited_pause`, `user_limited_stop`, `governance_blocked`, `human_decision_required`, or `complete_within_scope`.
@@ -126,4 +130,4 @@ A completed round, promoted candidate, stage report, exhausted resource envelope
 - Preserve weak, null, invalid, failed, abandoned, blocked, and unfavorable branches.
 - Use the validator before resume and before any stage, pause, or completion report. Metadata consistency and numerical reproduction are separate claims.
 
-Schema `<=1.4` remains readable under its legacy full-run behavior. Schema `1.5.0` profile runs remain readable, with a missing fixed-test `analysis_scope` interpreted as `single_test`; schema `1.5.0` and `1.5.1` may omit skill provenance. Do not relabel a legacy run; initialize or migrate profile metadata and artifacts explicitly.
+Schema `<=1.4` remains readable under its legacy full-run behavior. Schema `1.5.0` profile runs remain readable, with a missing fixed-test `analysis_scope` interpreted as `single_test`; schema `1.5.0` and `1.5.1` may omit skill provenance, and schemas through `1.5.2` may omit the domain-adapter and equivalence additions. Do not relabel a legacy run; initialize or migrate profile metadata and artifacts explicitly.

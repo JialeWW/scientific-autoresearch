@@ -6,6 +6,8 @@ Use this checklist for machine-artifact audit or validator diagnosis after an ex
 
 - **Identity and scope**: Are run, profile, profile history, stage, round lineage, scientific scope, data versions, and governance boundaries recorded?
 - **Frozen work**: Were the claim or decision, supported sample, estimand, analysis, meaningful scale, decision rule, falsifier, inputs, parameters, exclusions, and seed policy fixed at the correct time?
+- **Units and dependence**: Were the analysis and independence units, dependence handling, and partition or resampling unit frozen and followed?
+- **Domain adapter**: Was the need for a domain adapter or project data preflight assessed before affected outcomes, with every required hash-bound check passed or transparently blocking the result?
 - **Exposure and evidence**: Are earlier overlapping analyses and outcome views represented, and are specification timing, evidence stage, and verification status honest?
 - **Support and validity**: Are unavailable, unsupported, missing, censored, ineligible, invalid, and true-zero cases separated when relevant? Could the analysis detect or exclude a meaningful effect?
 - **Result**: Are effect, uncertainty, assumptions, diagnostics, falsification outcome, execution status, result status, limitations, and weak or unfavorable evidence retained?
@@ -41,8 +43,8 @@ Complete every adaptive item, then check:
 - **Inventory**: Is one active typed inventory version frozen, with substantive roles, support, distinctness, eligibility, and parent/duplicate history? Did outcome-motivated additions create a successor version?
 - **Coverage**: Is each finite cell linked to an eligible candidate, supported data and sample, observable or test role, formulation, meaningful effect, sensitivity requirement, falsifier, family, and ledger entries?
 - **Scientific versus scheduling state**: Did priority change only order? Are unrun, invalid, resource-blocked, and governance-blocked cells still open and present in the denominator and queue?
-- **Saturation**: After the latest eligible addition, did candidate-forward and data-product-reverse audits find no new eligible nonduplicate entry? Was each conditionally declared independent third source completed?
-- **Closure**: Is every eligible cell `tested_valid`, justified `covered_by`, or `not_testable_current_data`, with weak, null, failed, invalid, and unfavorable branches still visible?
+- **Saturation**: After the latest eligible addition, did the complementary, separately scoped candidate-forward and data-product-reverse audits find no new eligible nonduplicate entry? Was each conditionally declared third source completed, with starting basis, procedure, scope, shared context, additions, and unresolved gaps recorded?
+- **Closure**: Is every eligible cell `tested_valid`, auditable noncyclic `covered_by`, or `not_testable_current_data`, with weak, null, failed, invalid, and unfavorable branches still visible? Are tested, equivalence-closed, not-testable, classified-closed, and open fractions reported separately?
 - **Pause**: If limits ended work with open cells, does `pause_report.md` preserve the complete queue, blockers, versions, resource state, and exact resume point?
 
 ## Reporting Gate

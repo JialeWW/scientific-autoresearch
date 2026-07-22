@@ -12,7 +12,9 @@
         "It states a testable claim, the evidence that could weaken it, and a proportionate analysis design.",
         "It does not claim that data were analyzed or results obtained.",
         "It does not require an executed-run artifact tree."
-      ]
+      ],
+      "assertion_ids": ["a01", "a02", "a03", "a04"],
+      "critical_assertion_ids": ["a01", "a03"]
     },
     {
       "id": 2,
@@ -23,7 +25,9 @@
         "It freezes the claim, sample, model, estimand, uncertainty method, and decision rule before the result.",
         "It creates only proportionate fixed-test artifacts and does not require candidate inventory, selection-family, coverage, or saturation machinery.",
         "It reports the completed fixed test or a stage report without claiming exhaustive scientific completion."
-      ]
+      ],
+      "assertion_ids": ["a01", "a02", "a03", "a04"],
+      "critical_assertion_ids": ["a01", "a03"]
     },
     {
       "id": 3,
@@ -36,7 +40,9 @@
         "Every selection-influencing evaluation enters the ledger and an applicable selection family; Spearman screening is not treated as raw-scale predictive evidence by itself.",
         "It uses a predeclared stochastic-variation policy and never selects a seed by outcome.",
         "It may issue a valid adaptive decision or stage report but does not require inventory saturation or call the space exhausted."
-      ]
+      ],
+      "assertion_ids": ["a01", "a02", "a03", "a04", "a05", "a06"],
+      "critical_assertion_ids": ["a03", "a04", "a05"]
     },
     {
       "id": 4,
@@ -47,7 +53,9 @@
         "It inspects existing evidence, types the candidates as simulation or design alternatives, and estimates a finite next-step cost.",
         "It requests explicit authorization before submitting shared or costly jobs because no execution envelope was provided.",
         "It quantifies numerical and stochastic variation rather than relying on one favorable run."
-      ]
+      ],
+      "assertion_ids": ["a01", "a02", "a03", "a04"],
+      "critical_assertion_ids": ["a03", "a04"]
     },
     {
       "id": 5,
@@ -59,7 +67,9 @@
         "Any allowed subgroup or covariate candidates are finite, logged, and exploratory rather than restored to confirmatory status.",
         "Direct identifiers and linkage data do not enter diagnostics or reproduction artifacts.",
         "It uses adaptive_search safeguards only if authorized candidate selection proceeds; privacy and governance are not weakened by profile choice."
-      ]
+      ],
+      "assertion_ids": ["a01", "a02", "a03", "a04", "a05"],
+      "critical_assertion_ids": ["a01", "a02", "a04", "a05"]
     },
     {
       "id": 6,
@@ -69,9 +79,11 @@
         "The response selects coverage_search because systematic scoped completion was requested, while preserving the original frozen null.",
         "It builds a versioned typed candidate inventory and finite data-supported coverage cells rather than imposing a universal round or candidate cap.",
         "Every adaptive addition remains identifiable in the ledger and complete-selection-path inference; same-data variants are not independent confirmation.",
-        "Saturation includes candidate-forward and data-product-reverse audits plus a conditional independent source when informative.",
+        "Saturation includes complementary, separately scoped candidate-forward and data-product-reverse audits plus a conditional third lens when informative.",
         "It claims complete_within_scope only after saturation, eligible-cell closure, ledger audit, a terminal Decision Contract outcome, an adequate prior-exposure audit, and consistency validation; otherwise it returns a stage report with an open queue."
-      ]
+      ],
+      "assertion_ids": ["a01", "a02", "a03", "a04", "a05"],
+      "critical_assertion_ids": ["a03", "a05"]
     },
     {
       "id": 7,
@@ -82,7 +94,9 @@
         "It does not claim causal proof from the crude observational comparison.",
         "It defines the target, exposure, comparator, outcome, time horizon, effect measure, and material identification assumptions.",
         "It downgrades the claim to association or mechanism consistency if confounding, overlap, selection, missingness, or temporal ordering cannot be addressed."
-      ]
+      ],
+      "assertion_ids": ["a01", "a02", "a03", "a04"],
+      "critical_assertion_ids": ["a02", "a04"]
     },
     {
       "id": 8,
@@ -93,7 +107,9 @@
         "Work inside the recorded envelope does not require renewed approval each round; work outside it does.",
         "Cheap screens affect scheduling only, while selection-influencing results enter the ledger and unrun cells remain open.",
         "Envelope exhaustion produces a resource-limited stage report with the remaining queue, not scientific completion."
-      ]
+      ],
+      "assertion_ids": ["a01", "a02", "a03", "a04"],
+      "critical_assertion_ids": ["a02", "a03", "a04"]
     },
     {
       "id": 9,
@@ -105,7 +121,9 @@
         "It applies substantive eligibility to typed candidates before statistical ranking rather than ranking an unrelated flat product by nominal p-value.",
         "It activates measurement-error sensitivity because uncertainty affects inclusion and selection, without prescribing one universal method.",
         "The cleaner subgroup remains parallel or support-limited unless transport to the full target population is predeclared and validated."
-      ]
+      ],
+      "assertion_ids": ["a01", "a02", "a03", "a04", "a05"],
+      "critical_assertion_ids": ["a02", "a03", "a04", "a05"]
     },
     {
       "id": 10,
@@ -117,7 +135,9 @@
         "It reports byte-identical matched-condition outputs as numerical reproduction without treating them as a repair for missing provenance or selection history.",
         "Corrections preserve the old record through transitions, superseding versions, or a successor run instead of invisible overwrite.",
         "It issues only the completion status allowed by the profile: a fixed result, adaptive decision or stage report, or coverage completion after all coverage gates pass."
-      ]
+      ],
+      "assertion_ids": ["a01", "a02", "a03", "a04", "a05"],
+      "critical_assertion_ids": ["a01", "a03", "a04", "a05"]
     },
     {
       "id": 11,
@@ -129,7 +149,9 @@
         "It reports both member outcomes needed to reconstruct the joint decision, including weak, null, failed, or unfavorable results.",
         "It does not create a candidate inventory, adaptive selection ledger, saturation audit, or coverage matrix.",
         "If an outcome motivates a new member, threshold, model, sample, or reporting change, it preserves the family result and upgrades before continuing."
-      ]
+      ],
+      "assertion_ids": ["a01", "a02", "a03", "a04", "a05"],
+      "critical_assertion_ids": ["a01", "a04", "a05"]
     },
     {
       "id": 12,
@@ -140,7 +162,9 @@
         "It states what evidence and provenance were checked, what remains unknown, and which conclusions are supported.",
         "It does not initialize or upgrade an execution run; it may validate an already machine-audited run read-only if one was supplied.",
         "Future analyses are recommendations only and are not silently executed or used to reclassify the existing evidence."
-      ]
+      ],
+      "assertion_ids": ["a01", "a02", "a03", "a04"],
+      "critical_assertion_ids": ["a01", "a03", "a04"]
     },
     {
       "id": 13,
@@ -151,7 +175,9 @@
         "It checks selection-path completeness, family comparability, prior-exposure restrictions, inventory saturation, coverage closure, and consistency status.",
         "It does not accept a leader as proof of coverage completion and does not treat unrun or blocked cells as closed.",
         "It does not initialize, upgrade, repair, or execute the run; any recommended remediation remains future work."
-      ]
+      ],
+      "assertion_ids": ["a01", "a02", "a03", "a04"],
+      "critical_assertion_ids": ["a01", "a03", "a04"]
     }
   ]
 }

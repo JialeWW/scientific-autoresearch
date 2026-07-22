@@ -42,7 +42,7 @@ For `coverage_search` only:
 
 - Which inventory version and data-product scope were searched?
 - Which complementary generation lenses were completed?
-- Were candidate-forward and data-product-reverse audits independent, and was every conditionally required third source completed?
+- Were candidate-forward and data-product-reverse audits separately scoped and both completed, and was every conditionally required complementary third source completed?
 - Which candidates and coverage cells were eligible, unsupported, duplicate, invalid, blocked, or resource-deferred?
 - What are the coverage numerator, denominator, and closure rules?
 - What evidence supports inventory saturation?

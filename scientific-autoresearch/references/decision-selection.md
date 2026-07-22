@@ -2,13 +2,14 @@
 
 Use this protocol for outcome-adaptive `adaptive_search` and `coverage_search`. A prespecified finite comparison remains `fixed_test` when its members, methods, multiplicity or joint rule, and reporting rule cannot change after outcomes. If an outcome motivates a change, preserve the frozen result and upgrade before continuing.
 
-Record the protocol in the working report under `conceptual_record`. Use the named JSON, CSV, and JSONL files only under `machine_audited` mode or when continuing an existing machine-audited run.
+Under `conceptual_record`, record the protocol and every selection-influencing event contemporaneously in an append-only or versioned project record. Use the named JSON, CSV, and JSONL files under `machine_audited` mode or when continuing an existing machine-audited run. If the existing record cannot preserve the adaptive path reliably, enter machine-audited mode before the first adaptive outcome; do not reconstruct omitted history later.
 
 ## 1. Freeze a Decision Contract
 
 Before candidate-specific outcomes are inspected, freeze a compact Decision Contract. Its core defines:
 
 - the scientific or operational decision, eligible candidate classes, substantive eligibility, target population, supported sample, and estimand;
+- the analysis and scientifically independent units, dependence handling, and any partition or resampling unit;
 - comparable selection families and the evidence used for screening, ranking, falsification, and promotion;
 - the decision, tie or practical-equivalence, inconclusive, and noncomparable-candidate rules;
 - the minimum meaningful difference, selection-path inference strategy, freeze time, version, and amendment conditions.
@@ -47,7 +48,7 @@ Exposure follows the information, not the filename or tool. Changing the sample 
 Candidates may be directly ranked only inside a justified selection family. Freeze a comparison key that includes, as applicable:
 
 - scientific decision and target population;
-- unit of analysis and supported sample;
+- analysis unit, scientifically independent unit, dependence or grouping regime, and supported sample;
 - estimand and outcome definition;
 - data product, measurement regime, quality, and sensitivity;
 - evidence stage;

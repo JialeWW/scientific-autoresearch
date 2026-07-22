@@ -1,0 +1,16 @@
+{
+  "benchmark_result_schema_version": "2.0.0",
+  "skill_release": "0.2.7",
+  "manifest_sha256": "sha256:38169dcc0ba0c6c24906a4eb6bf5248e58378347179ff96bddf98d1a2a0f8109",
+  "status": "not_evaluated",
+  "package_validation": "separate_structural_check",
+  "behavioral_evaluation": "not_evaluated",
+  "empirical_method_validation": "not_evaluated",
+  "scored_execution_counts": {
+    "trigger": 0,
+    "behavioral": 0,
+    "empirical": 0
+  },
+  "summary": null,
+  "statement": "The release defines hash-bound benchmark protocols and passes separate deterministic consistency tests, but no scored behavioral execution or empirical operating-characteristic benchmark is reported."
+}

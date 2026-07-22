@@ -1,17 +1,22 @@
-name: validate-skill
+name: package-and-test-consistency
 
 on:
   push:
   pull_request:
 
 jobs:
-  validate:
+  package-validation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python scripts/validate_skill.py scientific-autoresearch
-      - run: python scientific-autoresearch/scripts/validate_run.py --self-test
-      - run: python benchmarks/score.py --self-test
+      - name: Package consistency
+        run: python scripts/validate_skill.py scientific-autoresearch
+      - name: Run-schema fixture checks
+        run: python scientific-autoresearch/scripts/validate_run.py --self-test
+      - name: Benchmark-scorer smoke fixture
+        run: python benchmarks/score.py --self-test
+      - name: Independent benchmark-scorer tests
+        run: python -m unittest discover -s benchmarks/tests -v

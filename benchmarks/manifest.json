@@ -1,87 +1,96 @@
 {
-  "benchmark_schema_version": "1.0.0",
-  "release_under_test": "0.2.6",
-  "benchmark_status": "specification_only",
+  "benchmark_schema_version": "2.0.0",
+  "protocol_id": "scientific-autoresearch-benchmark-v2",
+  "release_under_test": "0.2.7",
+  "benchmark_status": "protocol_defined_not_evaluated",
+  "record_schema_version": "2.0.0",
+  "scorer_sha256": "19d8ba84a19c2a450d92b02de6e218cee669a887ac9a56d1bbd0d6c285a9f4a5",
   "suites": [
     {
       "suite_id": "trigger-routing",
+      "protocol_status": "frozen",
+      "record_type": "trigger",
+      "scoring_backend": "score.py",
       "evidence_type": "behavioral_conformance",
       "target": "skill activation and adjacent-task nonactivation",
-      "case_source": "scientific-autoresearch/evals/eval_queries.json",
-      "metrics": [
-        "precision",
-        "recall",
-        "specificity",
-        "balanced_accuracy"
+      "case_source": {
+        "path": "scientific-autoresearch/evals/eval_queries.json",
+        "sha256": "0fe6d9302df069f207ef121ce71ad91afe035c43c138014a5b8f0058cfe369ba",
+        "collection_key": null,
+        "case_id_field": "id",
+        "prompt_field": "query",
+        "role": "development"
+      },
+      "conditions": [
+        {"condition_id": "skill-v0.2.7", "skill_release": "0.2.7", "skill_package_sha256": "sha256:20b2fe538932919c54863277e8cc677e1b375d79d379577272727a0553e72fa9"},
+        {"condition_id": "skill-v0.2.6", "skill_release": "0.2.6", "skill_package_sha256": "sha256:d7dc173bd510eff7384f59d807600e8f1a6de7f5d9ff52ef3800dac77d16e547"},
+        {"condition_id": "no-skill", "skill_release": null, "skill_package_sha256": null}
       ],
-      "baseline_conditions": [
-        "no_skill",
-        "previous_release"
-      ],
-      "repetitions": null,
-      "seed_policy": null,
-      "pass_rule": null,
-      "execution_status": "not_run"
+      "evaluation_unit": "one case in one isolated execution",
+      "repetitions": 5,
+      "seed_policy": "Use isolated executions; record any controllable seed; never retry or select a run by outcome.",
+      "metrics": ["precision", "recall", "specificity", "balanced_accuracy"],
+      "aggregation_rule": "Score truth from the frozen case source; aggregate case-replicate outcomes within one complete provenance stratum.",
+      "interval_rule": {"method": "stratified_case_cluster_bootstrap", "draws": 2000, "seed": 20260722, "confidence": 0.95},
+      "pass_rule": {"decision": "descriptive_only", "rule": "Report frozen metrics and intervals without a release-level pass claim."}
     },
     {
       "suite_id": "behavioral-profile-routing",
+      "protocol_status": "frozen",
+      "record_type": "behavioral",
+      "scoring_backend": "score.py",
       "evidence_type": "behavioral_conformance",
       "target": "profile selection and safeguard behavior",
-      "case_source": "scientific-autoresearch/evals/evals.json",
-      "metrics": [
-        "assertion_pass_rate",
-        "case_all_pass_rate",
-        "critical_violation_rate"
+      "case_source": {
+        "path": "scientific-autoresearch/evals/evals.json",
+        "sha256": "6da70bcdf3e7a94d8d7faac05830bcbe37ad16161ba0af6b4919c710732c7d92",
+        "collection_key": "evals",
+        "case_id_field": "id",
+        "prompt_field": "prompt",
+        "role": "development"
+      },
+      "conditions": [
+        {"condition_id": "skill-v0.2.7", "skill_release": "0.2.7", "skill_package_sha256": "sha256:20b2fe538932919c54863277e8cc677e1b375d79d379577272727a0553e72fa9"},
+        {"condition_id": "skill-v0.2.6", "skill_release": "0.2.6", "skill_package_sha256": "sha256:d7dc173bd510eff7384f59d807600e8f1a6de7f5d9ff52ef3800dac77d16e547"},
+        {"condition_id": "no-skill", "skill_release": null, "skill_package_sha256": null}
       ],
-      "baseline_conditions": [
-        "no_skill",
-        "previous_release"
-      ],
-      "repetitions": null,
-      "seed_policy": null,
-      "pass_rule": null,
-      "execution_status": "not_run"
+      "evaluation_unit": "one case in one isolated execution",
+      "repetitions": 5,
+      "seed_policy": "Use isolated executions; record any controllable seed; never retry or select a run by outcome.",
+      "metrics": ["case_mean_assertion_pass_rate", "case_all_pass_rate", "critical_violation_rate"],
+      "aggregation_rule": "Average assertions within each execution, replicates within each case, then weight cases equally; assertion-micro rate is diagnostic only.",
+      "interval_rule": {"method": "case_cluster_bootstrap", "draws": 2000, "seed": 20260722, "confidence": 0.95},
+      "pass_rule": {"decision": "descriptive_only", "rule": "Report frozen metrics and intervals without a release-level pass claim."}
     },
     {
       "suite_id": "empirical-operating-characteristics",
+      "protocol_status": "draft",
+      "record_type": "empirical",
+      "scoring_backend": "external",
       "evidence_type": "empirical_method_validation",
-      "target": "end-to-end behavior under known truth",
+      "target": "end-to-end behavior under known or defensible truth",
       "case_source": null,
-      "metrics": [
-        "false_promotion_rate",
-        "detection_power",
-        "interval_coverage",
-        "false_completion_rate",
-        "run_reproducibility",
-        "record_completeness"
+      "conditions": [
+        {"condition_id": "skill-v0.2.7", "skill_release": "0.2.7", "skill_package_sha256": "sha256:20b2fe538932919c54863277e8cc677e1b375d79d379577272727a0553e72fa9"},
+        {"condition_id": "skill-v0.2.6", "skill_release": "0.2.6", "skill_package_sha256": "sha256:d7dc173bd510eff7384f59d807600e8f1a6de7f5d9ff52ef3800dac77d16e547"},
+        {"condition_id": "no-skill", "skill_release": null, "skill_package_sha256": null},
+        {"condition_id": "component-ablations", "skill_release": "0.2.7", "skill_package_sha256": "sha256:20b2fe538932919c54863277e8cc677e1b375d79d379577272727a0553e72fa9"}
       ],
-      "baseline_conditions": [
-        "no_skill",
-        "previous_release",
-        "component_ablations"
-      ],
+      "evaluation_unit": "to be frozen with the known-truth scenario family",
       "repetitions": null,
       "seed_policy": null,
-      "pass_rule": null,
-      "execution_status": "not_evaluated"
+      "metrics": ["false_promotion_rate", "detection_power", "interval_coverage", "false_completion_rate", "run_reproducibility", "record_completeness"],
+      "aggregation_rule": null,
+      "interval_rule": null,
+      "pass_rule": null
     }
-  ],
-  "required_record_fields": [
-    "suite_id",
-    "release",
-    "condition",
-    "case_id",
-    "replicate",
-    "agent",
-    "model",
-    "runtime",
-    "output_hash",
-    "record_type"
   ],
   "result_policy": {
     "development_and_sealed_cases_separate": true,
     "raw_outputs_required": true,
+    "hash_verified_local_evidence_required_for_scoring": true,
     "uncertainty_required_for_repeated_metrics": true,
-    "scope_claims_to_tested_conditions": true
+    "scope_claims_to_tested_conditions": true,
+    "structural_checks_do_not_establish_behavioral_or_empirical_validity": true
   }
 }

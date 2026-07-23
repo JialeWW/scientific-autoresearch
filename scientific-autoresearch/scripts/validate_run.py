@@ -1066,14 +1066,13 @@ def _skill_metadata() -> tuple[str, str]:
 
 
 def _skill_package_sha256(root: Path | None = None) -> str:
-    """Hash the fixed behavior-bearing package surface without run artifacts."""
+    """Hash the fixed runtime package surface without run or benchmark artifacts."""
 
     root = (root or _skill_root()).resolve()
     skill_md = root / "SKILL.md"
     resource_specs = (
         (root / "references", "*.md"),
         (root / "scripts", "*.py"),
-        (root / "evals", "*.json"),
     )
     if skill_md.is_symlink() or not skill_md.is_file():
         raise RuntimeError("SKILL.md must be a regular, nonsymlink file for provenance hashing.")
@@ -1096,7 +1095,7 @@ def _skill_package_sha256(root: Path | None = None) -> str:
         files.extend(resources)
 
     digest = hashlib.sha256()
-    digest.update(b"scientific-autoresearch-behavior-package-v1\0")
+    digest.update(b"scientific-autoresearch-runtime-package-v2\0")
     for path in sorted(files, key=lambda item: item.relative_to(root).as_posix()):
         relative = path.relative_to(root).as_posix().encode("utf-8")
         file_digest = hashlib.sha256(path.read_bytes()).digest()
@@ -7114,7 +7113,7 @@ def initialize_run(run_dir: Path, profile: str) -> dict[str, Any]:
         "round_artifacts": [round_record],
         "question": todo,
         "scientific_scope": todo,
-        "execution_mode": "single_round" if profile == "fixed_test" else "multi_round",
+        "execution_mode": "multi_round",
         "created_at": created_at,
         "output_root": str(root),
         "governance_status": "not_assessed",
@@ -9819,6 +9818,16 @@ def run_self_test() -> dict[str, Any]:
             == ["legacy_artifact_schema"]
         )
 
+        fixed_init_root = temp_root / "initialized-fixed-run"
+        fixed_init_report = initialize_run(fixed_init_root, "fixed_test")
+        fixed_init_manifest = json.loads(
+            (fixed_init_root / "run_manifest.json").read_text(encoding="utf-8")
+        )
+        fixed_init_continuous = (
+            fixed_init_report.get("init") == "created"
+            and fixed_init_manifest.get("execution_mode") == "multi_round"
+        )
+
         init_root = temp_root / "initialized-run"
         init_report = initialize_run(init_root, "coverage_search")
         initialized_files = {
@@ -10021,8 +10030,8 @@ def run_self_test() -> dict[str, Any]:
             and mismatch_provenance_path.read_bytes() == mismatch_before
         )
 
-        digest_fixture_root = temp_root / "behavior-package-digest"
-        for directory in ("references", "scripts", "evals"):
+        digest_fixture_root = temp_root / "runtime-package-digest"
+        for directory in ("references", "scripts"):
             (digest_fixture_root / directory).mkdir(parents=True, exist_ok=True)
         (digest_fixture_root / "SKILL.md").write_text(
             "---\nname: scientific-autoresearch\ndescription: test\n---\n",
@@ -10034,9 +10043,6 @@ def run_self_test() -> dict[str, Any]:
         (digest_fixture_root / "scripts" / "test.py").write_text(
             "VALUE = 1\n", encoding="utf-8"
         )
-        (digest_fixture_root / "evals" / "test.json").write_text(
-            "{}\n", encoding="utf-8"
-        )
         digest_before_nested_run = _skill_package_sha256(digest_fixture_root)
         nested_run = digest_fixture_root / "runs" / "nested"
         nested_run.mkdir(parents=True)
@@ -10046,8 +10052,16 @@ def run_self_test() -> dict[str, Any]:
         digest_after_nested_run = _skill_package_sha256(digest_fixture_root)
         nested_run_digest_stable = digest_before_nested_run == digest_after_nested_run
 
-        symlink_fixture_root = temp_root / "symlink-behavior-package"
-        for directory in ("references", "scripts", "evals"):
+        historical_evals = digest_fixture_root / "evals"
+        historical_evals.mkdir()
+        (historical_evals / "legacy.json").write_text("{}\n", encoding="utf-8")
+        digest_after_historical_evals = _skill_package_sha256(digest_fixture_root)
+        historical_evals_excluded = (
+            digest_after_nested_run == digest_after_historical_evals
+        )
+
+        symlink_fixture_root = temp_root / "symlink-runtime-package"
+        for directory in ("references", "scripts"):
             (symlink_fixture_root / directory).mkdir(parents=True, exist_ok=True)
         (symlink_fixture_root / "SKILL.md").write_text(
             "---\nname: scientific-autoresearch\ndescription: test\n---\n",
@@ -10055,9 +10069,6 @@ def run_self_test() -> dict[str, Any]:
         )
         (symlink_fixture_root / "scripts" / "test.py").write_text(
             "VALUE = 1\n", encoding="utf-8"
-        )
-        (symlink_fixture_root / "evals" / "test.json").write_text(
-            "{}\n", encoding="utf-8"
         )
         external_reference = temp_root / "external-reference.md"
         external_reference.write_text("external\n", encoding="utf-8")
@@ -11021,6 +11032,7 @@ def run_self_test() -> dict[str, Any]:
                 rejected_with_history_valid,
                 rejected_without_evidence_detected,
                 legacy_valid,
+                fixed_init_continuous,
                 init_structure_valid,
                 init_overwrite_refused,
                 provenance_record_valid,
@@ -11029,6 +11041,7 @@ def run_self_test() -> dict[str, Any]:
                 malformed_provenance_detected,
                 provenance_validation_read_only,
                 nested_run_digest_stable,
+                historical_evals_excluded,
                 behavior_symlink_rejected,
                 future_schema_record_refused,
                 malformed_history_record_refused,
@@ -11103,6 +11116,7 @@ def run_self_test() -> dict[str, Any]:
                     "rejected_with_evidence_positive": rejected_with_history_valid,
                     "rejected_without_evidence": rejected_without_evidence_detected,
                     "legacy_schema_positive": legacy_valid,
+                    "fixed_init_continuous_execution": fixed_init_continuous,
                     "init_canonical_structure": init_structure_valid,
                     "init_overwrite_refused": init_overwrite_refused,
                     "skill_provenance_recording": provenance_record_valid,
@@ -11111,6 +11125,7 @@ def run_self_test() -> dict[str, Any]:
                     "malformed_skill_provenance": malformed_provenance_detected,
                     "skill_provenance_validation_read_only": provenance_validation_read_only,
                     "nested_run_excluded_from_skill_digest": nested_run_digest_stable,
+                    "historical_evals_excluded_from_runtime_digest": historical_evals_excluded,
                     "behavior_symlink_rejected": behavior_symlink_rejected,
                     "future_schema_provenance_write_refused": future_schema_record_refused,
                     "malformed_provenance_history_write_refused": malformed_history_record_refused,
@@ -11285,6 +11300,7 @@ def run_self_test() -> dict[str, Any]:
                 "rejected_with_evidence_positive": True,
                 "rejected_without_evidence": True,
                 "legacy_schema_positive": True,
+                "fixed_init_continuous_execution": True,
                 "init_canonical_structure": True,
                 "init_overwrite_refused": True,
                 "skill_provenance_recording": True,
@@ -11294,6 +11310,7 @@ def run_self_test() -> dict[str, Any]:
                 "skill_provenance_validation_read_only": True,
                 "nested_run_excluded_from_skill_digest": True,
                 "behavior_symlink_rejected": True,
+                "historical_evals_excluded_from_runtime_digest": True,
                 "future_schema_provenance_write_refused": True,
                 "malformed_provenance_history_write_refused": True,
                 "illegal_status_transition": True,

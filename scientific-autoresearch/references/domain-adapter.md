@@ -1,125 +1,54 @@
-# Domain Adapter and Data-Contract Interface
+# Domain Adapter and Data-Support Checks
 
-Use this reference only when scientific validity depends on domain semantics that the generic workflow cannot infer, such as independent units, repeated or nested observations, identifier reconciliation, joins, measurement tolerances, admissible estimands, or specialized falsification rules. Do not create an adapter for a simple analysis whose relevant units and assumptions fit directly in the claim card or Decision Contract.
+Use this reference only when scientific validity depends on domain semantics that the generic workflow cannot infer, such as independent units, repeated or nested observations, identifier reconciliation, joins, measurement tolerances, admissible estimands, or specialized falsification rules. A simple analysis whose relevant units and assumptions fit directly in the compact scientific plan needs no separate adapter.
 
-## 1. Keep Three Layers Separate
+## 1. State the Domain Semantics
 
-- The core skill controls profiles, selection history, evidence stages, inference over the actual selection path, and honest closure.
-- A domain adapter declares how a class of tasks instantiates units, dependence, admissible methods, data checks, and scientific review.
-- A project contract binds that adapter to actual data versions, identifiers, rules, tolerances, and expected counts.
-
-Never place project table names, object aliases, sample counts, connection methods, or one study's null construction in the reusable adapter.
-
-## 2. Freeze the Adapter Reference
-
-Before affected outcomes, record an adapter or equivalent existing protocol with:
+Record only what changes scientific meaning:
 
 ```text
-adapter_name
-adapter_version
-adapter_artifact_path_or_locator
-adapter_sha256_or_immutable_version
-applicable_scope
-analysis_unit
-independence_unit
-dependence_handling
-partition_or_resampling_unit
-admissible_estimands
-domain_specific_gates
-validation_procedures
-falsification_requirements
-completion_additions
-required_human_review
+applicable analysis family
+analysis unit
+scientifically independent unit
+dependence handling
+partition or resampling unit
+admissible estimands
+domain-specific support rules
+domain-specific falsifiers
+required scientific review
 ```
 
-In the machine schema, an attached adapter is run-scoped: `applicable_scope` states which part of the declared run it governs, and any blocking preflight must pass before that run produces affected outcomes. Use a separate successor run or contract when a narrower adapter should not gate unrelated work. An adapter may narrow an analysis or add safeguards. It may not waive core selection-path, provenance, evidence-stage, governance, or reporting requirements.
+Use the smallest coherent analysis family governed by the same rules. Independently executable families do not block one another: a shared input or calibration blocks only its dependents, and a joint rule blocks only the joint comparison or conclusion.
 
-## 3. Freeze a Project Data Contract When Needed
+Keep reusable domain semantics separate from project-specific table names, aliases, sample counts, connection methods, or one study's null construction.
 
-Activate a data-contract preflight when identifiers, aliases, multi-table joins, repeated rows, numerical reconciliation, expected counts, or grouped partitions can change support or independence. Version and bind the contract to registered input versions. Express only applicable rules, chosen from or extending:
+## 2. Run a Proportionate Data-Support Check
+
+Run a response-blind data-support check when identifiers, aliases, multi-table joins, repeated rows, numerical reconciliation, expected counts, or grouped partitions can change support or independence. Use only the applicable rules:
 
 ```text
-identifier_integrity
-alias_resolution
-join_cardinality
-numeric_consistency
-expected_count
-independent_unit_count
-partition_group_leakage
-measurement_support
+identifier integrity
+alias resolution
+join cardinality
+numeric consistency
+expected count
+independent-unit count
+partition leakage
+measurement support
 ```
 
-Each rule records a stable ID, affected inputs and fields, expected relation or tolerance, failure action, and the procedure that evaluates it. Alias decisions require an authoritative source or an explicitly unresolved state; do not guess from similar strings. A many-to-many join, tolerance failure, count mismatch, or cross-partition group overlap is not automatically invalid, but it must match the frozen rule or block the affected result.
+For each rule, record its stable name, affected inputs and fields, expected relation or tolerance, observed status, and failure action. Alias decisions need an authoritative source or an explicitly unresolved state; do not guess from similar strings. A many-to-many join, tolerance failure, count mismatch, or cross-partition overlap is not automatically invalid, but it must match the scientific rule or block the affected result.
 
-Let project code perform the actual checks. The generic validator can verify only that the declared adapter, contract, report, versions, hashes, statuses, and objections agree; it cannot infer whether a scientific identifier or domain tolerance is correct.
+Let project code perform the checks. The generic skill cannot infer whether a scientific identifier, tolerance, or domain assumption is correct. Use `passed`, `failed`, or `inconclusive`; `passed` requires every blocking rule for that family to pass.
 
-Classify a preflight's evidence as `automated`, `manual`, `semantic_review`, or `declarative`. Do not invent an executable command for a manual or semantic judgment. For schema 1.5.4, a passed automated preflight that can support or block a decision-bearing result also records:
+Once the relevant rules pass, begin or resume that family's science. Do not add more blocking checks for general reassurance. If a response-blind repair changes an identifier mapping, join, support rule, unit, or quality rule, rerun only the affected checks. Create a new scientific batch only when the change can alter the supported sample, estimand, candidate value, ranking, inference, or interpretation.
 
-```text
-evidence_mode
-decision_bearing
-procedure_artifact:
-  path
-  sha256
-input_bindings[]:
-  data_version_id  # must resolve to exactly one registered data product/version row
-  sha256_or_immutable_version
-execution_status
-exit_status
-```
+## 3. Review Material Semantic Judgments
 
-Preserve a script, notebook, workflow definition, fixed query, software entry configuration, or equivalent procedure artifact; a shell command is not required. Bind every declared input version to a digest or immutable version. The report repeats `procedure_artifact`, records `checked_input_bindings`, and agrees on the evidence and execution statuses. Record `execution_status=completed` and `exit_status=success` only when that procedure produced the bound report. A passed applicable preflight is the gate for later outcome-bearing work and therefore records `decision_bearing=true`; a passed automated preflight requires the executable binding above even if the manifest has not yet advanced from `planned`. Nonautomated evidence and checks that are not passed gates do not imitate executable evidence.
+When a scientific decision depends on a judgment that structure checks cannot establish, record its reason, scope, evidence reviewed, status, and unresolved objections in the compact research record. Use `not_required` with a reason for low-consequence or directly testable decisions; otherwise use `pending`, `passed`, `passed_with_reservations`, `failed`, or `inconclusive`.
 
-## 4. Bind the Preflight Report
+Do not call a review independent merely because it used another person, model, or label. Disclose shared evidence, context, methods, or personnel. Semantic review does not turn same-data exploration into independent verification or establish empirical operating characteristics.
 
-For a machine-audited run, preserve a report or equivalent record with this shape:
+## 4. Add Machine Bindings Only on Explicit Request
 
-```text
-contract_version
-checked_data_version_ids
-overall_status
-evidence_mode              # automated decision-bearing report only
-decision_bearing           # automated decision-bearing report only
-procedure_artifact:        # automated decision-bearing report only
-  path
-  sha256
-checked_input_bindings[]:  # automated decision-bearing report only
-  data_version_id
-  sha256_or_immutable_version
-execution_status           # automated decision-bearing report only
-exit_status                # automated decision-bearing report only
-checks[]:
-  check_id
-  check_type
-  status
-  observed_summary
-  evidence_path_or_locator  # optional when no separate evidence artifact exists
-  evidence_sha256_or_immutable_version  # required with a separate evidence locator
-checked_at
-```
-
-Require every applicable frozen rule to have exactly one entry in `checks[]`. The top-level `overall_status` may be `passed`, `failed`, or `inconclusive`; `passed` requires all blocking checks to pass. A `failed` or `inconclusive` overall status, or any unresolved required check, blocks affected outcome-bearing execution but may support a transparent blocked report.
-
-The generic validator reads and reconciles these records but never runs the procedure. It verifies contained artifact paths and hashes, input-version bindings, execution-status agreement, rule coverage, and report consistency. Scientific adequacy of the procedure remains a domain and reproduction question.
-
-## 5. Record Semantic Review Proportionately
-
-When a decision depends on a semantic judgment that structure checks cannot establish, record:
-
-```text
-required
-reason
-review_scope
-reviewed_artifact_hashes
-reviewer_identity_or_procedure
-reviewer_relation_to_generation
-status
-unresolved_objections
-human_signoff_required
-human_signoff_status
-human_signoff_evidence
-```
-
-Use `not_required` with one reason for low-consequence or directly testable decisions. Otherwise distinguish `pending`, `passed`, `passed_with_reservations`, `failed`, and `inconclusive`. If human signoff is required, distinguish `pending`, `passed`, and `declined`, and preserve the evidence or locator; a decision-bearing or completed state requires `passed`. Do not call a review independent merely because it used a different label; disclose shared evidence, context, methods, or personnel.
-
-Semantic review does not turn same-data exploration into independent verification and does not establish empirical operating characteristics. It records which judgments received domain scrutiny and which remain self-assessed.
+Ordinary work needs no adapter artifact, hash, immutable version, schema-specific project contract, or validator report. If machine-readable audit, formal handoff or recovery, or an existing structured run separately requires those bindings, read `report-contract.md` and `status-schema.md` and represent the same scientific checks there. The formal representation does not add scientific validity by itself.

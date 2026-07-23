@@ -69,11 +69,13 @@ authorization_expiry
 monitoring_and_stop_mechanism
 ```
 
-Do not request renewed approval for registered coverage jobs wholly inside a valid envelope. Request it before changing the execution context, data scope, job class, cost, concurrency, duration, storage, network behavior, or external impact.
+Do not request renewed approval for registered work wholly inside a valid envelope. Request it only before a change exceeds the authorized execution context, data scope, job class, cost, concurrency, duration, storage, or network boundary, or changes the external impact.
 
 An omitted envelope field is not unlimited permission. Resolve it from the documented execution policy or responsible authority; if no authoritative boundary exists, request clarification or renewed authorization.
 
-Track cumulative and remaining use after each job. Resource exhaustion, service interruption, or envelope expiry creates `search_status=resource_limited_pause` when eligible cells remain. Preserve the open queue and resume conditions; do not call the inventory saturated or coverage complete.
+Track cumulative and remaining use at declared resource checkpoints, not after every small task. Resource exhaustion, service interruption, or envelope expiry creates a bounded pause when work remains. Preserve the scientific and engineering queues, last accepted qualification state, and resume conditions; do not call the inventory saturated or coverage complete.
+
+An authorized change to workers, chunking, cache, scheduling, retry mechanics, or execution target does not require renewed scientific authorization when it stays inside the recorded Execution Profile, passes its equivalence gate, and does not change external impact. Record it as an execution amendment. If the change alters cost, data scope, network behavior, safety, scientific values, randomness, or selection, apply the corresponding authorization or scientific gate.
 
 If observed results change compute scheduling priority, record that adaptive resource decision in the search ledger because it can affect candidate selection.
 

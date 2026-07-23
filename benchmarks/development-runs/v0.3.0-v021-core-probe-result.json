@@ -1,0 +1,52 @@
+{
+  "result_schema_version": "0.1.0-development",
+  "skill_release": "0.3.0",
+  "run_id": "v0.3.0-v021-core-development-probes-20260723",
+  "execution_status": "completed_qualitative_probes",
+  "contains_scored_benchmark_result": false,
+  "behavioral_evaluation_status": "not_evaluated",
+  "assurance": {
+    "runner": "two isolated Agent responses",
+    "model_identity": "unreported",
+    "runtime_identity": "unreported",
+    "sampling_configuration": "unreported",
+    "timing_protocol": "unfrozen",
+    "judge_protocol": "manual semantic review",
+    "comparison_condition": null
+  },
+  "probes": [
+    {
+      "id": "active-open-search-continues-after-weak-result",
+      "response_path": "benchmarks/development-runs/v0.3.0-active-continuation-probe.md",
+      "response_sha256": "8649393b1039c5a955e129081fbca8cb83ad4ef5372a321da20e4a57cd123982",
+      "qualitative_result": "pass",
+      "observed": [
+        "weak result treated as a transition rather than a stop",
+        "response specifies autonomous continuation through remaining candidates and a falsifier",
+        "one compact selection-path record",
+        "engineering repair is not a scientific round",
+        "no formal coverage or machine-audit escalation"
+      ]
+    },
+    {
+      "id": "route-explicit-coverage-completion",
+      "response_path": "benchmarks/development-runs/v0.3.0-scoped-coverage-probe.md",
+      "response_sha256": "a1cfe672e807a5fb227984936c7f16d38115977e4ac243cde6c5c5dfcf3196ac",
+      "qualitative_result": "pass",
+      "observed": [
+        "missing scope is not fabricated",
+        "exact open queue preserves the authorization boundary",
+        "inventory, finite cells, dual saturation audits and complete selection path are planned",
+        "autonomous continuation begins once the minimum scope packet exists",
+        "machine-readable audit schema is not required"
+      ]
+    }
+  ],
+  "limitations": [
+    "These were two unfrozen qualitative responses, not repeated or paired behavioral evaluation.",
+    "No scientific computation or long-running infrastructure was executed.",
+    "Model, runtime, sampling, timing and judge protocols were not frozen.",
+    "The results cannot support superiority over v0.2.1, population-level behavior, a release gate or empirical-method validation."
+  ],
+  "benchmark_state_impact": "none; v0.3.0 remains not_evaluated"
+}

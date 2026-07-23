@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use scientific-autoresearch, please cite it using this metadata."
-title: "scientific-autoresearch: A risk-proportionate skill for auditable scientific research"
+title: "scientific-autoresearch: A lightweight workflow for iterative and auditable scientific research"
 authors:
   - family-names: "Wang"
     given-names: "Jiale"
@@ -8,10 +8,10 @@ authors:
   - family-names: "Fang"
     given-names: "Taotao"
     orcid: "https://orcid.org/0000-0002-2853-3808"
-version: "0.2.8"
-date-released: "2026-07-22"
+version: "0.3.0"
+date-released: "2026-07-23"
 license: "MIT"
 type: "software"
 repository-code: "https://github.com/JialeWW/scientific-autoresearch"
-url: "https://github.com/JialeWW/scientific-autoresearch/releases/tag/v0.2.8"
-abstract: "A client-neutral-by-design skill for risk-proportionate scientific investigation, from prospective design and read-only audit through frozen analyses, adaptive candidate search, and coverage-based search, with safeguards for outcome-adaptive inference and records supporting decision reconstruction."
+url: "https://github.com/JialeWW/scientific-autoresearch/releases/tag/v0.3.0"
+abstract: "A client-neutral skill for continuous scientific investigation that separates engineering iteration from outcome-adaptive scientific decisions while preserving falsification, systematics, selection correction, reproducibility, and optional data-supported coverage search."

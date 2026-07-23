@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here.
 
+## 0.3.0 - 2026-07-23
+
+- Rebased the always-loaded workflow on v0.2.1's active research loop: build a candidate space, test, interpret, learn from weak results, choose the next candidate or refinement, and continue autonomously to a scientific conclusion or real boundary.
+- Generalized the mechanism inventory into a compact board of mechanisms or other substantive candidates while keeping scientific rationale, distinct predictions, data support, falsifiers, and mechanism-first reasoning where applicable.
+- Made one compact candidate board and result–decision record the default for ordinary multi-round research. Outcome-informed changes are recorded before execution without creating a new governance system.
+- Retained full finite-scope coverage only on explicit request: versioned inventories, candidate-forward and data-product-reverse audits, coverage cells, complete selection accounting, honest scoped completion, and exact open queues without fixed mechanism or round caps.
+- Separated engineering repair and scientifically equivalent execution changes from scientific rounds, and retained the rule that same-data reruns are not independent verification.
+- Limited ordinary input-identity verification to first production use and final reporting or handoff, with intermediate rechecks only after a material identity or assurance trigger rather than at every batch.
+- Kept scale or radius sensitivity, measurement error, systematics, falsification, comparability, transportability, stochastic discipline, and complete-selection-path inference as promotion safeguards rather than per-tool ceremony.
+- Moved profiles, formal contracts, execution lifecycle, machine-audit schemas, immutable artifact rules, and validators into routed compatibility references instead of the ordinary scientific path.
+- Added a deterministic runtime-package digest and runtime-only installable archive that excludes historical v0.2.8 eval inputs. The frozen protocol/scorer 2.1.2 line remains unchanged; v0.3.0 behavioral and empirical-method evaluation remain `not_evaluated`.
+
 ## 0.2.8 - 2026-07-22
 
 - Kept the five research profiles, Decision Contract, adaptive selection-path rules, coverage search, and stopping logic unchanged while adding one general comparable-block principle for method and condition comparisons.

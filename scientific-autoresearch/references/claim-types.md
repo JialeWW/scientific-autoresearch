@@ -76,4 +76,4 @@ Treat discovered anomalies as exploratory until verified independently.
 
 ## Claim Card Check
 
-Before execution, confirm that the claim card records the claim type, target population or system, unit of inference, observable or outcome, comparator, expected direction when applicable, minimum meaningful effect, supported sample, assumptions, and frozen or exploratory status. A `fixed_test` uses this compact card without creating a search inventory or selection family; outcome-driven follow-up upgrades the run before continuing.
+Before execution, confirm that the compact scientific plan records the claim type, target population or system, unit of inference, observable or outcome, comparator, expected direction when applicable, minimum meaningful effect, supported sample, assumptions, and frozen or exploratory status. A fully frozen batch needs no search inventory or adaptive selection ledger; if an outcome motivates an unprespecified follow-up, record that decision and freeze the successor before continuing.

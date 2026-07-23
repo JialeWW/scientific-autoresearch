@@ -2,14 +2,14 @@
 
 Use this lens before promoting a candidate, claiming verification, or writing a final scientific interpretation.
 
-First state the research profile. A bounded `fixed_test` report, an `adaptive_search` stage report, and a scientifically complete `coverage_search` make different completion claims.
+First identify the actual scientific path: fully frozen before outcomes, outcome-informed, or explicitly systematic coverage. These paths make different completion claims. Formal profile labels are derived compatibility metadata only when auditing a structured record.
 
 ## Question and Significance
 
 - State the question and claim type in one sentence.
 - State the gap, decision, uncertainty, anomaly, calibration, or mechanism the result addresses.
 - Explain why the minimum meaningful effect matters.
-- For `fixed_test`, state the frozen claim card and one decision rule. For adaptive or coverage search, state the frozen Decision Contract, eligible comparisons, ranking evidence, and tie or inconclusive rule.
+- For a fully frozen batch, state its compact scientific plan and decision rule. For outcome-informed or coverage work, state the decision, eligible comparisons, ranking evidence, and tie or inconclusive rule frozen before the applicable outcomes.
 
 ## Method Fit
 
@@ -22,23 +22,23 @@ First state the research profile. A bounded `fixed_test` report, an `adaptive_se
 
 - Report direction, magnitude, interval or uncertainty, sensitivity, sample support, and failure cases.
 - Compare the effect with measurement precision, intrinsic variation, calibration limits, and the dominant systematic floor.
-- For adaptive or coverage search, record prior exposure, data looks, the generation-to-promotion selection path, adaptive additions, and stochastic variation. Add the complete versioned search space only for coverage search.
+- For outcome-informed or coverage work, record prior exposure, data looks, the generation-to-promotion selection path, adaptive additions, and stochastic variation. Add the complete versioned search space only for explicit systematic coverage.
 - State which observation would reduce belief.
 
 ## Adaptive-Path Audit
 
-For `adaptive_search` and `coverage_search`:
+For outcome-informed and systematic-coverage work:
 
 - Did every generation, modification, screening, ranking, verification-targeting, and promotion step enter the correct complete path?
 - Does the selected holdout, end-to-end null, selective, sequential, hierarchical, Bayesian, or other method match the path, dependence structure, and decision?
 - Are directly ranked candidates genuinely comparable in target population, supported sample, estimand, evidence stage, and material data quality?
 - Were actual seeds and failed realizations handled under the frozen policy?
 
-An `adaptive_search` may stop with a bounded stage report. It must preserve unresolved work and cannot claim saturation or coverage completion.
+A bounded report limits claim strength; it is not a stopping rule. Continue while Core Rule 6 identifies a material supported next test. Preserve unresolved work, and never claim saturation or coverage completion unless systematic coverage was explicitly requested and its closure conditions passed.
 
 ## Coverage-Scope Audit
 
-For `coverage_search` only:
+For explicit systematic coverage only:
 
 - Which inventory version and data-product scope were searched?
 - Which complementary generation lenses were completed?
@@ -47,7 +47,7 @@ For `coverage_search` only:
 - What are the coverage numerator, denominator, and closure rules?
 - What evidence supports inventory saturation?
 - Did any result add a post-result candidate or formulation and reset the relevant audit?
-- Did the machine consistency check pass across contracts, versions, ledger, families, queue, and statuses?
+- Is the scientific coverage record internally consistent across inventory versions, cells, ledger, families, queue, and decisions? If structured machine audit was separately selected, did its applicable check also pass?
 
 Resource-deferred or governance-blocked cells prevent coverage completion. Inventory saturation and coverage completion are separate claims.
 
@@ -90,7 +90,7 @@ Use language that matches the design:
 
 ## Coverage Wording
 
-For a completed mechanistic `coverage_search`, when supported, use:
+For completed mechanistic systematic coverage, when supported, use:
 
 > We systematically searched a versioned inventory of mechanisms and observables testable with the available data products.
 
@@ -115,5 +115,5 @@ Before promotion, answer:
 9. What is the verification status?
 10. What dominant limitation must remain in the headline sentence?
 11. What evidence would change the decision?
-12. If this is `coverage_search`, did the inventory actually meet saturation and coverage criteria, or did execution merely stop? Otherwise is the output clearly a bounded test or stage report?
-13. Did the profile-appropriate consistency check pass when artifacts were created?
+12. If systematic coverage was explicitly requested, did the inventory actually meet saturation and coverage criteria, or did execution merely stop? Otherwise is the output clearly a bounded scientific result?
+13. When structured artifacts were created, did the applicable consistency check pass?

@@ -20,7 +20,7 @@ Treat availability, support, exposure, footprint, quality, and missingness class
 
 If measurement uncertainty can change support, matching, subgroup membership, thresholds, eligibility, or candidate ranking, propagate or perturb it through the relevant selection path before that quantity can control promotion. A recovery study, measurement model, resampling scheme, calibration analysis, or another domain-appropriate sensitivity design may satisfy the gate. Until it passes, keep quality-defined strata diagnostic or support limited. This conditional gate is method- and execution-context agnostic.
 
-When aliases, multi-table joins, repeated rows, numerical tolerances, expected counts, or grouped partitions determine the supported sample, use `domain-adapter.md` to freeze a project data-contract preflight. Keep related independent units together across partitions and resample or permute at that level unless their dependence is modeled explicitly.
+When aliases, multi-table joins, repeated rows, numerical tolerances, expected counts, or grouped partitions determine the supported sample, use `domain-adapter.md` to record and run the applicable data-support checks. A formal project contract is not required. Keep related independent units together across partitions and resample or permute at that level unless their dependence is modeled explicitly.
 
 ## 2. Match the Observable to the Mechanism
 
@@ -67,8 +67,8 @@ Do not build an arbitrary score from weak variables merely to improve a metric. 
 
 ## 6. Observational Completion Check
 
-For `fixed_test` and `adaptive_search`, apply only the support, geometry, measurement, and contrast checks relevant to the frozen claim or candidate. Do not create an inventory, coverage denominator, or saturation claim merely because this adapter was loaded.
+For frozen or outcome-informed work without a systematic-coverage objective, apply only the support, geometry, measurement, and contrast checks relevant to the frozen claim or candidate. Do not create an inventory, coverage denominator, or saturation claim merely because this adapter was loaded.
 
-For `coverage_search`, map scientifically relevant classes of proximity, cumulative contribution, weighting, natural scale, support, censoring, background contrast, interaction, and selection effects into finite coverage cells or record why they are duplicate, unsupported, or irrelevant.
+For explicit systematic coverage, map scientifically relevant classes of proximity, cumulative contribution, weighting, natural scale, support, censoring, background contrast, interaction, and selection effects into finite coverage cells or record why they are duplicate, unsupported, or irrelevant.
 
-Before a coverage-completion or mechanism-rejection claim, confirm that every relevant eligible observational cell in the current inventory version was validly tested or explicitly classified under the coverage rules. If a feasible mechanism-matched class remains untested or only resource-deferred, use `active`, `weakened`, or `needs_data`, not `rejected`, and do not claim coverage completion. Candidate promotion in a lighter profile still requires its declared selection path and applicable support gates, not unrequested inventory completion.
+Before a coverage-completion or mechanism-rejection claim, confirm that every relevant eligible observational cell in the current inventory version was validly tested or explicitly classified under the coverage rules. If a feasible mechanism-matched class remains untested or only resource-deferred, use `active`, `weakened`, or `needs_data`, not `rejected`, and do not claim coverage completion. Candidate promotion outside systematic coverage still requires its declared selection path and applicable support gates, not unrequested inventory completion.

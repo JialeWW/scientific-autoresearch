@@ -70,15 +70,14 @@ def contained_directory(root: Path, relative_value: object) -> Path | None:
     return resolved if resolved.is_dir() else None
 
 
-def behavior_package_sha256(skill_dir: Path) -> str:
-    """Use the same fixed behavior-package digest as the installed run validator."""
+def runtime_package_sha256(skill_dir: Path) -> str:
+    """Use the same runtime-package digest as the installed run validator."""
 
     root = skill_dir.resolve()
     skill_md = root / "SKILL.md"
     resource_specs = (
         (root / "references", "*.md"),
         (root / "scripts", "*.py"),
-        (root / "evals", "*.json"),
     )
     if skill_md.is_symlink() or not skill_md.is_file():
         raise ValueError("SKILL.md must be a regular, nonsymlink file")
@@ -93,7 +92,7 @@ def behavior_package_sha256(skill_dir: Path) -> str:
             raise ValueError(f"{directory.relative_to(root)} contains an invalid behavior-bearing file")
         files.extend(resources)
     digest = hashlib.sha256()
-    digest.update(b"scientific-autoresearch-behavior-package-v1\0")
+    digest.update(b"scientific-autoresearch-runtime-package-v2\0")
     for path in sorted(files, key=lambda item: item.relative_to(root).as_posix()):
         digest.update(path.relative_to(root).as_posix().encode("utf-8"))
         digest.update(b"\0")
@@ -152,6 +151,8 @@ def load_python_module(path: Path, module_name: str):
 
 def validate(skill_dir: Path, repo_root: Path) -> list[str]:
     errors: list[str] = []
+    repository_skill_dir = (repo_root / "scientific-autoresearch").resolve()
+    validating_repository_source = skill_dir.resolve() == repository_skill_dir
     skill_md = skill_dir / "SKILL.md"
     if not skill_md.is_file():
         return [f"Missing {skill_md}"]
@@ -196,9 +197,9 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
         errors.append("SKILL.md exceeds 500 lines")
 
     try:
-        current_package_hash = behavior_package_sha256(skill_dir)
+        current_package_hash = runtime_package_sha256(skill_dir)
     except (OSError, ValueError) as exc:
-        errors.append(f"Cannot compute current behavior-package digest: {exc}")
+        errors.append(f"Cannot compute current runtime-package digest: {exc}")
         current_package_hash = None
 
     referenced = set(
@@ -270,6 +271,9 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
                 or not set(critical_ids) <= set(assertion_ids or [])
             ):
                 errors.append(f"Eval case {case.get('id')} has invalid critical assertion IDs")
+    except FileNotFoundError as exc:
+        if validating_repository_source:
+            errors.append(f"Invalid evals/evals.json: {exc}")
     except (OSError, json.JSONDecodeError, ValueError, TypeError) as exc:
         errors.append(f"Invalid evals/evals.json: {exc}")
 
@@ -291,6 +295,9 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
                 errors.append(f"Trigger case {item.get('id')!r} needs a query")
             if not isinstance(item.get("should_trigger"), bool):
                 errors.append(f"Trigger case {item.get('id')!r} needs Boolean should_trigger")
+    except FileNotFoundError as exc:
+        if validating_repository_source:
+            errors.append(f"Invalid evals/eval_queries.json: {exc}")
     except (OSError, json.JSONDecodeError, ValueError, TypeError) as exc:
         errors.append(f"Invalid evals/eval_queries.json: {exc}")
 
@@ -492,8 +499,12 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
             benchmark_scorer_path.read_bytes()
         ).hexdigest() != scorer_hash:
             errors.append("benchmarks/manifest-v2.1.2.json scorer SHA-256 mismatch")
-        if benchmark_manifest.get("release_under_test") != version:
-            errors.append("benchmarks/manifest-v2.1.2.json release does not match SKILL.md")
+        if benchmark_manifest.get("release_under_test") != current_protocol_entry.get(
+            "release_under_test"
+        ):
+            errors.append(
+                "benchmarks/manifest-v2.1.2.json release does not match its protocol-index entry"
+            )
         if benchmark_manifest.get("benchmark_status") != (
             "development_protocol_2_1_2_defined_not_evaluated"
         ):
@@ -638,7 +649,7 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
                         and package_hash != current_package_hash
                     ):
                         errors.append(
-                            f"Benchmark suite {suite_id!r} current package hash does not match the installable skill"
+                            f"Benchmark suite {suite_id!r} current runtime-package hash does not match the installable skill"
                         )
                     if not isinstance(package_assurance, dict) or set(package_assurance) != {
                         "mode",
@@ -739,7 +750,10 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
     except (OSError, json.JSONDecodeError, ValueError, TypeError) as exc:
         errors.append(f"Invalid benchmarks/manifest-v2.1.2.json: {exc}")
 
-    if version:
+    current_result_entries = [
+        entry for entry in result_index_entries if entry.get("skill_release") == version
+    ]
+    if version and current_result_entries:
         benchmark_result_path = benchmark_root / "results" / f"v{version}.json"
         try:
             result_relative_path = str(benchmark_result_path.relative_to(repo_root))
@@ -755,32 +769,37 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
                 None,
             )
             if indexed_result is None:
-                errors.append("Current benchmark result is not registered in protocol-index.json")
+                raise ValueError(
+                    "current release has an indexed result but not at its canonical path"
+                )
+            result_manifest_hash = indexed_result.get("manifest_sha256")
+            result_protocol_entry = protocol_entries_by_manifest_hash.get(
+                str(result_manifest_hash)
+            )
+            result_manifest_path = (
+                contained_regular_file(repo_root, result_protocol_entry.get("manifest_path"))
+                if result_protocol_entry is not None
+                else None
+            )
+            if result_manifest_path is None:
+                errors.append("Current benchmark result cannot resolve its historical manifest")
                 result_manifest: dict[str, object] = {}
-                result_manifest_hash = None
             else:
-                result_manifest_hash = indexed_result.get("manifest_sha256")
-                result_protocol_entry = protocol_entries_by_manifest_hash.get(
-                    str(result_manifest_hash)
+                result_manifest = protocol_manifests_by_hash.get(
+                    str(result_manifest_hash), {}
                 )
-                result_manifest_path = (
-                    contained_regular_file(repo_root, result_protocol_entry.get("manifest_path"))
-                    if result_protocol_entry is not None
-                    else None
-                )
-                if result_manifest_path is None:
-                    errors.append("Current benchmark result cannot resolve its historical manifest")
-                    result_manifest = {}
-                else:
-                    result_manifest = protocol_manifests_by_hash.get(
-                        str(result_manifest_hash), {}
-                    )
-                    if not isinstance(result_manifest, dict):
-                        raise ValueError("resolved result manifest must be an object")
-            if benchmark_result.get("benchmark_result_schema_version") != "2.1.0":
-                errors.append("Current benchmark result must use result schema 2.1.0")
-            if benchmark_result.get("benchmark_protocol_version") != "2.1.0":
-                errors.append("Current benchmark result must bind protocol 2.1.0")
+                if not isinstance(result_manifest, dict):
+                    raise ValueError("resolved result manifest must be an object")
+            if len(current_result_entries) != 1:
+                errors.append("Current release must not have multiple indexed result snapshots")
+            if benchmark_result.get("benchmark_result_schema_version") != indexed_result.get(
+                "result_schema_version"
+            ):
+                errors.append("Current benchmark result schema does not match its index entry")
+            if benchmark_result.get("benchmark_protocol_version") != indexed_result.get(
+                "benchmark_protocol_version"
+            ):
+                errors.append("Current benchmark result protocol does not match its index entry")
             if benchmark_result.get("skill_release") != version:
                 errors.append("Current benchmark result release does not match SKILL.md")
             if benchmark_result.get("manifest_sha256") != result_manifest_hash:
@@ -822,13 +841,9 @@ def validate(skill_dir: Path, repo_root: Path) -> list[str]:
                         "Unevaluated result comparison_blocks_frozen does not match "
                         f"the manifest ({actual_frozen_blocks})"
                     )
-                if actual_frozen_blocks != 0:
-                    errors.append(
-                        "Unevaluated prepared protocol must have zero frozen comparison blocks"
-                    )
                 if benchmark_result.get("package_validation") != "separate_structural_check":
                     errors.append("Package consistency must remain a separate evidence state")
-                if result_manifest.get("benchmark_status") != "protocol_2_1_defined_not_evaluated":
+                if "not_evaluated" not in str(result_manifest.get("benchmark_status", "")):
                     errors.append("Unevaluated result conflicts with manifest status")
             elif scoring_status not in {
                 "complete",

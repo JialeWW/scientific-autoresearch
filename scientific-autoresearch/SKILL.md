@@ -1,176 +1,107 @@
 ---
 name: scientific-autoresearch
-description: "Use this skill when scientific work requires formal audit or provenance, when outcome-informed choices generate, modify, screen, compare, rank, or promote data-supported candidates, or when systematic coverage of a finite data-supported candidate space is requested. It provides proportionate profiles for research design, read-only audit, frozen analyses, adaptive search, and coverage search, with safeguards requiring inference to account for the actual selection path."
+description: "Use this skill to investigate scientific questions autonomously by building data-supported mechanisms or substantive candidates, testing and refining them, learning from weak or null results, and auditing the selection path behind the final conclusion. Use it for frozen analyses, open multi-round research, or explicitly requested systematic coverage across empirical, computational, and experimental sciences."
 license: MIT
 metadata:
-  version: "0.2.8"
+  version: "0.3.0"
 ---
 
 # Scientific Autoresearch
 
-Match process weight to outcome adaptivity, not to the number of analyses alone. Search actively when requested, but infer conservatively from every outcome-dependent choice. Bound execution by authorized scope and resources; bound scientific claims by the data-supported search space.
-
-## 1. Select and Freeze a Profile
-
-Choose the least expansive profile that covers the requested work. Record the profile before inspecting new outcomes.
-
-- `design_only`: Prospectively design work without inspecting completed outcomes or executing analysis.
-- `audit_only`: Inspect completed work read-only, without producing new outcomes or changing candidate selection.
-- `fixed_test`: Execute one frozen claim through one prespecified analysis or a finite prespecified family under frozen joint rules.
-- `adaptive_search`: Let outcome-informed choices generate, modify, screen, compare, rank, or promote candidates, without claiming coverage completion.
-- `coverage_search`: Systematically cover the finite candidate and observable space supported by available data and assess scoped completion.
-
-The number of frozen analyses does not by itself create adaptivity. Keep a prespecified finite comparison in `fixed_test` when its membership, methods, multiplicity or joint rule, and reporting rule were fixed before outcomes. Treat any outcome-informed change to those elements as `adaptive_search` or `coverage_search`.
-
-Choose record mode separately from research profile:
-
-- `conceptual_record` is the default for design, read-only audit, and bounded frozen work. Preserve required decisions and provenance in the working report or existing project records; prescribed JSON and CSV filenames are not required.
-- Outcome-adaptive execution requires a contemporaneous append-only or versioned record from the first selection-influencing outcome. An existing project ledger may satisfy this under `conceptual_record`; otherwise use `machine_audited` before that outcome. Retrospective migration may encode preserved history, but it cannot reconstruct omitted attempts or restore pre-result status.
-- `machine_audited` also applies when the user requests structured machine audit, an existing run already uses the schema, or a formal handoff, resume, or `complete_within_scope` claim requires it. Initialize an empty run path with `scripts/validate_run.py --init RUN_DIR --profile PROFILE`, complete only generated profile artifacts, and validate before a machine-audited bounded, pause, or completion report.
-
-Escalate to `machine_audited` or an existing hash-bound equivalent early when a formal handoff or resume is anticipated, multiple autonomous outcome-dependent iterations are authorized, sealed evidence will be opened, or the decision has substantial scientific, financial, regulatory, safety, or operational consequence. Base escalation on consequence and record-loss risk, not on a publication label alone.
-
-`audit_only` may validate an existing machine-audited run read-only, but it does not initialize or upgrade an execution run unless new analysis is separately authorized.
-
-For an authorized execution or resume of a schema-1.5.2-or-later run, call `scripts/validate_run.py --record-skill-provenance RUN_DIR` before producing new outcomes. The command is idempotent and appends only a changed skill identity; ordinary validation remains read-only.
-
-## 2. Preserve History When the Profile Changes
-
-Upgrade the profile before continuing whenever the work exceeds its frozen boundary.
-
-- Move `design_only` to `audit_only` before inspecting completed results, or to an execution profile before generating new results.
-- Move `audit_only` to an execution profile before running a new analysis or making an outcome-informed candidate change.
-- Upgrade `fixed_test` to `adaptive_search` when its outcome motivates a new candidate, formulation, threshold, sample, model, statistic, or ranking. Preserve the original test and label the addition post-result adaptive.
-- Upgrade `adaptive_search` to `coverage_search` only when systematic scoped coverage becomes the goal. Seed the inventory and ledger with the complete earlier history; do not claim retrospective saturation.
-- Never downgrade a run to erase selection, exposure, failed branches, or stricter obligations.
-
-Record each profile transition, reason, timing, and prior outcome access. Changing data subsets, code, models, tools, workflows, or skill versions does not restore confirmatory status after overlapping data were inspected.
-
-For a `machine_audited` execution run, record any changed skill identity, validate the current profile, and use `scripts/validate_run.py --snapshot-upgrade RUN_DIR --to-profile PROFILE` before migration. Review its non-overwriting, hash-bound preservation snapshot, add the returned `profile_history` entry, create only the newly required profile artifacts, and validate again. A preservation attestation without the referenced evidence is insufficient.
-
-## 3. Pass Scope and Governance Gates
-
-Before execution, record the scientific scope, authorized data and actions, output boundary, resource envelope, data-use constraints, and required human oversight. Keep raw inputs read-only when practical, minimize sensitive outputs, and redact credentials, private identifiers, and restricted information.
-
-Do not infer approval. Do not trigger costly, shared, regulated, hazardous, prospective, or physical actions outside explicit authorization. If a prerequisite is absent, stop execution and preserve a useful design or blocked report. Treat persistence requests as persistence only within the recorded boundaries.
-
-## 4. Apply the Chosen Workflow
-
-### `design_only`
-
-State the question, claim, estimand, supported data, proposed test, falsifier, assumptions, uncertainty sources, and next decision. Clearly label every unexecuted result as expected or hypothetical. Create only the requested planning artifact.
-
-### `audit_only`
-
-Inspect the supplied results, methods, provenance, and existing artifacts without producing new scientific outcomes. Identify the recorded or effective execution profile, then apply its scientific checks read-only: fixed-scope integrity for a frozen analysis, selection-path and comparability checks for adaptive work, and saturation and closure checks for a coverage claim. State what was checked, what remains unknown, whether the claim matches the estimand and evidence stage, and which conclusions are supported. Recommend future work without executing, repairing, or silently reclassifying it.
-
-### `fixed_test`
-
-Before outcomes, freeze a compact claim card containing:
-
-- claim, estimand, target and analysis population, supported sample, and meaningful effect scale;
-- `analysis_scope=single_test` or `analysis_scope=frozen_family`; for a family, its finite member IDs, member methods, multiplicity or joint inference rule, joint decision rule, and reporting rule;
-- input versions, exclusions, statistics or models, parameters, seed policy when relevant, decision rule, prespecified checks, and falsifier;
-- specification timing, prior exposure to overlapping data, and intended evidence stage.
-
-Run only the frozen analysis or family. Report each prespecified member needed to reconstruct the joint decision, the effect in meaningful units, uncertainty, assumption and falsification results, limitations, actual inputs and parameters, code or procedure state, seeds when used, and reproduction command or equivalent recipe. A prespecified falsifier or robustness check is part of the frozen family and does not trigger an upgrade. Preserve every member even when weak, null, failed, or unfavorable.
-
-Do not build a candidate inventory, adaptive selection ledger, saturation audit, or coverage matrix for a genuine `fixed_test`. Call the result a completed frozen analysis, not a completed search.
-
-### `adaptive_search`
-
-Before adaptive outcomes, freeze compact records for:
-
-1. a Decision Contract defining the decision, candidate eligibility, target and any distinct analysis, selection, or reporting populations, comparison rules, estimands, ranking evidence, tie and inconclusive rules, evidence partitions, and applicable conditional gates;
-2. a bounded prior-exposure audit with declared projects, sources, time range or search budget, overlap unit, uncertain gaps, and completion rule;
-3. selection families that separate candidates with incompatible targets, samples, estimands, evidence stages, or data-quality regimes;
-4. a search ledger that receives every choice or test capable of changing candidate generation, modification, screening, retention, ranking, verification targeting, or promotion.
-
-Version outcome-motivated additions, retain failed branches, and label their timing and evidence stage. Use an inference strategy that covers the actual selection path. Issue a stage or bounded report when execution ends; never claim inventory saturation or coverage completion from this profile.
-
-### `coverage_search`
-
-Complete the `adaptive_search` requirements, then:
-
-1. Build and version a typed candidate inventory. Admit a new candidate only when it has a distinct substantive role, a distinct data-testable signature, and a possible effect on the frozen decision; otherwise classify it as a formulation or duplicate.
-2. Map eligible entries into finite cells through `candidate -> observable or test role -> formulation`. Let one cell represent a frozen finite parameter domain or integration rule when scientifically coherent; do not split trivial parameter values into separate scientific candidates or create an unrelated Cartesian ranking pool.
-3. Generate inventory through separately scoped candidate-forward and data-product-reverse audits. Add a complementary third lens such as theory, literature, expert knowledge, or failure modes only when informative for the question; do not call the lenses independent unless their information and generation paths justify that claim.
-4. Separate scientific coverage from scheduling. Permit uniform low-cost screening before deeper tests, but let priority change only execution order. Keep every unrun eligible cell open and preserve the queue when resources end.
-5. Batch additions found in one audit checkpoint into a successor inventory version. Reopen only affected families and cells, retain valid closure of unaffected cells, then repeat the required saturation audits after the latest batch. Do not impose a universal round or candidate cap.
-
-Treat unsupported but plausible entries as `needs_data`, not as executed coverage or evidence against them. Rank only substantively eligible and mutually comparable candidates.
-
-## 5. Activate Gates Only When Applicable
-
-Record one reason when a gate is not applicable; do not manufacture repeated placeholder work.
-
-- Apply substantive alignment before statistical ranking. Require a candidate to support the frozen scientific or operational decision; allow mechanism alignment to be not applicable for a nonmechanistic task only with a stated reason.
-- Apply measurement-error sensitivity only when uncertainty could change support, matching, thresholds, subgroup membership, eligibility, ranking, or interpretation. Complete the frozen perturbation, propagation, recovery, or equivalent check before using that variable for selection or promotion.
-- Apply transportability requirements only when evidence is used beyond its analysis or selection population, or when target, analysis, selection, and reporting populations differ materially. Keep unsupported populations parallel rather than silently generalizing.
-- Apply screening-to-decision mapping only when screening and final evidence differ in statistic, estimand, scale, or role. Freeze the mapping, validation or calibration, and discordance rule. A rank association does not establish raw-scale prediction.
-- Apply a bounded, reproducible literature audit before promoting a premise or novelty claim that depends on prior work. Preserve the search boundary and conflicting or null evidence; absence from a narrow search does not establish novelty.
-- Apply a prespecified joint or multiplicity rule when a frozen finite family informs one decision. Apply complete-selection-path inference when outcome-informed generation, modification, screening, ranking, or repeated looks can influence a decision. Choose a domain-appropriate method; do not force unrelated families into one universal null.
-- Apply a frozen common seed or realization design when stochastic variation could change ranking or interpretation. Never select favorable seeds, checkpoints, or realizations.
-
-## 6. Execute, Falsify, and Preserve
-
-Freeze inputs, code or procedure state, parameters, exclusions, sample, statistic or model, seed policy, decision rule, and falsifier before each decision-bearing result. Also freeze the scientifically independent unit, dependence handling, and any partition or resampling unit. Keep related observations together across partitions and resample or permute at that level unless dependence is modeled explicitly.
-
-Verify that the available data can test the claim. When identifiers, aliases, joins, repeated rows, numerical reconciliation, expected counts, or group-wise splits can change the supported sample or independence structure, complete a frozen data-integrity preflight before affected outcomes. Unresolved identity, cardinality, tolerance, or leakage failures block that analysis; use a project adapter when domain semantics cannot be inferred generically. Distinguish unavailable, unsupported, missing, censored, ineligible, invalid, and true-zero cases when relevant.
-
-Estimate effects and relevant uncertainty, run the frozen check capable of weakening the claim, and preserve diagnostics sufficient to reconstruct reported results. A prespecified check does not create adaptivity; an outcome-motivated new check does. Use only the applicable references listed in the Reference Router.
-
-Keep records append-only or versioned. Preserve nulls, weak effects, sign conflicts, invalid runs, abandoned paths, and unfavorable results. Inspect sealed evidence once under its frozen rule; mark it compromised if it influenced development.
-
-## 7. Stop and Report Honestly
-
-End `design_only` with a design report, `audit_only` with a read-only audit report, `fixed_test` with a bounded frozen-analysis report, and `adaptive_search` with a stage or bounded report. Distinguish these valid stopping points from scientific completion.
-
-Declare `coverage_search` complete within scope only from a validated `machine_audited` record and when all are true:
+Use an active evidence loop:
 
 ```text
-inventory_saturated AND coverage_complete
-AND search_ledger_audited AND decision_contract_applied
-AND terminal_decision_status
-AND prior_exposure_audit_adequate_for_claim
-AND consistency_validator_passed
+question
+-> mechanism or substantive candidate
+-> supported observable or prediction
+-> test
+-> scientific interpretation
+-> next candidate or refinement
+-> final audit
 ```
 
-A passing consistency report establishes only that the recorded artifacts satisfy applicable schema and cross-record checks. It does not establish numerical correctness, completeness of unrecorded history, empirical operating characteristics, or independent scientific verification.
+Honor requests limited to prospective design, read-only audit, or one named test. Otherwise, when the user authorizes an investigation or autoresearch run, continue autonomously inside the agreed scientific, data, resource, safety, and external-action boundaries. A weak result is information for the next decision, not a default stopping point. A round is a result–interpretation–decision checkpoint, not a tool call, retry, job, or mandatory request for confirmation.
 
-If authorization, compute, cost, time, storage, or a user limit ends first, preserve the open queue and report a bounded pause. Do not relabel open cells as covered. Scope conclusions to the versioned candidate space supported by the available data; never claim exhaustion of all scientific possibilities.
+## Seven Core Rules
 
-Apply the frozen Decision Contract. Report a tie or inconclusive result when evidence does not separate eligible candidates, and `no_eligible_candidate` when none qualify. Summarize branch classes and link the complete registry or ledger rather than expanding every branch into final-report prose. Do not default to the smallest nominal p-value or force a winner.
+### 1. Build a compact candidate board
 
-## Non-Negotiable Guardrails
+State the question, target population or system, estimand or decision target, meaningful effect scale, authorized data, supported sample, and scientifically independent unit.
 
-- Do not remove, redefine, or hide data, attempts, thresholds, models, subgroups, transformations, or results because they weaken a claim.
-- Do not rank ineligible candidates, nominal p-values alone, or results with incompatible targets, samples, estimands, or unresolved required gates.
-- Do not silently replace the target population with a convenient subset or present post-result adaptation as confirmation.
-- Do not treat missing support, invalid execution, inadequate sensitivity, or one failed formulation as rejection of a broader candidate.
-- Do not treat one seed as stochastic robustness, same-data variants as independent verification, or metadata completeness as numerical reproducibility.
-- Do not treat a completed round, a favorable threshold, a promoted candidate, or exhausted resources as scientific completion.
-- Do not fabricate data, citations, approvals, provenance, commands, results, or coverage.
-- Do not expose personal data, credentials, confidential paths, or restricted information.
+For a mechanism question, begin with physical, causal, biological, or process mechanisms. For a nonmechanistic question, use substantively distinct models, empirical relations, features, simulations, designs, interventions, methods, or failure modes. Generate candidates in both directions:
 
-## Reference Router
+- candidate-forward: what plausible candidates could answer the question?
+- data-product-reverse: what scientifically relevant alternatives can each authorized data product distinguish?
 
-- For `design_only`: read no reference by default; load only the reference needed by the requested design.
-- For `audit_only`: read no reference for a simple frozen-result audit. When auditing adaptive or coverage work, identify its effective profile and apply the same `decision-selection.md` and, when applicable, `coverage-search.md` checks read-only. For an existing machine-audited run, use its validator and load artifact references only to interpret an error.
-- For `fixed_test`: read no reference by default. Load `references/statistical-discipline.md` only when a frozen-family multiplicity or stochastic rule needs design; otherwise load only the claim, falsification, or domain reference needed.
-- For `adaptive_search`: read `references/decision-selection.md`; read `references/statistical-discipline.md` only when its method-selection guidance is needed.
-- For `coverage_search`: read `references/coverage-search.md` and `references/decision-selection.md`; add `references/statistical-discipline.md` only when its method-selection guidance is needed.
-- For `machine_audited` implementation at any executed profile: use `scripts/validate_run.py`; read `references/report-contract.md` only when the initialized schema or an error needs explanation.
-- For a full `coverage_search` artifact audit or validator diagnosis: additionally read `references/status-schema.md` and `references/round-gate-checklist.md`.
-- For sensitive, regulated, costly, prospective, physical, or external-system work: read `references/governance-safety.md`.
-- When independent units, joins, identifiers, tolerances, admissible estimands, or other domain semantics require a project-specific contract or review: read `references/domain-adapter.md`.
-- When the required falsifier or robustness check is unclear: read `references/falsification-toolkit.md`.
-- For validation or benchmarking of a method, estimator, pipeline, workflow, or this skill: read `references/claim-types.md`; also read `references/ml-simulation.md` when the benchmark is computational.
-- When the scientific claim type or its minimum evidentiary requirements are unclear: read `references/claim-types.md`.
-- For observational support, censoring, geometry, or background contrast: read `references/observational-data.md`.
-- For machine learning, benchmark optimization, or simulation: read `references/ml-simulation.md`.
-- For causal, randomized, longitudinal, or experimental claims: read `references/causal-experimental.md`.
-- For literature-dependent premises or novelty: read `references/literature-evidence.md`.
-- For null or sign-inconsistent results requiring triage: read `references/null-triage.md`.
-- For promotion or scientific write-up review: read `references/scientific-review-lens.md`.
-- For difficult research judgment: read `references/thinking-principles.md`.
+Add literature, theory, expert knowledge, or a failure-mode catalogue as another source when the question materially requires it, not as a ritual. For each candidate, keep only the scientific rationale, distinct prediction, required data and support, observable and relevant scale, expected signature, falsifier, current status, and next action. Keep plausible but currently untestable candidates as `needs_data`.
+
+### 2. Test only substantive, supported candidates
+
+A candidate enters testing only when it has a scientific reason, an expectation distinguishable from relevant alternatives, and an observable or test supported by available data. A proxy, threshold, parameter value, or implementation variant is a formulation unless it has a distinct scientific role and prediction. Do not turn a naive Cartesian product into a candidate space.
+
+Before inspecting a coherent batch's outcomes, freeze its candidates or formulations, data and exclusions, observable, sample, method, scale or parameter rule, comparator, uncertainty, falsifier, decision role, stopping, and reporting. Freeze the current executable batch, not every hypothetical future step. A finite family, cross-validation, simulation program, parameter scan, or automated search may be one batch when its complete data-to-decision mapping is fixed in advance.
+
+### 3. Run, interpret, and continue autonomously
+
+Select the unresolved candidate, falsifier, validation, or refinement most likely to change scientific understanding. Run the simplest valid supported test that distinguishes the leading alternatives; do not choose only by nominal significance or convenience.
+
+For each new or materially changed batch, establish the relevant support, sensitivity, and challenge checks once and reuse them until an affected scientific fact changes. At the result checkpoint, estimate the effect in meaningful units with uncertainty, apply the material challenge most capable of weakening the interpretation, interpret the result against serious alternatives, update the board, and choose the next action without per-round confirmation.
+
+- If a candidate remains credible, test its next prediction, alternative explanation, relevant scale, or verification need.
+- If evidence is weak, null, unstable, or conflicting, check sensitivity, support, observable or scale mismatch, measurement error, model fit, implementation, and systematics. Continue to another supported candidate or scientifically motivated refinement while it could change the conclusion.
+- Do not reject a broader candidate because one formulation failed, and do not treat missing support or inadequate sensitivity as a scientific null.
+
+### 4. Record scientific adaptation, not ordinary engineering
+
+Use one persistent candidate board and compact result–decision record. If a viewed outcome motivates an unplanned candidate, formulation, sample, method, threshold, ranking, stopping, or reporting change, preserve the earlier result, record what was seen and why it changed the next step, freeze the successor before running it, and retain both steps in the final path. Do not retrospectively call the change prespecified or build a new governance system merely because the science learned from a result.
+
+Code repair, exact reruns, worker or chunk changes, cache moves, scheduling changes, and scientifically equivalent implementations are engineering work when they preserve scientific values and meaning. Repair and continue the same frozen test; do not count them as new scientific rounds. If they can change the sample, estimand, candidate values, ranking, or conclusion, treat the affected change scientifically.
+
+At first production use, record each input's stable dataset ID, version, snapshot, or digest. Reuse that identity during the run and verify it again before final reporting or handoff; do not recompute full-data hashes at every batch or round. Recheck earlier only when the source or version changes, mutation is suspected, sealed evidence is opened, data cross a material trust boundary, or stronger assurance was explicitly requested.
+
+### 5. Preserve the full selection path and promote carefully
+
+Keep supported, weak, null, conflicting, invalid, failed, abandoned, and unfavorable branches. Every attempt or viewed outcome that influenced generation, modification, screening, retention, ranking, repeated looks, verification targeting, or promotion belongs to the final selection path.
+
+Before promotion:
+
+- require substantive or mechanism alignment;
+- directly rank only candidates with compatible targets, supported samples, estimands, evidence bases, and material data quality;
+- examine scale, radius, aperture, binning, threshold, resolution, measurement error, systematics, confounding, controls, alternatives, screening-to-final-model mapping, and transportability when they can change the decision;
+- distinguish exploration, same-data internal validation, untouched verification, and independent replication; changing code, sample, split, repository, workflow, or skill version does not erase prior exposure;
+- predeclare common seeds or realizations when stochastic variation can change ranking, and never choose a favorable seed, scale, subgroup, checkpoint, or branch.
+
+Use inference that covers the actual selection path, such as untouched evaluation, end-to-end resampling or randomization, valid sequential or selective inference, hierarchical control, or justified model comparison or averaging. No single global-null method fits every domain. If the actual path cannot be covered validly, keep the conclusion exploratory rather than promoting the survivor's nominal statistic.
+
+### 6. Continue while material science remains
+
+Continue while a distinct data-supported candidate, falsifier, validation, or refinement could materially change the conclusion and the work remains authorized and feasible. A useful partial result may be reported without ending the search. Do not impose a universal candidate or round cap.
+
+Stop only when the requested scientific decision is resolved and no remaining supported test could materially alter it, no distinct supported test remains, progress requires new data or assumptions, or a real resource, safety, governance, or user boundary is reached. Preserve unresolved candidates and the exact next admissible step; do not stop silently or force a winner.
+
+### 7. Finish with a scientific audit; use full coverage only when requested
+
+Before ending ordinary open research, review the question once from candidate-forward and data-product-reverse directions for an obvious supported candidate or alternative that could change the conclusion. Test it or leave it explicitly open. This is a lightweight omission review, not inventory saturation. Ordinary work may end with a bounded conclusion and one compact record.
+
+When the user explicitly requests systematic coverage, saturation, exhaustion of a declared data-supported space, or `complete_within_scope`, read `references/coverage-search.md` and use a finite versioned inventory, data-supported coverage cells, candidate-forward and data-product-reverse saturation audits, any additional source declared necessary, a complete selection ledger, and an exact open queue. Compute schedules work; unrun, invalid, blocked, and resource-deferred cells remain open.
+
+Claim `complete_within_scope` only when the same inventory version satisfies its prespecified saturation rule, every eligible cell is validly tested or explicitly closed, the complete selection path is audited, the final decision rule is applied, and the scientific coverage record is internally consistent. Resource exhaustion is a pause, not completion. Scope the claim to the candidate classes, observables, and data products actually covered; never claim all scientific possibilities were exhausted.
+
+The full scientific coverage record may remain compact. Use a machine-audited schema only when the user separately requests machine-readable audit, formal handoff or recovery needs it, or an existing structured run must be continued.
+
+## Report
+
+Report the supported conclusion and effect scale; uncertainty, support, falsifiers, systematics, and alternatives; candidates and formulations attempted; weak, failed, and support-limited branches; outcome-informed changes and selection-path inference; evidence status and prior exposure; data and procedure versions; a practical reproduction recipe; and the strongest unresolved candidate or open queue. Use `tie`, `inconclusive`, `null`, `support_limited`, or `needs_data` when justified.
+
+Never hide or redefine data, attempts, candidates, scales, models, or results because they weaken a claim; rank by nominal p-value alone; present same-data adaptation as untouched confirmation; fabricate evidence, authority, provenance, or coverage; exceed authorization; or expose restricted information.
+
+## Load Detailed References Only When Needed
+
+- Explicit systematic coverage or scoped completion: `references/coverage-search.md`.
+- Complex candidate comparison, prior exposure that affects the claim, or final selection-path inference: `references/decision-selection.md` and, when necessary, `references/statistical-discipline.md`.
+- Weak or null evidence and falsification design: `references/null-triage.md` and `references/falsification-toolkit.md`.
+- Data support and domain semantics: `references/domain-adapter.md` and the applicable `references/observational-data.md`, `references/ml-simulation.md`, or `references/causal-experimental.md`.
+- Claim type, literature, safety, or final interpretation: the applicable `references/claim-types.md`, `references/literature-evidence.md`, `references/governance-safety.md`, or `references/scientific-review-lens.md`.
+- Difficult substantive framing or conflicting evidence: `references/thinking-principles.md`.
+- A concrete execution or resource risk: `references/execution-lifecycle.md`.
+- Explicit machine-readable audit, formal recovery, or an existing structured run: `references/report-contract.md`, `references/status-schema.md`, and `references/round-gate-checklist.md`.

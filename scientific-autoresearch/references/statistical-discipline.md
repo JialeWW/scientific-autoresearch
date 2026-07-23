@@ -4,14 +4,14 @@ Use this reference only when the multiplicity, selection-path, evidence-partitio
 
 ## 1. Handle a Frozen Analysis Family Without Adaptive Machinery
 
-A `fixed_test` may contain a finite prespecified analysis family when its members, methods, exclusions, multiplicity or joint inference rule, and reporting rule were frozen before outcomes. Record:
+A fully frozen batch may contain a finite prespecified family or bounded automated procedure when its candidate domain, proposal and evaluation rules, evidence partitions, methods, exclusions, randomization, budget, stopping, multiplicity or joint inference, decision, and reporting rules were frozen before outcomes. Record:
 
 - stable member IDs and the claim or estimand each member addresses;
 - the joint, omnibus, familywise, hierarchical, false-discovery, or model-based rule appropriate to the frozen decision;
 - dependence assumptions or a resampling design when they affect calibration;
 - the rule for discordant members and the joint decision.
 
-Prespecified assumption checks, falsifiers, and robustness checks belong to the frozen family. They do not create an adaptive ledger. Report every member required to reconstruct the joint decision. If an outcome changes membership, method, threshold, sample, or reporting, preserve the original result and upgrade to `adaptive_search`.
+Prespecified assumption checks, falsifiers, robustness checks, and frozen algorithmic search transitions belong to the frozen procedure. They do not create an adaptive ledger. Report the members and search state needed to reconstruct the joint decision. If an outcome changes the candidate domain, method, threshold, sample, stopping, decision, or reporting outside the frozen rules, append the outcome and decision contemporaneously, preserve the original result, and freeze the successor before continuing.
 
 ## 2. Choose an Adaptive-Path Method by Design
 
@@ -34,13 +34,15 @@ Before a decision-bearing test, freeze the supported sample, estimand, meaningfu
 - Use `inconclusive` when uncertainty, support, or sensitivity cannot distinguish relevant alternatives.
 - Use `artifact` or `invalid` for measurement, leakage, implementation, or assumption failures.
 
-Run measurement-error sensitivity only when uncertainty can change support, matching, subgroup membership, thresholds, eligibility, ranking, or interpretation. Run transport analysis only when evidence is used beyond its analysis or selection population. One explicit not-applicable reason is sufficient.
+Run measurement-error sensitivity only when uncertainty can change support, matching, subgroup membership, thresholds, eligibility, ranking, or interpretation. Run transport analysis only when evidence is used beyond its analysis or selection population. Do not create placeholder records for irrelevant gates.
 
 ## 4. Protect Evidence Partitions
 
 Distinguish `exploratory`, `internal_validation`, `independent_verification`, and `diagnostic` evidence. Fit preprocessing, imputation, scaling, feature selection, and tuning within discovery data or folds. Split by the independent scientific unit and use nested validation when tuning and performance estimation would otherwise reuse folds.
 
 Evaluate sealed evidence once under its frozen rule. If its outcome changes development, mark verification compromised. Earlier inspection of overlapping units remains exposure even when the split, code, model, repository, workflow, or skill version changes.
+
+State whether independence concerns evidence, prior-result blinding, implementation, or review. Untouched evidence can support independent verification with reused outcome-neutral software; a same-data blind rerun remains reproduction or internal validation. Require separate implementation only when implementation independence is itself part of the claim.
 
 ## 5. Handle Stochasticity Without Seed Selection
 
@@ -54,4 +56,4 @@ Native optimizer or simulation logs may remain in their reproducible system of r
 
 ## 6. Stop at the Correct Claim Level
 
-A frozen analysis family can end with its prespecified joint decision. `adaptive_search` ends with a stage or bounded report unless new untouched evidence supports a stronger claim. `coverage_search` uses the saturation and closure rules in `coverage-search.md`. A favorable result, promoted candidate, round count, or resource limit is not scientific completion.
+A frozen analysis family can end with its prespecified joint decision. Outcome-informed work may issue a stage or bounded report, but whether execution ends is governed by Core Rule 6: continue while a material supported test could change the conclusion. Explicit systematic coverage uses the saturation and closure rules in `coverage-search.md`. A favorable result, promoted candidate, round count, or resource limit is not scientific completion.

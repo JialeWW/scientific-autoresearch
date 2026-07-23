@@ -6,13 +6,21 @@ This directory is repository-maintenance infrastructure, not part of an ordinary
 2. behavioral evaluation on isolated executions;
 3. empirical operating-characteristic studies under known or defensible truth.
 
-Passing deterministic checks does not establish behavioral or empirical validity. The frozen v0.2.8 result remains `not_evaluated`. Protocol/scorer 2.1.2 repairs the execution boundary and replays a non-development canary shakedown, but no development case has been run.
+Passing deterministic checks does not establish behavioral or empirical validity. The frozen v0.2.8 result remains `not_evaluated`. Protocol/scorer 2.1.2 repairs the execution boundary and replays a non-development canary shakedown, but no frozen development suite or scored development case has been run. Skill v0.3.0 is a later installable release, has no result in this frozen protocol line, and is also `not_evaluated`.
 
 ## Immutable protocol lines
 
-`manifest.json`, `score.py`, and `results/v0.2.8.json` remain the byte-frozen 2.1.0 chain. The reviewed 2.1.1 files are retained byte-for-byte as a superseded, unevaluated no-go snapshot. Protocol/scorer 2.1.2 is the benchmark-only successor and does not change Skill release 0.2.8. `protocol-index.json` resolves every result or execution through explicit artifact hashes; it never infers a historical manifest from the current Skill version.
+`manifest.json`, `score.py`, and `results/v0.2.8.json` remain the byte-frozen 2.1.0 chain. The reviewed 2.1.1 files are retained byte-for-byte as a superseded, unevaluated no-go snapshot. Protocol/scorer 2.1.2 is the benchmark-only successor whose release under test remains Skill 0.2.8. It does not evaluate or describe v0.3.0. `protocol-index.json` resolves every result or execution through explicit artifact hashes; it never infers a historical manifest from the current Skill version.
 
 Any scorer, protocol, or result-schema correction requires a new patch version. Do not overwrite a frozen scorer, manifest, result, execution manifest, or execution directory.
+
+## v0.3.0 development specification
+
+`development-cases/v0.3.0-routing-efficiency.json` is an unfrozen, unscored development specification for a future successor protocol. It targets active continuation after weak results, premature scientific stopping, lightweight omission review, false workflow and adaptivity escalation, unnecessary formal-audit escalation, false coverage triggers, correct explicit scoped-completion routing, delay and artifact count before the first scientific result, governance overhead, continuous execution, bounded qualification, family-local release, infrastructure reuse under result blinding, engineering/scientific separation, scale sensitivity, systematics, and selection-path completeness. Assertions judge observable behavior; they do not require an ordinary Agent response to recite profile, record-mode, contract-type, or completion-status labels. Draft event definitions and provisional acceptance targets make future collection requirements explicit, while the end-to-end surrogate checks local family release, join repair, equivalent worker changes, nonselection QA exposure, and later selection correction together. The case definitions and targets are not a frozen protocol or benchmark result. A future frozen comparison should run v0.2.1, v0.2.8, and v0.3.0 under the same cases and execution conditions; no such comparison is reported here.
+
+`development-runs/v0.3.0-active-continuation-probe.md` and `v0.3.0-scoped-coverage-probe.md` preserve two isolated qualitative Agent responses. The first specified that it would continue through remaining candidates and a falsifier after a weak result without creating formal artifacts. The second preserved inventory, coverage-cell, dual-audit, selection-path and open-queue semantics while declining to fabricate a missing scope or require a machine schema. The runner, model, sampling, timing and judge protocols were not frozen, and no scientific computation or infrastructure failure was executed. These are development diagnostics only: they do not change `not_evaluated`, establish a release comparison or support superiority over v0.2.1.
+
+The historical files under `scientific-autoresearch/evals/` remain at their original paths only because the immutable v0.2.8 protocol manifests bind those exact paths and hashes. They are legacy benchmark case sources, not current v0.3.0 runtime guidance. A successor protocol may relocate its own copied case source, but must not rewrite the frozen 2.1.2 manifests or imply that the old cases describe v0.3.0.
 
 ## Protocol 2.1.2 comparison unit
 

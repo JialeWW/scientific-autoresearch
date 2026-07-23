@@ -1,10 +1,10 @@
 # Profile-Aware Round Gate
 
-Use this checklist for machine-artifact audit or validator diagnosis after an executed round. `design_only` and `audit_only` have no round gate. Apply the shared items and only the recorded execution profile; do not create placeholder work for an inapplicable gate.
+Use this checklist only for machine-artifact audit or validator diagnosis after a production reporting checkpoint. One round may contain multiple coherent prespecified batches or analyses; it is not one tool call, statistic, plot, development attempt, worker trial, or resource smoke. `design_only` and `audit_only` have no round gate. Apply the shared items and only the recorded research profile; do not create placeholder work for an inapplicable gate.
 
 ## Every Executed Profile
 
-- **Identity and scope**: Are run, profile, profile history, stage, round lineage, scientific scope, data versions, and governance boundaries recorded?
+- **Identity and scope**: Are run, research profile, profile history, stage, round lineage, scientific scope, data versions, and governance boundaries recorded?
 - **Frozen work**: Were the claim or decision, supported sample, estimand, analysis, meaningful scale, decision rule, falsifier, inputs, parameters, exclusions, and seed policy fixed at the correct time?
 - **Units and dependence**: Were the analysis and independence units, dependence handling, and partition or resampling unit frozen and followed?
 - **Domain adapter**: Was the need for a domain adapter or project data preflight assessed before affected outcomes, with every required hash-bound check passed or transparently blocking the result?

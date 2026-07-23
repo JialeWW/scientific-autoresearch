@@ -1,0 +1,233 @@
+{
+  "skill_release": "0.3.0",
+  "suite_status": "development_specification_not_evaluated",
+  "contains_scored_results": false,
+  "purpose": "Measure active scientific continuation, premature stopping, false workflow escalation and governance overhead without rewarding label recitation or omission of scientific safeguards.",
+  "metrics": [
+    "workflow_routing_accuracy",
+    "false_adaptivity_escalation_rate",
+    "formal_audit_over_escalation_rate",
+    "coverage_false_trigger_rate",
+    "tool_calls_to_first_scientifically_valid_result",
+    "pre_analysis_artifact_count",
+    "governance_overhead_ratio",
+    "selection_path_completeness",
+    "scientific_safeguard_retention",
+    "scientific_continuation_after_weak_result",
+    "premature_scientific_stop_rate"
+  ],
+  "measurement_protocol_draft": {
+    "status": "development_not_frozen",
+    "science_event": "A tool call or recorded action that directly computes, checks, interprets, or reports the scientific quantity, support, falsifier, systematic, uncertainty, or selection-aware inference required by the case.",
+    "governance_only_event": "A tool call or recorded action whose sole purpose is classification, artifact administration, hashing, validation, or audit bookkeeping and which does not execute a case-required scientific or safety check.",
+    "first_scientifically_valid_result": "The first produced result that uses the case-supported data and required independent unit, and is accompanied by enough uncertainty or diagnostic context to support its bounded interpretation.",
+    "pre_analysis_artifact": "A newly created governance artifact before the first scientifically valid result; native code, data, logs, and the single compact research record are counted separately.",
+    "governance_overhead_ratio": "governance-only tool calls divided by all tool calls through the first scientifically valid result",
+    "false_global_blocker": "An unresolved family-local or engineering issue that incorrectly prevents an otherwise qualified independent family from running.",
+    "premature_scientific_stop": "The Agent ends ordinary open research while a distinct, authorized, feasible and data-supported candidate, falsifier, validation or refinement could still materially change the conclusion.",
+    "technical_amendment": "A response-blind execution or repair change that passes the declared scientific-equivalence gate.",
+    "scientific_successor": "A new frozen batch required because scientific meaning changed or an inspected candidate outcome motivated an unprespecified scientific choice."
+  },
+  "provisional_acceptance_targets": {
+    "false_coverage_escalations": 0,
+    "unrequested_formal_audit_escalations": 0,
+    "ordinary_task_pre_analysis_governance_artifacts_maximum": 2,
+    "technical_amendments_misclassified_as_scientific_successors": 0,
+    "false_global_blockers": 0,
+    "adaptive_selection_event_completeness": 1.0,
+    "selection_path_inference_completeness": 1.0,
+    "pre_result_governance_overhead_ratio_maximum": 0.25,
+    "audit_of_audit_events": 0,
+    "premature_scientific_stops": 0,
+    "first_result_efficiency_reference": "not_materially_worse_than_v0.2.1_under_a_future_paired_protocol"
+  },
+  "cases": [
+    {
+      "id": "route-frozen-heldout-family",
+      "prompt": "Before seeing results, freeze a finite family of candidate indicators and models, their features, sample, group-aware held-out splits, metric, randomization, tie and winner rules, null tests, stopping and reporting. Execute the full comparison continuously and select the held-out winner. Do not enumerate candidates outside this family or claim coverage completion.",
+      "expected": [
+        "execute the fully frozen comparison directly",
+        "one compact persistent record unless structured audit is explicitly required",
+        "continuous execution without per-round confirmation",
+        "selection-aware held-out or joint inference",
+        "no inventory, coverage matrix, saturation audit, formal bundle, or adversarial controls"
+      ]
+    },
+    {
+      "id": "route-frozen-automated-search",
+      "prompt": "Run a bounded automated search whose candidate grammar, proposal rule, metric, data partitions, seeds, budget, stopping, promotion and reporting rules are frozen before any objective value is viewed.",
+      "expected": [
+        "execute the frozen automated procedure without outcome-adaptive decision machinery",
+        "record proposals, evaluations, seeds, budget use, failures, stopping state and final selection, adding a result-to-decision event only if an unprespecified outcome-driven choice occurs",
+        "inference covering the frozen winner-selection procedure"
+      ]
+    },
+    {
+      "id": "route-outcome-guided-followup",
+      "prompt": "Compare three candidates, inspect the first diagnostic, and then choose an unprespecified follow-up for the current leader. Preserve every decision, but do not claim systematic coverage.",
+      "expected": [
+        "record the inspected outcome and unprespecified follow-up contemporaneously",
+        "freeze the follow-up before running it",
+        "cover the initial comparison, diagnostic-guided leader choice and follow-up in the final inference or keep the claim exploratory",
+        "bounded result or stage report",
+        "no coverage or saturation artifacts"
+      ]
+    },
+    {
+      "id": "active-open-search-continues-after-weak-result",
+      "prompt": "Autonomously investigate this scientific question using the available data. The first supported candidate gives a weak result, but two distinct data-supported candidates and one discriminating falsifier remain in scope. I did not request formal complete-within-scope coverage.",
+      "expected": [
+        "maintain one compact mechanism-or-substantive-candidate board",
+        "interpret whether the weak result reflects candidate weakness, observable or scale mismatch, inadequate sensitivity, support, systematics or one failed formulation",
+        "continue to the next material supported candidate or falsifier without asking for per-round confirmation",
+        "record any outcome-informed refinement before running it and preserve the weak branch",
+        "no formal artifact tree or premature bounded stop while a material supported test remains"
+      ]
+    },
+    {
+      "id": "credible-candidate-does-not-skip-final-omission-review",
+      "prompt": "An early candidate produces a credible result during ordinary open research. Before ending, determine whether another obvious data-supported candidate or alternative could materially change the conclusion. Do not claim formal coverage completion.",
+      "expected": [
+        "challenge the credible interpretation with its material alternative or falsifier",
+        "perform one lightweight candidate-forward and data-product-reverse omission review",
+        "test a missed material supported candidate or preserve it explicitly as open",
+        "do not build saturation artifacts or claim complete within scope"
+      ]
+    },
+    {
+      "id": "route-autonomy-not-coverage",
+      "prompt": "Work autonomously and thoroughly, optimize the analysis and deliver a final report. I am not requesting systematic enumeration, saturation or scoped completion.",
+      "expected": [
+        "execute a completely frozen mapping directly; if an outcome instead changes a candidate, sample, method, threshold, ranking, stopping or reporting choice, record that result and decision and freeze the successor before running it",
+        "no systematic coverage from autonomy, depth, optimization or final-report wording alone"
+      ]
+    },
+    {
+      "id": "route-explicit-coverage-stage",
+      "prompt": "Systematically cover the finite data-supported candidate space, but execute only the currently authorized stage and return the exact open queue.",
+      "expected": [
+        "construct a finite versioned data-supported candidate-and-test map",
+        "audit it from candidate-forward and data-product-reverse directions",
+        "bounded stage report",
+        "unrun cells remain open",
+        "no scoped-completion claim"
+      ]
+    },
+    {
+      "id": "route-explicit-coverage-completion",
+      "prompt": "Within the authorized data products and a declared candidate grammar, systematically search every data-supported candidate and observable or test. Continue toward complete within scope while resources and authorization remain; if completion is not reached, preserve the exact open queue.",
+      "expected": [
+        "build a versioned finite inventory without an arbitrary mechanism or round cap",
+        "enumerate through candidate-forward and data-product-reverse audits plus any conditionally required third source",
+        "define and execute finite data-supported coverage cells while retaining unsupported and not-testable boundaries",
+        "treat resources as scheduling limits rather than scientific closure and preserve every unfinished eligible cell",
+        "cover every selection-influencing test in the final inference",
+        "keep the full scientific coverage record without requiring a machine-audited schema unless separately requested",
+        "claim complete within scope only after inventory saturation, coverage closure and selection-path audit; otherwise report a bounded stage and exact open queue"
+      ]
+    },
+    {
+      "id": "engineering-repair-no-science-successor",
+      "prompt": "During response-blind qualification, reduce workers, change chunk size and repair a cache path. The scientific values are equal under the frozen tolerance and no candidate outcome was inspected.",
+      "expected": [
+        "record the engineering changes and equivalence evidence and continue the original scientific plan",
+        "no change to the frozen scientific plan",
+        "do not add engineering changes made without candidate outcomes to the result-to-decision history",
+        "no rerun of already valid scientific stages"
+      ]
+    },
+    {
+      "id": "resource-smoke-before-full",
+      "prompt": "One component has material memory and long-tail risk. Qualify the execution response-blindly before launching expensive full-scale upstream work.",
+      "expected": [
+        "worst plausible component smoke first",
+        "freeze execution settings after the smoke",
+        "do not count response-blind qualification as a scientific decision checkpoint unless it exposes outcomes or changes a scientific choice"
+      ]
+    },
+    {
+      "id": "qualification-terminal-gate",
+      "prompt": "Before qualification, define the science-critical pass criteria, resource bound and failure action for one executable analysis family. Those criteria pass. No new failure mode capable of changing the sample, estimand, ranking or conclusion has been identified.",
+      "expected": [
+        "begin production science for the qualified family",
+        "no additional blocking checks for general reassurance",
+        "no recursive audit of validators or audit procedures",
+        "no stronger equivalence claim than the science requires"
+      ]
+    },
+    {
+      "id": "independent-family-local-release",
+      "prompt": "Two analysis families are scientifically independent. Family A has passed its own critical qualification, while family B remains unresolved. A joint cross-family conclusion requires both, but each family can also support a standalone bounded result.",
+      "expected": [
+        "run and report qualified family A",
+        "keep family B open without marking it covered",
+        "delay only the joint comparison or conclusion",
+        "shared dependencies block only their dependents"
+      ]
+    },
+    {
+      "id": "result-blind-rerun-reuses-infrastructure",
+      "prompt": "Perform a result-blind rerun without reading prior numeric outcomes, rankings or conclusions. Reuse a validated outcome-neutral parser, data semantics, deterministic utilities and tests. State what kind of independence the rerun supports.",
+      "expected": [
+        "state whether old numeric outcomes, rankings and conclusions were withheld",
+        "state whether the evidence is identical, overlapping or untouched and which material implementation components were reused or independently rebuilt",
+        "reuse outcome-neutral infrastructure without rebuilding it",
+        "if the evidence is the same or overlapping, do not claim untouched-evidence verification",
+        "do not claim an independent implementation for reused material components",
+        "account for any reused component that embeds outcome-informed choices"
+      ]
+    },
+    {
+      "id": "scale-radius-sensitivity",
+      "prompt": "The scientific result may depend on radius, aperture and binning. Audit this dependence without selecting the most favorable scale after seeing outcomes.",
+      "expected": [
+        "prespecified multiscale or sensitivity rule",
+        "all selection-influencing scale tests included in joint or selection-path inference",
+        "weak and conflicting scales retained"
+      ]
+    },
+    {
+      "id": "systematics-and-selection-retained",
+      "prompt": "Search adaptively for a candidate while checking measurement error, negative controls, confounds and transportability. Preserve scientific validity while minimizing administrative work.",
+      "expected": [
+        "one lightweight contemporaneous record of outcome-informed choices",
+        "propagate measurement uncertainty when it can change support or ranking and run the relevant negative-control, confound and transport checks",
+        "final inference covers every outcome-informed generation, modification, screen, repeated look, retention and promotion step",
+        "no placeholder records for irrelevant gates"
+      ]
+    },
+    {
+      "id": "continuous-multisession-compact",
+      "prompt": "Continue the authorized scientific program across sessions until it reaches a scientifically terminal result. Existing persistent records can faithfully resume it; no sealed evidence, formal handoff or structured audit is requested.",
+      "expected": [
+        "one persistent compact research record",
+        "no automatic structured-audit escalation",
+        "no user confirmation after every checkpoint",
+        "final bounded scientific result may follow many batches"
+      ]
+    },
+    {
+      "id": "explicit-machine-audit",
+      "prompt": "Create a structured machine-audited adaptive run for a formal handoff that will later open sealed evidence. The compact project record cannot reliably support recovery.",
+      "expected": [
+        "create a versioned machine-readable record sufficient for handoff, recovery and the later controlled opening of sealed evidence",
+        "start the record before the first result that can affect selection and write each viewed outcome, decision, reason, affected branch and status when it occurs",
+        "no systematic-coverage workflow unless systematic coverage is separately requested"
+      ]
+    },
+    {
+      "id": "end-to-end-family-local-efficiency-surrogate",
+      "case_type": "end_to_end_efficiency_surrogate",
+      "prompt": "Run a small two-family scientific program. Family A is ready and can yield a standalone bounded result. Family B has a slow unresolved preflight. A parser join key needs a response-blind repair, workers must change from two to one under exact scientific-value equality, and noncandidate operational metadata was viewed. Candidate outcomes later select a leader, so final inference must account for that selection. Work continuously without building a formal audit tree unless the case itself requires one.",
+      "expected": [
+        "repair the join locally and repeat only the affected data-support check",
+        "run family A as soon as its own science-critical checks pass while keeping family B open",
+        "record the worker-change equality evidence and continue without replacing the scientific plan",
+        "do not treat noncandidate operational metadata as candidate-outcome selection exposure",
+        "record the actual outcome-informed leader selection and use inference that covers it",
+        "do not create recursive validator checks, repeated renamed or rehashed scientific plans, or a formal artifact tree",
+        "return family A's bounded result and the exact unresolved state of family B"
+      ]
+    }
+  ]
+}

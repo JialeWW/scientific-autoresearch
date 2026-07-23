@@ -1,6 +1,8 @@
 # Coverage-Based Scientific Search
 
-Use this reference only for `coverage_search`: construct a finite data-supported search space, audit its saturation, close its coverage cells, and state the scope of the result. An `adaptive_search` may use a candidate ledger without claiming inventory saturation or coverage completion.
+Use this reference only when the semantic objective is systematic coverage of a finite data-supported search space, assessment of saturation, or scoped completion. Do not infer that objective from requests for depth, autonomy, thoroughness, optimization, a final report, or many analyses. Execute a fully frozen optimization procedure directly. If inspected outcomes change unfrozen scientific choices, keep a contemporaneous selection ledger and return a bounded result unless systematic coverage was independently requested; a ledger alone does not justify inventory saturation or coverage completion.
+
+When the user explicitly requests full systematic coverage or scoped completion, advance autonomously toward inventory saturation and cell closure until completion or a real authorization, resource, governance, or scientific boundary is reached. If the user requests only a bounded coverage stage or coverage design, stop at that boundary with an exact open-queue report.
 
 ## 1. Version a Typed Candidate Inventory
 
@@ -26,11 +28,11 @@ specification_timing
 duplicate_of
 ```
 
-Use `pre_result_frozen` when the entry was fixed before related outcomes were inspected and `post_result_adaptive` otherwise. Preserve every prior inventory version. Batch additions discovered at one audit checkpoint into one successor version and record the diff; never silently insert them into an old version. A compatibility schema may retain a legacy mechanism-specific column name, but it must not force nonmechanistic candidates to make mechanistic claims.
+Use `pre_result_frozen` when the entry was fixed before related outcomes were inspected and `post_result_adaptive` otherwise. Preserve every prior inventory version. Batch additions discovered at one audit checkpoint into one successor version and record the diff; never silently insert them into an old version. A legacy record may retain a mechanism-specific column name, but it must not force nonmechanistic candidates to make mechanistic claims.
 
 Keep scientifically plausible but currently untestable entries with `candidate_status=needs_data`. They document the boundary of the available data but do not enter the executable coverage denominator.
 
-Use the canonical `data_support_status` values in `status-schema.md`. Direct promotion requires `supported`, but every nonduplicate `active`, `provisionally_supported`, or `weakened` candidate must still receive finite coverage; a limited, diagnostic, or unsupported role changes the cell's role or closure, not whether the active candidate is represented in the search map.
+Record data support as `supported`, `support_limited`, `diagnostic_only`, `unsupported`, or `not_assessed`. Direct promotion requires `supported`, but every nonduplicate `active`, `provisionally_supported`, or `weakened` candidate must still receive finite coverage; a limited, diagnostic, or unsupported role changes the cell's role or closure, not whether the active candidate is represented in the search map.
 
 ## 2. Enumerate Through Complementary Lenses
 
@@ -40,7 +42,7 @@ Freeze the inventory-audit protocol before outcomes. Use complementary lenses ra
 - data-product-reverse mapping from each authorized field, table, image, time series, model output, or experimental record to the candidates and alternatives it can test;
 - scale, geometry, timing, regime, interaction, and boundary-condition predictions;
 - measurement, calibration, selection, support, confounding, leakage, and numerical-artifact alternatives;
-- residual and failure-mode review after each closed round, with any additions marked adaptive.
+- residual and failure-mode review at declared audit checkpoints, with any additions marked adaptive.
 
 The saturation audit always has two complementary, separately scoped directions:
 
@@ -114,7 +116,7 @@ When an adaptive inventory or formulation addition affects selection:
 3. update error allocation with a valid adaptive method or keep the result exploratory;
 4. preserve all prior weak, failed, invalid, and abandoned branches.
 
-Technical failures without an evaluable statistic remain in the ledger and execution accounting; do not fabricate inferential values for them.
+Production technical failures that can affect which scientific cell is run, retained, ranked, or reported remain in the ledger and execution accounting; do not fabricate inferential values for them. Development and response-blind qualification failures stay in the engineering record unless they expose candidate outcomes or influence scientific selection.
 
 ## 5. Audit Inventory Saturation
 
@@ -152,25 +154,27 @@ open_fraction
 
 Use the same eligible-cell denominator and active inventory version for every fraction. `classified_closed_fraction` is the legacy overall closure concept; it is not empirical testing coverage. Declare `coverage_complete=true` only when every eligible cell in that version is closed and the ledger and family-level inference are audited.
 
-Scientific completion requires a validated `machine_audited` record and:
+Scientific completion requires a contemporaneously preserved and internally consistent coverage record and:
 
 ```text
 inventory_saturated
 AND coverage_complete
 AND search_ledger_audited
-AND decision_contract_applied
+AND final_decision_rule_applied
 AND terminal_decision_status
 AND prior_exposure_audit_adequate_for_claim
-AND consistency_validator_passed
+AND coverage_record_consistency_reviewed
 ```
 
 Resource, time, cost, authorization, or user-limit exhaustion does not close cells. Use `resource_limited_pause`, `governance_blocked`, or `user_limited_stop`, report every open cell, and preserve an exact resume point.
 
-For adaptive bounded work under `conceptual_record`, an existing append-only or versioned record must capture every selection-influencing event contemporaneously. Otherwise enter `machine_audited` before the first adaptive outcome. Before claiming `complete_within_scope`, migrate only preserved complete history into the machine-audited schema and pass its consistency checks; retrospective reconstruction cannot supply omitted attempts or create pre-result status.
+Use a persistent lightweight append-only or versioned ledger that captures every selection-influencing event contemporaneously. A compact coverage record is sufficient when it faithfully preserves the inventory, cells, saturation audits, ledger, decision, and open queue. Before claiming `complete_within_scope`, review those records for internal consistency; machine-schema migration is required only when machine audit was separately requested. Retrospective reconstruction cannot supply omitted attempts or create pre-result status.
 
 ## 7. Schedule Without Shrinking Coverage
 
 Scientific eligibility and execution priority are separate fields. A scheduler may first run one or more prespecified, low-cost screening stages within declared comparable screening families and then allocate deeper tests by dependency, cost, expected information gain, or feasibility. Record every screen rule, threshold, sensitivity or recovery check, and false-negative risk before use.
+
+Qualify and execute independent analysis families separately. A family whose science-critical gates pass may produce a bounded result while unrelated families remain open. Shared inputs or calibrations block only dependent cells; a frozen joint decision rule blocks the joint comparison, promotion, or conclusion, not otherwise standalone family results. Never relabel an unfinished family or cell as covered.
 
 Every screen and outcome that can influence progression enters the ledger and its selection path. A cell that fails a valid prespecified screen may close only if the screen itself provides the substantively matched sensitivity required by the cell; otherwise it remains open or is replaced by an explicitly justified coverage cell.
 

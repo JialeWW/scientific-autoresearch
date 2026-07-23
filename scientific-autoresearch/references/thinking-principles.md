@@ -52,9 +52,9 @@ Preserve null, inconclusive, invalid, and failed branches. They constrain future
 
 ## Autonomy Must Be Auditable
 
-In `coverage_search`, do not cap scientific possibilities with an arbitrary candidate or round count. Version a finite data-supported inventory, make every executable formulation set finite, preserve the full ledger, and stop scientifically only after the complete closure gate passes.
+For explicit systematic coverage, do not cap scientific possibilities with an arbitrary candidate or round count. Version a finite data-supported inventory, make every executable formulation set finite, preserve the full ledger, and stop scientifically only after the complete closure gate passes.
 
-In `adaptive_search`, preserve the full candidate and selection history but end with a bounded stage report rather than inventing saturation. A `fixed_test` needs neither an inventory nor a search ledger.
+For outcome-informed work without a systematic-coverage objective, preserve the full candidate and selection history and describe its conclusion as bounded rather than inventing saturation. Bounded is a claim level, not a stopping rule; continue under Core Rule 6 while material supported science remains. A fully frozen batch needs neither an inventory nor an adaptive search ledger.
 
 The ledger must cover the complete selection path from candidate generation and modification through screening, ranking, verification targeting, and promotion. Use an inferential strategy suited to that path; no single global-null method fits every domain.
 
@@ -62,7 +62,7 @@ Data looks, governance, compute, cost, time, storage, and external actions still
 
 ## Coverage Is Not Universal Exhaustiveness
 
-For `coverage_search`, coverage describes a versioned search space constructed from the current question and data products. It does not prove that no other physical, causal, computational, measurement, selection, model, simulation, feature, or design candidate exists.
+For explicit systematic coverage, the claim describes a versioned search space constructed from the current question and data products. It does not prove that no other physical, causal, computational, measurement, selection, model, simulation, feature, or design candidate exists.
 
 ## Governance Is Not an Afterthought
 

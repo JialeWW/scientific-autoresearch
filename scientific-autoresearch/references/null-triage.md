@@ -1,6 +1,6 @@
 # Null Triage
 
-Use this file after a null, weak, unstable, or sign-inconsistent result. Preserve the frozen result before redesigning anything. If a `fixed_test` outcome motivates any new sample, observable, threshold, statistic, model, or formulation, upgrade to `adaptive_search` before running it; the original result remains the completed fixed test.
+Use this file after a null, weak, unstable, or sign-inconsistent result. Preserve the frozen result before redesigning anything. If it motivates a new sample, observable, threshold, statistic, model, or formulation, record the outcome and decision and freeze a successor before running it; the original batch remains unchanged.
 
 ## 1. Write the Narrow Result
 
@@ -37,7 +37,7 @@ For observational support, geometry, censoring, or background questions, read `r
 
 ## 4. Expand Formulations Without Result Shopping
 
-In `coverage_search`, continue through remaining pre-result-frozen coverage cells when they represent distinct, scientifically justified observables, tests, scales, support sets, or parameter regimes. In `adaptive_search`, preserve unresolved candidates and tests in the ledger without claiming a coverage denominator or saturation.
+For explicit systematic coverage, continue through remaining pre-result-frozen coverage cells when they represent distinct, scientifically justified observables, tests, scales, support sets, or parameter regimes. For other outcome-informed work, preserve unresolved candidates and tests in the ledger without claiming a coverage denominator or saturation.
 
 Add a new formulation only when it addresses a named failure mode without changing the scientific question or adding unauthorized data. Freeze a finite batch of new cells before inspecting their outcomes. Examples include:
 
@@ -48,7 +48,7 @@ Add a new formulation only when it addresses a named failure mode without changi
 - test a finite preregistered set of substantively justified interactions or composites;
 - correct a documented support, unit, or calibration error.
 
-Specify every addition before running it, assign a new candidate or formulation ID, record its parent and rationale, and label it `post_result_adaptive` and exploratory. Version the affected selection family and update the registered inference method. In `coverage_search`, also assign a coverage-cell ID and version the coverage matrix. Do not rewrite the original frozen result.
+Specify every addition before running it, assign a new candidate or formulation ID, record its parent and rationale, and label it `post_result_adaptive` and exploratory. Version the affected selection family and update the registered inference method. In explicit systematic coverage, also assign a coverage-cell ID and version the coverage matrix. Do not rewrite the original frozen result.
 
 Update the complete selection path, not only the final test count. A null-triggered proxy, sample, scale, threshold, model, or parameter change can affect generation, screening, ranking, and promotion even when it receives a new filename or code version. The Prior-exposure Audit remains in force.
 
@@ -72,8 +72,10 @@ Missing data, small samples, or invalid tests do not weaken a candidate by thems
 
 ## 6. Stop Correctly
 
-Stop adaptive execution when remaining variants are redundant or unsupported, verification data are unavailable, governance blocks the work, or progress needs new data or assumptions. Report this as a bounded stage unless a `coverage_search` has passed its complete scientific-closure gate: inventory saturation, coverage completion, audited selection ledger, applied Decision Contract with a terminal decision, adequate prior-exposure audit for the claim, and passing consistency validation.
+Stop expanding the affected candidate when its remaining variants are redundant or unsupported, its required verification data are unavailable, or progress needs new data or assumptions. Continue through other material supported candidates under Core Rule 6; one candidate's blocker does not end the whole search. A bounded report describes claim strength, not permission to stop while material supported science remains.
 
-If resources end first, preserve an exact resume point. In `coverage_search`, use `resource_limited_pause` and list every deferred coverage cell in the open queue. In `adaptive_search`, preserve unresolved candidates and tests in the bounded report without inventing coverage cells.
+Explicit systematic coverage reaches scientific closure only after inventory saturation, coverage completion, an audited selection ledger, an applied final decision rule, adequate prior-exposure handling, and an internally consistent scientific coverage record.
 
-Apply the frozen Decision Contract without promoting the least unfavorable nominal p-value. Report the frozen result, sensitivity, support limits, complete formulation history, selection-path handling, comparability, the applicable candidate or mechanism status, and the exact evidence needed to change belief.
+If resources end first, preserve an exact resume point. In systematic coverage, use `resource_limited_pause` and list every deferred coverage cell in the open queue. In other outcome-informed work, preserve unresolved candidates and tests in the bounded report without inventing coverage cells.
+
+Apply the frozen decision rule without promoting the least unfavorable nominal p-value. Report the frozen result, sensitivity, support limits, complete formulation history, selection-path handling, comparability, the applicable candidate or mechanism status, and the exact evidence needed to change belief.

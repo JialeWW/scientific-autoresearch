@@ -44,7 +44,7 @@ For a frozen procedure, preserve a reproducible native search log and the inform
 
 Candidates trained or evaluated on different target populations, supported samples, estimands, metrics, evidence stages, or materially different data quality are not directly ranked without a prespecified validated common-scale mapping. Keep them as parallel conclusions or `support_limited_candidate`.
 
-A scheduler may apply one or more prespecified low-cost screening stages within declared comparable screening families before deeper evaluation. Record each screen's sensitivity, false-negative risk, threshold, and selection consequences. Screening and priority control execution order only. In systematic coverage, unrun deep-test cells remain open and in the coverage denominator; in other outcome-informed work, preserve them as unresolved candidates without implying completeness. When resources end, preserve the applicable queue and exact resume point.
+A scheduler may apply one or more prespecified low-cost screening stages within declared comparable screening families before deeper evaluation. Record each screen's sensitivity, false-negative risk, threshold, and selection consequences. In a fully frozen procedure, a screen-fail branch may terminate under its prespecified joint rule only when the screen supplies the sensitivity required for that decision. Otherwise screening controls execution order only: unrun deep tests remain open in systematic coverage and unresolved in outcome-informed work. When resources end, preserve the applicable queue and exact resume point.
 
 If the screen and final predictor or decision model use different statistics, losses, transformations, or scales, freeze their estimand relation, calibration or validation, and discordance rule. A rank-based association screen does not by itself validate raw-scale linear prediction, calibration, or predictive loss. If no selection-influencing screen differs from the final evidence, this mapping gate is not applicable.
 
@@ -56,10 +56,10 @@ When a finite compute envelope is explicitly authorized under `references/govern
 
 ## 4. Quantify Stochastic and Numerical Variation
 
-- Use master seed `42` unless the user or established project fixes another value. Reuse it for exact reruns and derive any required multi-realization set deterministically from it.
-- Predeclare the seed or realization set when randomness can change the conclusion.
+- Choose and record a deterministic seed and random-stream policy appropriate to the design; reuse the frozen policy for exact reruns.
+- Predeclare the realization set, aggregation, retry, and precision-expansion rules when randomness can change the conclusion.
 - Report the mean or other frozen aggregate, between-run variation, convergence failures, and the aggregation rule.
-- Use a common or paired seed design when comparing candidates unless another design is justified.
+- Use common or paired streams when they improve a scientifically valid comparison; use independent streams when the design requires them.
 - Add realizations adaptively only through a predeclared precision rule, never because of effect direction, significance, or rank.
 - Separate optimization noise, Monte Carlo error, finite-sample uncertainty, initialization variance, and model-choice uncertainty.
 - For simulations, test resolution, timestep, domain size, softening, solver tolerance, conservation, and initial-condition variation when relevant.

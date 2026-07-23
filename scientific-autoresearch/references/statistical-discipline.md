@@ -46,10 +46,11 @@ State whether independence concerns evidence, prior-result blinding, implementat
 
 ## 5. Handle Stochasticity Without Seed Selection
 
-- Unless the user or an established project has fixed another value, use master seed `42` for exact reproduction and as the root of every stochastic stream.
-- Reuse the same seed or stream rule across comparable candidates. Do not assign a fresh arbitrary seed to each run.
-- When randomness could change ranking or interpretation, predeclare a common or paired realization set deterministically generated from master `42`, together with its derivation, aggregation, retry rule, and precision-based expansion rule.
-- Retain actual seeds, failures, nonconvergence, and between-run variation.
+- Before execution, freeze a reproducible randomization policy appropriate to the design; reuse it for exact reruns when the scientific procedure permits.
+- For simulation or optimization, record deterministic seeds or generator state. Use common or paired streams when they improve comparison precision without violating the design, and independent streams otherwise.
+- For treatment or operational assignment, use a separate validated allocation scheme and restrict its seed, state, and assignment information from anyone who could infer future allocations until disclosure is authorized.
+- When randomness could change ranking or interpretation, predeclare the realization set, aggregation, retry rule, and any precision-based expansion rule.
+- Retain seeds or generator state under the applicable access controls, plus failures, nonconvergence, and enough outputs to reproduce aggregates and quantify between-run variation.
 - Never select seeds, checkpoints, or realizations because they improve direction, significance, or rank.
 - Do not treat seeds as independent scientific sample units.
 
@@ -57,4 +58,4 @@ Native optimizer or simulation logs may remain in their reproducible system of r
 
 ## 6. Stop at the Correct Claim Level
 
-A frozen analysis family can end with its prespecified joint decision. Outcome-informed work may issue a stage or bounded report, but whether execution ends is governed by Core Rule 6: continue while a material supported test could change the conclusion. Explicit systematic coverage uses the saturation and closure rules in `coverage-search.md`. A favorable result, promoted candidate, round count, or resource limit is not scientific completion.
+A frozen analysis family can end with its prespecified joint decision. In authorized outcome-informed work, use Core Rule 6's problem-specific continuation standard and resource boundary. Explicit systematic coverage uses the saturation and closure rules in `coverage-search.md`. A favorable result, promoted candidate, round count, or resource limit is not scientific completion.

@@ -4,6 +4,19 @@ Use this lens before promoting a candidate, claiming verification, or writing a 
 
 First identify the actual scientific path: fully frozen before outcomes, outcome-informed, or explicitly systematic coverage. These paths make different completion claims.
 
+## Contents
+
+- [Question and Significance](#question-and-significance)
+- [Method Fit](#method-fit)
+- [Evidence Strength](#evidence-strength)
+- [Adaptive-Path Audit](#adaptive-path-audit)
+- [Coverage-Scope Audit](#coverage-scope-audit)
+- [Evidence Independence](#evidence-independence)
+- [Interpretation Boundary](#interpretation-boundary)
+- [Literature and Novelty](#literature-and-novelty)
+- [Coverage Wording](#coverage-wording)
+- [Promotion Audit](#promotion-audit)
+
 ## Question and Significance
 
 - State the question and claim type in one sentence.

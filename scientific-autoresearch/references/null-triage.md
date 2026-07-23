@@ -72,7 +72,7 @@ Missing data, small samples, or invalid tests do not weaken a candidate by thems
 
 ## 6. Stop Correctly
 
-Stop expanding the affected candidate when its remaining variants are redundant or unsupported, its required verification data are unavailable, or progress needs new data or assumptions. Continue through other material supported candidates under Core Rule 6; one candidate's blocker does not end the whole search. A bounded report describes claim strength, not permission to stop while material supported science remains.
+Stop expanding the affected candidate when its remaining variants are redundant or unsupported, its required verification data are unavailable, or progress needs new data or assumptions. In authorized iterative work, continue through other candidates only while they meet Core Rule 6's continuation standard; one candidate's blocker does not end otherwise admissible work. A bounded report describes claim strength rather than overriding that standard.
 
 Explicit systematic coverage reaches scientific closure only after inventory saturation, coverage completion, an audited selection ledger, an applied final decision rule, adequate prior-exposure handling, and an internally consistent scientific coverage record.
 

@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here.
 
+## 0.3.2 - 2026-07-23
+
+- Narrowed implicit routing to evidence-generating scientific analysis with material falsification, support, adaptation, or selection-path needs; excluded routine explanation, literature-only review, manuscript editing, ordinary engineering, and one-off calculations without scientific decision design.
+- Limited multi-round continuation to explicitly autonomous or iterative requests. Design, read-only audit, and named one-test tasks now stay bounded, while scope, cost, risk, data-access, and external-action changes require renewed authorization.
+- Restored the distinction between a coherent frozen multi-stage mapping and an outcome-driven successor, including prospective comparison-family, evidence-partition, decision, and selection-path rules.
+- Replaced universal seed `42` behavior with design-appropriate reproducible randomization: common, paired, or independent streams for simulation and a separate protected concealed scheme for allocation, with no post-outcome randomness selection.
+- Restored compact top-level safeguards for data integrity, dependence and leakage, append-only adaptive logging, preservation of every scientific attempt, engineering equivalence, and versioning of decision-bearing code and procedures.
+- Reframed the v0.3.1 anti-bureaucracy rules proportionately: ordinary work avoids bespoke audit packages by default but reuses project-required scientific, data-integrity, execution, and provenance controls.
+- Tightened promotion, prior-exposure, null-status, and stopping language. Resource exhaustion now yields `resource_limited` or incomplete work rather than scientific or scoped completion.
+- Added explicit routing for sensitive, regulated, costly, prospective, physical, and external actions, plus an unscored v0.3.2 boundary-correction development specification. Behavioral and empirical-method evaluation remain `not_evaluated`.
+
 ## 0.3.1 - 2026-07-23
 
 - Kept the active candidate–test–interpret–next-step loop while making the next executable test or coherent batch, rather than the whole future project, the default freeze unit.

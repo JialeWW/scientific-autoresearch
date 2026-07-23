@@ -8,4 +8,4 @@ tag and release asset.
 
 Use that frozen release only to inspect or continue an existing schema-1.5.4
 run. Do not install its formal audit components for ordinary scientific work,
-and do not mix their runtime-package provenance with v0.3.1.
+and do not mix their runtime-package provenance with v0.3.1 or later.

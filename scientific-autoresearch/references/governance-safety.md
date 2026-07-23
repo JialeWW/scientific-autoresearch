@@ -2,6 +2,15 @@
 
 Read this file when work involves sensitive data, regulated research, physical actions, external systems, substantial compute or cost, or unclear authorization.
 
+## Contents
+
+- [1. Classify the Work](#1-classify-the-work)
+- [2. Build an Authorization Record](#2-build-an-authorization-record)
+- [3. Protect Data and Artifacts](#3-protect-data-and-artifacts)
+- [4. Bound External Actions and Reuse Compute Authorization](#4-bound-external-actions-and-reuse-compute-authorization)
+- [5. Regulated and Physical Research](#5-regulated-and-physical-research)
+- [6. Report the Gate](#6-report-the-gate)
+
 ## 1. Classify the Work
 
 Choose one or more classes:

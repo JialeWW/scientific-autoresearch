@@ -8,6 +8,15 @@ The lightweight record may be Markdown, JSONL, or an equivalent project record. 
 
 Write those events when they occur. At a declared checkpoint such as pause, handoff, a change from frozen to outcome-guided work, sealed-evidence opening, external decision release, a resource checkpoint, or bounded completion, summarize the compact record. Do not turn every analysis call into a reporting or validation checkpoint.
 
+## Contents
+
+- [1. Freeze the Data-to-Decision Rule](#1-freeze-the-data-to-decision-rule)
+- [2. Audit Prior Exposure](#2-audit-prior-exposure)
+- [3. Define Comparable Selection Families](#3-define-comparable-selection-families)
+- [4. Cover the Complete Selection Path](#4-cover-the-complete-selection-path)
+- [5. Separate Scientific Coverage from Scheduling](#5-separate-scientific-coverage-from-scheduling)
+- [6. Decide Conservatively](#6-decide-conservatively)
+
 ## 1. Freeze the Data-to-Decision Rule
 
 Before candidate-specific outcomes are inspected, freeze a compact data-to-decision rule inside the single research record. Its core defines:

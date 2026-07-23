@@ -71,7 +71,7 @@ def contained_directory(root: Path, relative_value: object) -> Path | None:
 
 
 def runtime_package_sha256(skill_dir: Path) -> str:
-    """Use the lightweight v0.3.1 runtime-package digest."""
+    """Use the lightweight v0.3.x runtime-package digest."""
 
     root = skill_dir.resolve()
     skill_md = root / "SKILL.md"

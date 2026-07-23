@@ -4,6 +4,17 @@ Use this reference only when the semantic objective is systematic coverage of a 
 
 When the user explicitly requests full systematic coverage or scoped completion, advance autonomously toward inventory saturation and cell closure until completion or a real authorization, resource, governance, or scientific boundary is reached. If the user requests only a bounded coverage stage or coverage design, stop at that boundary with an exact open-queue report.
 
+## Contents
+
+- [1. Version a Typed Candidate Inventory](#1-version-a-typed-candidate-inventory)
+- [2. Enumerate Through Complementary Lenses](#2-enumerate-through-complementary-lenses)
+- [3. Define Finite Coverage Cells](#3-define-finite-coverage-cells)
+- [4. Define Selection Families](#4-define-selection-families)
+- [5. Audit Inventory Saturation](#5-audit-inventory-saturation)
+- [6. Close Coverage](#6-close-coverage)
+- [7. Schedule Without Shrinking Coverage](#7-schedule-without-shrinking-coverage)
+- [8. State the Scope Honestly](#8-state-the-scope-honestly)
+
 ## 1. Version a Typed Candidate Inventory
 
 Do not impose an arbitrary total limit on scientifically distinct candidates. At any execution point, however, the current inventory version must be finite, explicit, deduplicated, and version-frozen. Declare `candidate_type` as `mechanism`, `model`, `feature`, `simulation`, `design`, or another justified type.

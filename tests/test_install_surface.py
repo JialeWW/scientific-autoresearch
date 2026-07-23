@@ -22,10 +22,12 @@ def load_builder():
 
 
 class LightweightInstallSurfaceTests(unittest.TestCase):
-    def test_default_master_seed_is_42(self) -> None:
+    def test_stochastic_policy_is_design_appropriate(self) -> None:
         content = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("master random seed `42`", content)
-        self.assertIn("never change or select seeds after viewing outcomes", content)
+        self.assertNotIn("master random seed `42`", content)
+        self.assertIn("reproducible randomization policy appropriate to the design", content)
+        self.assertIn("never select or change randomness after outcomes", content)
+        self.assertIn("separate validated concealed scheme", content)
 
     def test_runtime_file_list_excludes_formal_audit(self) -> None:
         builder = load_builder()

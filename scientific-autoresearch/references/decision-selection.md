@@ -1,16 +1,16 @@
 # Decision, Exposure, and Selection Protocol
 
-Use this protocol when an inspected outcome can alter an unprespecified scientific choice. A prespecified comparison or bounded automated procedure executes directly when its candidate domain, proposal and evaluation rules, evidence partitions, metric, randomization, budget, stopping, joint inference, decision, and reporting rules cannot change after outcomes. If an outcome motivates discretion outside that frozen mapping, preserve the result, record the resulting choice, and freeze the successor before continuing. Formal schemas may derive compatibility metadata afterward; ordinary work need not announce it.
+Use this protocol when an inspected outcome can alter an unprespecified scientific choice. A prespecified comparison or bounded automated procedure executes directly when its candidate domain, proposal and evaluation rules, evidence partitions, metric, randomization, budget, stopping, joint inference, decision, and reporting rules cannot change after outcomes. If an outcome motivates discretion outside that frozen mapping, preserve the result, record the resulting choice, and freeze the successor before continuing.
 
-Create or reuse one lightweight append-only or versioned record before the first outcome that can influence an unprespecified choice. A pre-existing project ledger is not required. Use this path whenever one persistent compact record can faithfully preserve the selection path, including ordinary work that spans sessions. Use named JSON, CSV, and JSONL files only when structured machine audit was independently selected or an existing formal run is being continued. Do not reconstruct omitted history later.
+Create or reuse one lightweight append-only or versioned record before the first outcome that can influence an unprespecified choice. A pre-existing project ledger is not required. Use this path whenever one persistent compact record can faithfully preserve the selection path, including ordinary work that spans sessions. Do not create parallel registries or reconstruct omitted history later.
 
 The lightweight record may be Markdown, JSONL, or an equivalent project record. Freeze its task scope, candidate or formulation boundary, data-to-decision rule, prior-exposure audit scope, and evidence partitions. Append one timestamped entry for each selection-influencing outcome or decision with an event ID, outcome accessed, resulting change or decision, reason, status, and affected candidate or family. End with the complete selection path and unresolved branches. Preserve weak, failed, invalid, and abandoned paths; compact storage does not reduce inferential obligations.
 
-Write those events when they occur. At a declared checkpoint such as pause, handoff, a change from frozen to outcome-guided work, sealed-evidence opening, external decision release, a resource checkpoint, or bounded completion, summarize the compact record. Materialize registries and cross-record checks only when structured audit requires them. Do not turn every analysis call into a reporting or validation checkpoint.
+Write those events when they occur. At a declared checkpoint such as pause, handoff, a change from frozen to outcome-guided work, sealed-evidence opening, external decision release, a resource checkpoint, or bounded completion, summarize the compact record. Do not turn every analysis call into a reporting or validation checkpoint.
 
 ## 1. Freeze the Data-to-Decision Rule
 
-Before candidate-specific outcomes are inspected, freeze a compact data-to-decision rule. Ordinary work may keep it inside the single research record; the formal machine-audit schema represents the same content in its decision record. Its core defines:
+Before candidate-specific outcomes are inspected, freeze a compact data-to-decision rule inside the single research record. Its core defines:
 
 - the scientific or operational decision, eligible candidate classes, substantive eligibility, target population, supported sample, and estimand;
 - the analysis and scientifically independent units, dependence handling, and any partition or resampling unit;
@@ -22,13 +22,15 @@ Add conditional clauses only when their pathway exists: distinct analysis, selec
 
 The contract may choose a frequentist, Bayesian, predictive, decision-theoretic, or hybrid rule, but it must be interpretable for the scientific question. The smallest nominal p-value is never a default ranking rule.
 
+Derive numerical eligibility, support, or comparison thresholds from scientific scale, design constraints, precision, power, recovery, or another declared operating characteristic before outcomes. If only a heuristic is possible, label it as such, examine reasonable alternatives, and do not tune it merely to retain or exclude available candidates, samples, or data families.
+
 Here, population means the scientific target domain, system class, distribution, or ensemble—not a particular dataset split. Record concrete support with `supported_sample_id`; train/test or discovery/verification partitions may share one population when they sample the same target definition.
 
 Substantive eligibility is a gate, not a post-result plausibility score. Declare each candidate type, such as mechanism, model, feature, simulation, or design. For mechanistic candidates, freeze `mechanism_alignment` as `direct`, `calibrated_proxy`, `diagnostic_only`, `unsupported`, or `not_assessed`. For a nonmechanistic scientific or operational decision, use `not_applicable` with a reason and apply the declared `substantive_eligibility` rule instead. Diagnostics and unsupported proxies remain in the record but cannot become a substantive leader through statistical strength alone.
 
 When screening and decision evidence differ, freeze one mapping per distinct family and screening-statistic relation: both evidence definitions, estimands and scales, the scale relation, validation or calibration rule, and discordance rule. A rank statistic can support monotone association while remaining silent about raw-scale slope, calibration, residual structure, or predictive loss. Without a validated mapping, a screen may prioritize execution but cannot replace decision-scale evidence.
 
-If the rule changes after outcome inspection, preserve the earlier version, record the trigger, and treat decisions affected by the change as exploratory unless a valid adaptive procedure already covered it. In a formal schema, mark the change `post_result_adaptive`. If no rule existed before outcomes were viewed, the first retrospective version is also outcome-informed; it cannot create a pre-result freeze retroactively.
+If the rule changes after outcome inspection, preserve the earlier version, record the trigger, and treat decisions affected by the change as exploratory unless a valid adaptive procedure already covered it. If no rule existed before outcomes were viewed, the first retrospective version is also outcome-informed; it cannot create a pre-result freeze retroactively.
 
 ## 2. Audit Prior Exposure
 
@@ -49,7 +51,7 @@ Exposure follows the information, not the filename or tool. Changing the sample 
 
 State what is independent: prior-result blinding, evidence or data, implementation, or review. A result-blind rerun may receive the frozen test specification and reuse validated parsers, data semantics or contracts, deterministic utilities, and tests when they do not encode outcome-informed scientific choices. It must not receive prior numeric outcomes, rankings, conclusions, or discretionary outcome-derived choices outside that specification. Disclose shared infrastructure and do not claim implementation independence unless it is real. Same-data blind reruns remain reproduction or internal validation; untouched-data verification may reuse software unless software independence is the target.
 
-Classify exposure by decision relevance rather than treating every technical view as equivalent. Field names, schemas, and noncandidate operational metadata may be summarized as response-blind QA and do not ordinarily reopen the Scientific Contract. Record isolated outcome information when it could plausibly affect a choice. Candidate features, effects, scores, ranks, selection states, or any other information that can guide generation, modification, screening, ranking, or promotion must enter the complete selection path and may require genuinely untouched evidence. Exposure relevance never restores status already lost through prior overlapping outcome access.
+Classify exposure by decision relevance rather than treating every technical view as equivalent. Field names, schemas, and noncandidate operational metadata may be summarized as response-blind QA and do not ordinarily reopen the frozen scientific plan. Record isolated outcome information when it could plausibly affect a choice. Candidate features, effects, scores, ranks, selection states, or any other information that can guide generation, modification, screening, ranking, or promotion must enter the complete selection path and may require genuinely untouched evidence. Exposure relevance never restores status already lost through prior overlapping outcome access.
 
 ## 3. Define Comparable Selection Families
 
@@ -120,4 +122,4 @@ At decision time:
 6. report sensitivity to reasonable contract, prior, model, and data-quality choices;
 7. distinguish exploratory preference, internally validated evidence, and independent verification.
 
-Record candidate-level outcomes in a registry or equivalent table. When structured machine audit is active, follow `report-contract.md` for its prescribed candidate registry and manifest fields. Summarize outcome classes in prose and link the complete registry rather than narrating every branch. If evidence does not separate eligible candidates by the declared rule, report `tie` or `inconclusive`; if none pass, use `no_eligible_candidate`.
+Record candidate-level outcomes in the compact board or an equivalent table. Summarize outcome classes in prose and link the complete table rather than narrating every branch. If evidence does not separate eligible candidates by the declared rule, report `tie` or `inconclusive`; if none pass, use `no_eligible_candidate`.

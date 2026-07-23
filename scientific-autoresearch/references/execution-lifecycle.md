@@ -30,7 +30,7 @@ If the resource bound is reached before the criteria pass, report the unresolved
 
 ## Classify the Change by Effect
 
-Classify by effect; do not create three contracts or announce category names in ordinary work. The formal compatibility schema may map these effects to Scientific Contract, Data Contract, and Execution Profile fields:
+Classify by effect; do not create separate contracts or announce category names in ordinary work:
 
 - A **scientific-meaning change** affects candidates, estimand, scientific population or support, feature meaning, model or statistic, validation design, multiplicity, decision rule, stopping, or reporting role. Outcome-driven changes enter the selection path.
 - A **data-or-support change** affects input identity, versions, joins, quality rules, units, support, or dependence. Repeat the affected data checks. Re-freeze science only if the change alters eligibility, sample, estimand, interpretation, or decision use.
@@ -62,4 +62,4 @@ Development files may be edited normally. Once an outcome-bearing contract, resu
 
 Record engineering failures only to the degree needed for diagnosis and reproducibility. Do not add worker, chunk, cache, deployment, or retry events to the scientific selection ledger unless they exposed candidate outcomes or influenced a scientific choice.
 
-Run consolidated consistency checks at meaningful delivery, pause, handoff, material decision-bearing resume, or scientific-plan-change boundaries—not after every script or result. Ordinary retries, engineering resumes, and accepted execution amendments do not require repeated full validation. Continue automatically inside the recorded authorization and equivalence envelope.
+Run only the scientific or execution checks needed at meaningful delivery, pause, handoff, material decision-bearing resume, or scientific-plan-change boundaries—not after every script or result. Do not build a general validator for ordinary work. Ordinary retries, engineering resumes, and accepted execution amendments do not require repeated full validation. Continue automatically inside the recorded authorization and equivalence envelope.

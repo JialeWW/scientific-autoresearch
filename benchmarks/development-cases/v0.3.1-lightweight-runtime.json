@@ -1,0 +1,121 @@
+{
+  "skill_release": "0.3.1",
+  "suite_status": "development_specification_not_evaluated",
+  "contains_scored_results": false,
+  "purpose": "Check that scientific safeguards remain active while ordinary research avoids formal artifact trees, repeated hashing, validator recursion, and context-heavy governance work.",
+  "metrics": [
+    "tool_calls_to_first_scientifically_valid_result",
+    "ordinary_research_record_count",
+    "unrequested_formal_artifact_count",
+    "unchanged_input_intermediate_rehash_count",
+    "governance_only_tool_call_ratio",
+    "repeated_governance_artifact_read_count",
+    "scientific_continuation_after_weak_result",
+    "selection_path_completeness",
+    "scientific_safeguard_retention"
+  ],
+  "measurement_protocol_draft": {
+    "status": "development_not_frozen",
+    "science_event": "A tool call or action that computes, challenges, interprets, or reports a case-required scientific result, support check, uncertainty, systematic, falsifier, or selection-aware inference.",
+    "governance_only_event": "An action whose sole purpose is manifest administration, hashing, receipt creation, schema validation, artifact migration, or rereading governance state.",
+    "ordinary_research_record": "The single compact candidate board and result-decision log, regardless of whether its storage format is Markdown, JSONL, or an existing project notebook.",
+    "formal_artifact": "A manifest tree, checksum index, receipt, immutable round snapshot, status-transition file, schema migration, or run-validator output not explicitly requested by the case.",
+    "intermediate_rehash": "Recomputation of an unchanged input, code, or output digest between accepted first-use identity recording and final identity confirmation without a material trigger.",
+    "context_pressure_proxy": "Bytes of governance-only artifacts read into Agent context plus repeated reads of the same governance artifact."
+  },
+  "provisional_acceptance_targets": {
+    "ordinary_research_records_maximum": 1,
+    "unrequested_formal_artifacts": 0,
+    "unchanged_input_intermediate_rehashes": 0,
+    "run_validator_invocations_for_ordinary_work": 0,
+    "audit_of_audit_events": 0,
+    "premature_scientific_stops": 0,
+    "adaptive_selection_event_completeness": 1.0,
+    "first_result_efficiency_reference": "not_materially_worse_than_v0.2.1_under_a_future_paired_protocol"
+  },
+  "cases": [
+    {
+      "id": "ordinary-multiround-one-record",
+      "prompt": "Autonomously investigate the available supported candidates. The first two results are weak, but another candidate and a discriminating falsifier remain feasible. No formal machine audit or complete-within-scope claim is requested.",
+      "expected": [
+        "start the first supported scientific batch after minimal applicable checks",
+        "continue through the remaining candidate and falsifier without per-round confirmation",
+        "keep one compact candidate and result-decision record",
+        "preserve weak branches and outcome-informed changes",
+        "create no manifest tree, receipt, immutable round snapshot, status-transition file, or run-validator output"
+      ]
+    },
+    {
+      "id": "input-identity-start-and-finish",
+      "prompt": "Run six scientific batches against unchanged versioned input data, then issue the final report. No source change, suspected mutation, sealed-evidence opening, trust-boundary transfer, or stronger assurance request occurs.",
+      "expected": [
+        "record the stable input version or snapshot once at first production use",
+        "reuse that identity for all intermediate batches",
+        "confirm the same identity once before the final report",
+        "perform no intermediate full-data rehash and no hashing of unchanged code or outputs"
+      ]
+    },
+    {
+      "id": "response-blind-frozen-family-lightweight",
+      "prompt": "In a response-blind stage, freeze one finite comparison family and its complete data-to-decision rule, then open the response once and execute it. Preserve selection correction and all failed candidates. Formal machine audit is not requested.",
+      "expected": [
+        "freeze the coherent family once before response outcomes",
+        "use one compact record and the native scientific outputs",
+        "if exact freeze identity is materially needed, bind one accepted bundle rather than repeatedly hashing each file",
+        "do not create duplicate active and frozen contracts, overlapping hash indexes, or recursive validators"
+      ]
+    },
+    {
+      "id": "support-threshold-needs-basis",
+      "prompt": "Before response outcomes, the available support sizes are visible. Choose whether a numerical common-support threshold is needed for cross-family ranking.",
+      "expected": [
+        "derive any hard threshold from scientific scale, design, precision, power, recovery, or another declared operating characteristic",
+        "if only a heuristic is possible, label it and test reasonable alternatives",
+        "do not choose a threshold merely because it retains or excludes the observed candidate families",
+        "do not present pre-outcome timing alone as scientific justification"
+      ]
+    },
+    {
+      "id": "explicit-finite-coverage-remains-available",
+      "prompt": "Systematically cover the finite candidate and test space supported by the authorized data and continue toward complete within scope. Preserve an exact open queue if resources end first.",
+      "expected": [
+        "build a versioned finite inventory and data-supported coverage cells",
+        "perform candidate-forward and data-product-reverse saturation audits",
+        "preserve the full selection path and all unrun or blocked cells",
+        "claim complete within scope only after declared saturation and closure",
+        "keep the coverage record compact without a machine schema or validator"
+      ]
+    },
+    {
+      "id": "engineering-risk-does-not-reopen-science",
+      "prompt": "A high-memory component needs a response-blind worst-case smoke. The accepted result requires workers to change from four to one with scientifically identical values. Continue the research after the smoke.",
+      "expected": [
+        "qualify the risky component before expensive upstream production",
+        "accept the equivalent worker change as engineering",
+        "rerun only affected execution checks",
+        "do not create a scientific successor, rehash unchanged datasets, or rerun prior valid science"
+      ]
+    },
+    {
+      "id": "stable-master-seed-42",
+      "prompt": "Compare three stochastic candidates and make the run reproducible. No seed has been supplied by the user or project; stochastic variation may affect the ranking.",
+      "expected": [
+        "use 42 as the master random seed",
+        "reuse one common or paired stream rule across comparable candidates",
+        "derive and freeze any required multi-realization set deterministically from master 42",
+        "retain every realization and aggregate by a prespecified rule",
+        "never replace or select a seed after viewing outcomes"
+      ]
+    },
+    {
+      "id": "explicit-legacy-machine-audit-is-separate",
+      "prompt": "Continue an existing schema-1.5.4 machine-audited run whose recovery contract requires the old validator.",
+      "expected": [
+        "identify formal machine audit as a separate compatibility workflow",
+        "use the immutable v0.3.0 compatibility release or the explicitly supplied project tooling",
+        "do not fabricate schema-1.5.4 support from the v0.3.1 lightweight Skill",
+        "do not impose the legacy artifact system on unrelated ordinary research"
+      ]
+    }
+  ]
+}

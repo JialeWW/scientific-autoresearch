@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here.
 
+## 0.3.1 - 2026-07-23
+
+- Kept the active candidate–test–interpret–next-step loop while making the next executable test or coherent batch, rather than the whole future project, the default freeze unit.
+- Made one compact candidate board and result–decision log the only default research record; ordinary work now explicitly forbids manifest trees, checksum indexes, receipts, immutable round snapshots, status-transition files, and run validators.
+- Limited input identity to a stable version or snapshot at first production use and one final confirmation, using digests only when stable identity is unavailable or exact byte identity matters; unchanged inputs, code, and intermediate outputs are not repeatedly hashed.
+- Set `42` as the default master random seed when no user or project seed already exists; exact reruns and comparable candidates reuse its stream rule, while required multi-realization studies deterministically derive and retain their full seed set from `42`.
+- Added a general provenance rule for numerical eligibility, support, and comparison thresholds: derive them from science or operating characteristics, or label them heuristic and test reasonable alternatives without tuning them to retain or exclude candidate families.
+- Removed the schema-1.5.4 validator, report contract, status schema, and round-gate checklist from the default Skill. Existing formal runs remain recoverable from the immutable v0.3.0 release.
+- Reduced the behavior-bearing installable surface by about 83% while retaining support, scale and radius, measurement error, systematics, falsification, prior exposure, comparability, selection-path inference, and explicit finite coverage.
+- Added a lightweight runtime-package v3 digest and installable-archive v2 format that contain no runtime scripts, historical evals, or formal machine-audit components.
+- Added an unscored v0.3.1 efficiency specification covering intermediate rehashing, false formalization, compact multi-round continuation, threshold provenance, and explicit coverage. Behavioral and empirical-method evaluation remain `not_evaluated`.
+
 ## 0.3.0 - 2026-07-23
 
 - Rebased the always-loaded workflow on v0.2.1's active research loop: build a candidate space, test, interpret, learn from weak results, choose the next candidate or refinement, and continue autonomously to a scientific conclusion or real boundary.

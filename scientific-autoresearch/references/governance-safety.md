@@ -75,9 +75,9 @@ An omitted envelope field is not unlimited permission. Resolve it from the docum
 
 Track cumulative and remaining use at declared resource checkpoints, not after every small task. Resource exhaustion, service interruption, or envelope expiry creates a bounded pause when work remains. Preserve the scientific and engineering queues, last accepted qualification state, and resume conditions; do not call the inventory saturated or coverage complete.
 
-An authorized change to workers, chunking, cache, scheduling, retry mechanics, or execution target does not require renewed scientific authorization when it stays inside the recorded Execution Profile, passes its equivalence gate, and does not change external impact. Record it as an execution amendment. If the change alters cost, data scope, network behavior, safety, scientific values, randomness, or selection, apply the corresponding authorization or scientific gate.
+An authorized change to workers, chunking, cache, scheduling, retry mechanics, or execution target does not require renewed scientific authorization when it stays inside the recorded execution bounds, passes its equivalence check, and does not change external impact. Note it only as needed for reproducibility. If the change alters cost, data scope, network behavior, safety, scientific values, randomness, or selection, apply the corresponding authorization or scientific gate.
 
-If observed results change compute scheduling priority, record that adaptive resource decision in the search ledger because it can affect candidate selection.
+If observed results change compute scheduling priority, record that decision in the compact scientific record because it can affect candidate selection.
 
 ## 5. Regulated and Physical Research
 

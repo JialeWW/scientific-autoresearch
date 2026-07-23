@@ -14,15 +14,15 @@ jobs:
           python-version: "3.12"
       - name: Package consistency
         run: python scripts/validate_skill.py scientific-autoresearch
-      - name: Runtime-only installable archive
+      - name: Lightweight installable archive
         run: python scripts/build_installable_skill.py scientific-autoresearch "$RUNNER_TEMP/scientific-autoresearch-skill.zip"
       - name: Validate extracted runtime-only archive
         run: |
           extract_root="$(mktemp -d)"
           unzip -q "$RUNNER_TEMP/scientific-autoresearch-skill.zip" -d "$extract_root"
           python scripts/validate_skill.py "$extract_root/scientific-autoresearch"
-      - name: Run-schema fixture checks
-        run: python scientific-autoresearch/scripts/validate_run.py --self-test
+      - name: Lightweight install-surface regression
+        run: python -m unittest discover -s tests -v
       - name: Benchmark-scorer smoke fixture
         run: python benchmarks/score.py --self-test
       - name: Historical protocol-2.0.0 scorer smoke fixture

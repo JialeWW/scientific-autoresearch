@@ -71,28 +71,34 @@ def contained_directory(root: Path, relative_value: object) -> Path | None:
 
 
 def runtime_package_sha256(skill_dir: Path) -> str:
-    """Use the same runtime-package digest as the installed run validator."""
+    """Use the lightweight v0.3.1 runtime-package digest."""
 
     root = skill_dir.resolve()
     skill_md = root / "SKILL.md"
-    resource_specs = (
-        (root / "references", "*.md"),
-        (root / "scripts", "*.py"),
-    )
     if skill_md.is_symlink() or not skill_md.is_file():
         raise ValueError("SKILL.md must be a regular, nonsymlink file")
     files = [skill_md]
-    for directory, pattern in resource_specs:
-        if directory.is_symlink() or not directory.is_dir():
-            raise ValueError(f"{directory.relative_to(root)} must be a regular directory")
-        resources = sorted(directory.glob(pattern), key=lambda item: item.name)
-        if not resources:
-            raise ValueError(f"no behavior-bearing files matched {directory.relative_to(root) / pattern}")
-        if any(path.is_symlink() or not path.is_file() for path in resources):
-            raise ValueError(f"{directory.relative_to(root)} contains an invalid behavior-bearing file")
-        files.extend(resources)
+    references = root / "references"
+    if references.is_symlink() or not references.is_dir():
+        raise ValueError("references must be a regular directory")
+    resources = sorted(references.glob("*.md"), key=lambda item: item.name)
+    if not resources:
+        raise ValueError("no behavior-bearing files matched references/*.md")
+    if any(path.is_symlink() or not path.is_file() for path in resources):
+        raise ValueError("references contains an invalid behavior-bearing file")
+    files.extend(resources)
+
+    forbidden = {
+        "references/report-contract.md",
+        "references/status-schema.md",
+        "references/round-gate-checklist.md",
+        "scripts/validate_run.py",
+    }
+    relative_files = {path.relative_to(root).as_posix() for path in files}
+    if relative_files & forbidden:
+        raise ValueError("formal machine-audit files entered the runtime package")
     digest = hashlib.sha256()
-    digest.update(b"scientific-autoresearch-runtime-package-v2\0")
+    digest.update(b"scientific-autoresearch-runtime-package-v3\0")
     for path in sorted(files, key=lambda item: item.relative_to(root).as_posix()):
         digest.update(path.relative_to(root).as_posix().encode("utf-8"))
         digest.update(b"\0")

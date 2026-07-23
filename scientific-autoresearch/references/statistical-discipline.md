@@ -1,6 +1,6 @@
 # Statistical Method Selection
 
-Use this reference only when the multiplicity, selection-path, evidence-partition, or stochastic method is not already clear. `decision-selection.md` is the source of truth for the Decision Contract, prior exposure, comparability, and ledger. Do not recreate those records here.
+Use this reference only when the multiplicity, selection path, evidence partition, or stochastic method is not already clear. `decision-selection.md` contains the detailed rules for prior exposure, comparability, and the compact selection record. Do not recreate those records here.
 
 ## 1. Handle a Frozen Analysis Family Without Adaptive Machinery
 
@@ -46,13 +46,14 @@ State whether independence concerns evidence, prior-result blinding, implementat
 
 ## 5. Handle Stochasticity Without Seed Selection
 
-- Use one fixed seed only for debugging or exact reproduction.
-- When randomness could change ranking or interpretation, predeclare a common or paired seed or realization set, aggregate, retry rule, and precision-based expansion rule.
+- Unless the user or an established project has fixed another value, use master seed `42` for exact reproduction and as the root of every stochastic stream.
+- Reuse the same seed or stream rule across comparable candidates. Do not assign a fresh arbitrary seed to each run.
+- When randomness could change ranking or interpretation, predeclare a common or paired realization set deterministically generated from master `42`, together with its derivation, aggregation, retry rule, and precision-based expansion rule.
 - Retain actual seeds, failures, nonconvergence, and between-run variation.
 - Never select seeds, checkpoints, or realizations because they improve direction, significance, or rank.
 - Do not treat seeds as independent scientific sample units.
 
-Native optimizer or simulation logs may remain in their reproducible system of record. Reference them from the search ledger and summarize selection-influencing state changes; do not copy noninfluential telemetry for ceremony.
+Native optimizer or simulation logs may remain in their reproducible system of record. Reference them from the compact scientific record and summarize selection-influencing state changes; do not copy noninfluential telemetry for ceremony.
 
 ## 6. Stop at the Correct Claim Level
 

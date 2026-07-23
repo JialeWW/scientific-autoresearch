@@ -2,7 +2,7 @@
 
 Use this adapter for benchmark optimization, predictive modeling, algorithm comparison, stochastic simulation, numerical convergence, surrogate models, or parameter sweeps.
 
-Choose the workflow by outcome-driven discretion, not by domain or analysis count. Execute a frozen benchmark, finite model comparison, feature-selection algorithm, hyperparameter procedure, convergence program, or bounded automated search directly when its complete data-to-decision mapping is prespecified. When inspected outcomes motivate choices outside that mapping, record the choice and freeze a successor. Build systematic finite coverage of model, simulation, solver, or design classes only when that objective is explicit. Formal profile names may be derived later for schema compatibility; ordinary work need not emit them.
+Choose the workflow by outcome-driven discretion, not by domain or analysis count. Execute a frozen benchmark, finite model comparison, feature-selection algorithm, hyperparameter procedure, convergence program, or bounded automated search directly when its complete data-to-decision mapping is prespecified. When inspected outcomes motivate choices outside that mapping, record the choice and freeze a successor. Build systematic finite coverage of model, simulation, solver, or design classes only when that objective is explicit.
 
 ## 1. State the Scientific Role
 
@@ -56,7 +56,8 @@ When a finite compute envelope is explicitly authorized under `references/govern
 
 ## 4. Quantify Stochastic and Numerical Variation
 
-- Use a predeclared seed or realization set when randomness can change the conclusion.
+- Use master seed `42` unless the user or established project fixes another value. Reuse it for exact reruns and derive any required multi-realization set deterministically from it.
+- Predeclare the seed or realization set when randomness can change the conclusion.
 - Report the mean or other frozen aggregate, between-run variation, convergence failures, and the aggregation rule.
 - Use a common or paired seed design when comparing candidates unless another design is justified.
 - Add realizations adaptively only through a predeclared precision rule, never because of effect direction, significance, or rank.
@@ -64,7 +65,7 @@ When a finite compute envelope is explicitly authorized under `references/govern
 - For simulations, test resolution, timestep, domain size, softening, solver tolerance, conservation, and initial-condition variation when relevant.
 - Use convergence curves, recovery tests, known-truth cases, or analytic limits rather than relying on a single run.
 
-A single seed supports a smoke test or exact reproduction, not stochastic robustness. Seeds are nuisance realizations, not independent scientific sample units. Never select the luckiest seed, checkpoint, or realization.
+A single seeded realization supports a smoke test or exact reproduction, not stochastic robustness. Seeds are nuisance realizations, not independent scientific sample units. Never select the luckiest seed, checkpoint, or realization.
 
 ## 5. Use Scientific Falsifiers
 

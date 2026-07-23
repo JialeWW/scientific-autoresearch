@@ -168,7 +168,7 @@ AND coverage_record_consistency_reviewed
 
 Resource, time, cost, authorization, or user-limit exhaustion does not close cells. Use `resource_limited_pause`, `governance_blocked`, or `user_limited_stop`, report every open cell, and preserve an exact resume point.
 
-Use a persistent lightweight append-only or versioned ledger that captures every selection-influencing event contemporaneously. A compact coverage record is sufficient when it faithfully preserves the inventory, cells, saturation audits, ledger, decision, and open queue. Before claiming `complete_within_scope`, review those records for internal consistency; machine-schema migration is required only when machine audit was separately requested. Retrospective reconstruction cannot supply omitted attempts or create pre-result status.
+Use a persistent lightweight append-only or versioned ledger that captures every selection-influencing event contemporaneously. A compact coverage record is sufficient when it faithfully preserves the inventory, cells, saturation audits, ledger, decision, and open queue. Before claiming `complete_within_scope`, review that record for internal consistency. Retrospective reconstruction cannot supply omitted attempts or create pre-result status.
 
 ## 7. Schedule Without Shrinking Coverage
 

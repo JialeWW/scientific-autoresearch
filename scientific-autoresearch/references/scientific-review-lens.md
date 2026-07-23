@@ -2,7 +2,7 @@
 
 Use this lens before promoting a candidate, claiming verification, or writing a final scientific interpretation.
 
-First identify the actual scientific path: fully frozen before outcomes, outcome-informed, or explicitly systematic coverage. These paths make different completion claims. Formal profile labels are derived compatibility metadata only when auditing a structured record.
+First identify the actual scientific path: fully frozen before outcomes, outcome-informed, or explicitly systematic coverage. These paths make different completion claims.
 
 ## Question and Significance
 
@@ -47,7 +47,7 @@ For explicit systematic coverage only:
 - What are the coverage numerator, denominator, and closure rules?
 - What evidence supports inventory saturation?
 - Did any result add a post-result candidate or formulation and reset the relevant audit?
-- Is the scientific coverage record internally consistent across inventory versions, cells, ledger, families, queue, and decisions? If structured machine audit was separately selected, did its applicable check also pass?
+- Is the scientific coverage record internally consistent across inventory versions, cells, ledger, families, queue, and decisions?
 
 Resource-deferred or governance-blocked cells prevent coverage completion. Inventory saturation and coverage completion are separate claims.
 
@@ -116,4 +116,3 @@ Before promotion, answer:
 10. What dominant limitation must remain in the headline sentence?
 11. What evidence would change the decision?
 12. If systematic coverage was explicitly requested, did the inventory actually meet saturation and coverage criteria, or did execution merely stop? Otherwise is the output clearly a bounded scientific result?
-13. When structured artifacts were created, did the applicable consistency check pass?

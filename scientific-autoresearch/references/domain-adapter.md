@@ -49,6 +49,6 @@ When a scientific decision depends on a judgment that structure checks cannot es
 
 Do not call a review independent merely because it used another person, model, or label. Disclose shared evidence, context, methods, or personnel. Semantic review does not turn same-data exploration into independent verification or establish empirical operating characteristics.
 
-## 4. Add Machine Bindings Only on Explicit Request
+## 4. Keep the Check Lightweight
 
-Ordinary work needs no adapter artifact, hash, immutable version, schema-specific project contract, or validator report. If machine-readable audit, formal handoff or recovery, or an existing structured run separately requires those bindings, read `report-contract.md` and `status-schema.md` and represent the same scientific checks there. The formal representation does not add scientific validity by itself.
+Keep the applicable findings in the compact research record. Ordinary work needs no adapter artifact, hash, immutable version, schema-specific project contract, or validator report. Formal representation does not add scientific validity by itself and belongs to a separately requested audit workflow.

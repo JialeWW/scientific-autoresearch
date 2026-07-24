@@ -3,7 +3,7 @@ name: scientific-autoresearch
 description: "Use when asked to design, execute, audit, or iteratively extend an evidence-generating scientific analysis where falsification, outcome-informed choices, data support, or selection-path validity are material. Supports prespecified programs, explicitly autonomous multi-round research, and explicitly requested finite coverage. Do not use for routine scientific explanation, literature-only review, manuscript editing, or ordinary engineering and one-off calculations without scientific decision design."
 license: MIT
 metadata:
-  version: "0.3.2"
+  version: "0.3.3"
 ---
 
 # Scientific Autoresearch
@@ -53,6 +53,8 @@ At each checkpoint, estimate the effect in meaningful units with uncertainty, ap
 
 Use one persistent candidate board and result–decision log. For outcome-adaptive work, make it append-only or versioned before the first potentially selection-influencing outcome. Log each scientific checkpoint and preserve every scientific attempt and result, including weak, null, conflicting, invalid, failed, abandoned, and unfavorable branches. Response-blind operational metadata and QA may be summarized.
 
+When a protocol or builder declares stable scientific identifiers or science-facing data-product families, keep their dispositions in the compact record. Reconcile each declared candidate, prediction, falsifier, control, scientific role, and science-facing product to a test and output, an explicit closure, or the open queue. This reconciliation is deterministic only over declared identifiers and resolvable references; do not infer semantic equivalence from free text. Mark product families by role and whether they are science-facing so QA, intermediate, and provenance fields do not become false scientific blockers. A label such as `sensitivity` or `diagnostic` is a scientific role, not a disposition.
+
 If a viewed outcome motivates an unplanned candidate, formulation, sample, method, threshold, ranking, stopping, or reporting change, preserve the earlier result, record what was seen and why it changed the next step, and freeze the successor before running it. Do not retrospectively call the change prespecified.
 
 Treat code repair, exact reruns, worker or chunk changes, cache moves, scheduling, and equivalent implementations as engineering work only when they preserve the data, sample, estimand, parameters, random streams, and decision rule. If a change could alter scientific meaning, record it and freeze the affected successor before production.
@@ -79,7 +81,9 @@ Within the authorized scope and resource budget, continue while a currently iden
 
 Stop when the requested decision is resolved under its declared rule, no currently identified feasible test meets the continuation standard, progress requires new data or assumptions, or a resource, safety, governance, or user boundary is reached. Preserve unresolved candidates and the exact next admissible step; do not stop silently, invent endless refinements, or force a winner. If resources end while admissible work remains, report `resource_limited` or a bounded pause, not completion.
 
-Before ending ordinary open research, review the question once candidate-forward and data-product-reverse for an obvious supported omission. Test it or leave it explicitly open. This is a lightweight omission review, not inventory saturation.
+Do not infer scientific stopping from completion of the requested execution or a registered batch. Keep `request_execution_complete`, `scientific_mapping_complete`, `search_stop_admissible`, and, only for explicit coverage, `complete_within_scope` separate. Use `not_assessed` when a gate was not invoked and `indeterminate` when a required stop challenge cannot resolve a material dispute. Use only the state and termination vocabularies in `references/completion-review.md`; do not invent compound status labels. When the task actually terminates, record exactly one primary reason. Use `termination_reason=request_complete` when the bounded request finished as authorized; use a user, resource, safety, or governance boundary only when that boundary interrupts otherwise unfinished authorized work.
+
+Only when preparing to set `search_stop_admissible=true`, claim that no material test remains, or end open or adaptive research on a scientific-stop basis, read `references/completion-review.md` and run one scientific stop challenge. Reconstruct expected work candidate-forward, from declared protocol roles, and data-product-reverse before accepting the test registry as complete. Use one fresh reviewer context when available; otherwise perform the same source-first pass as an explicitly non-independent self-review. Adjudicate every finding and test or leave open every accepted, supported, feasible, authorized, potentially material omission. Do not recursively review the reviewer. A named-test result, registered-batch completion without a search-stop claim, or boundary-forced termination does not trigger this challenge.
 
 ## 7. Use full coverage only when explicitly requested
 
@@ -87,9 +91,11 @@ When the user requests systematic coverage, saturation, exhaustion of a declared
 
 Claim `complete_within_scope` only when the declared inventory satisfies its saturation rule, every eligible cell is validly tested or explicitly closed, the complete selection path is reviewed, and the final decision rule is applied. Resource exhaustion makes the search resource-limited or incomplete, not complete. Scope the claim to the candidate classes, observables, and data products actually covered.
 
+A scientific stop challenge may review the coverage record and expose inconsistencies, but it cannot replace inventory saturation, cell closure, selection-ledger review, or the final decision rule.
+
 ## Report
 
-Report, as applicable, the supported conclusion and effect scale; uncertainty and sample support; the strongest falsifier, systematics, and alternatives; candidates and formulations attempted; outcome-informed changes and selection-path treatment; evidence status and prior exposure; data, code, and procedure versions; a practical reproduction recipe; and the strongest unresolved candidate or open queue.
+Report, as applicable, the supported conclusion and effect scale; uncertainty and sample support; the strongest falsifier, systematics, and alternatives; candidates and formulations attempted; outcome-informed changes and selection-path treatment; evidence status and prior exposure; data, code, and procedure versions; a practical reproduction recipe; the strongest unresolved candidate or open queue; the applicable completion states; and the termination reason.
 
 Define any status labels used. Reserve `null` for a prespecified null or equivalence decision with adequate support and sensitivity; use `inconclusive` or `support_limited` when absence of evidence is the issue. Use `tie`, `needs_data`, `no_eligible_candidate`, or `resource_limited` when their stated conditions apply. `resource_limited_pause` is the systematic-coverage form of `resource_limited` when open cells and an exact resume point must be preserved.
 
@@ -98,6 +104,7 @@ Never omit, relabel, redefine, or selectively report data, attempts, candidates,
 ## Load references only when needed
 
 - Explicit finite coverage or scoped completion: `references/coverage-search.md`.
+- Scientific-stop or no-material-test claim: `references/completion-review.md`.
 - Material candidate ranking, prior exposure, adaptive choice, or a promoted selection claim: `references/decision-selection.md`; add `references/statistical-discipline.md` when multiplicity, evidence partitions, stochastic calibration, or path inference is not already clear.
 - Weak or null evidence: `references/null-triage.md`; concrete falsification design: `references/falsification-toolkit.md`.
 - Data support and domain semantics: `references/domain-adapter.md` plus the applicable `references/observational-data.md`, `references/ml-simulation.md`, or `references/causal-experimental.md`.

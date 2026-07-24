@@ -60,6 +60,8 @@ The saturation audit always has two complementary, separately scoped directions:
 1. candidate-forward: start from the declared candidate classes and enumerate distinct roles and predictions;
 2. data-product-reverse: start from every authorized data product and ask which pathways, alternatives, and artifacts it can distinguish.
 
+When a protocol or plan also declares stable scientific-role identifiers, reconcile them protocol-forward under `completion-review.md`. That is a required traceability lane for a stopping or completion claim, not a substitute for either saturation direction and not automatically a third candidate-generation audit.
+
 For a mechanistic search, candidate-forward is specifically a mechanism-forward audit; for other declared classes, use the corresponding model-, feature-, simulation-, or design-forward audit rather than forcing mechanistic language.
 
 These directions are different enumeration procedures, not automatically statistically independent reviews. Freeze their starting bases and scopes separately, and disclose shared executor, context, prior-inventory visibility, or source material. A high-consequence run may add separated contexts or reviewers, but different people or models are not a universal minimum.
@@ -180,6 +182,8 @@ AND coverage_record_consistency_reviewed
 Resource, time, cost, authorization, or user-limit exhaustion does not close cells. Use `resource_limited_pause`, `governance_blocked`, or `user_limited_stop`, report every open cell, and preserve an exact resume point.
 
 Use a persistent lightweight append-only or versioned ledger that captures every selection-influencing event contemporaneously. A compact coverage record is sufficient when it faithfully preserves the inventory, cells, saturation audits, ledger, decision, and open queue. Before claiming `complete_within_scope`, review that record for internal consistency. Retrospective reconstruction cannot supply omitted attempts or create pre-result status.
+
+Also run the scientific stop challenge required by Core Rule 6. It may find orphan roles, unsupported closures, or a potentially material omission, but it cannot create saturation, close an open cell, or replace the conjunction above. Any required `false`, `indeterminate`, or unresolved challenge finding defeats `complete_within_scope=true`.
 
 ## 7. Schedule Without Shrinking Coverage
 

@@ -10,6 +10,7 @@ First identify the actual scientific path: fully frozen before outcomes, outcome
 - [Method Fit](#method-fit)
 - [Evidence Strength](#evidence-strength)
 - [Adaptive-Path Audit](#adaptive-path-audit)
+- [Scientific-Stop Audit](#scientific-stop-audit)
 - [Coverage-Scope Audit](#coverage-scope-audit)
 - [Evidence Independence](#evidence-independence)
 - [Interpretation Boundary](#interpretation-boundary)
@@ -48,6 +49,10 @@ For outcome-informed and systematic-coverage work:
 - Were actual seeds and failed realizations handled under the frozen policy?
 
 A bounded report limits claim strength; it is not a stopping rule. Continue while Core Rule 6 identifies a material supported next test. Preserve unresolved work, and never claim saturation or coverage completion unless systematic coverage was explicitly requested and its closure conditions passed.
+
+## Scientific-Stop Audit
+
+Before claiming that no material test remains or ending open or adaptive research on a scientific-stop basis, use `completion-review.md`. Check declared identifiers and science-facing products deterministically, then challenge the stop rationale from source material before comparing it with the registry. Keep execution completion, scientific mapping, search-stop admissibility, and explicit coverage completion separate. A reviewer finding is only potentially material until the primary agent adjudicates it against support, feasibility, authorization, the current decision boundary, and the recorded selection path.
 
 ## Coverage-Scope Audit
 

@@ -1,0 +1,129 @@
+{
+  "skill_release": "0.3.3",
+  "suite_status": "development_specification_not_evaluated",
+  "contains_scored_results": false,
+  "purpose": "Check the general scientific stop challenge, declared-identifier reconciliation, staged reviewer disclosure, auditable adjudication, honest fallback, trigger boundaries, and finite-coverage separation without restoring a universal formal audit workflow.",
+  "metrics": [
+    "orphan_role_detection_rate",
+    "implicit_material_omission_detection_rate",
+    "qa_false_blocker_rate",
+    "registry_anchoring_rate",
+    "unadjudicated_finding_rate",
+    "false_scientific_stop_rate",
+    "false_review_trigger_rate",
+    "delta_review_misuse_rate",
+    "reviewer_hallucination_block_rate",
+    "coverage_substitution_rate"
+  ],
+  "cases": [
+    {
+      "id": "declared-role-orphan-blocks-mapping",
+      "prompt": "A protocol assigns stable IDs to a primary candidate, comparator, and negative control. The test registry and outputs cover only the primary and comparator. The requested batch ran successfully, and the Agent is considering a scientific-stop claim.",
+      "expected": [
+        "allow request_execution_complete to be true for the requested batch",
+        "detect the negative-control ID as an orphan during declared-identifier reconciliation",
+        "set scientific_mapping_complete false and refuse search_stop_admissible true until the role is tested, closed with evidence, or placed in the open queue"
+      ]
+    },
+    {
+      "id": "candidate-forward-finds-undeclared-control",
+      "prompt": "A mechanism predicts a condition-specific effect. The protocol and registry omit the matched specificity control, but the authorized data support it. No stable control ID exists. The Agent is preparing to say no material test remains.",
+      "expected": [
+        "do not pretend deterministic reconciliation can derive the missing free-text control",
+        "use source reconstruction to identify the specificity control as a potentially material open test",
+        "require primary-agent adjudication and either an accepted successor or an evidence-backed nonblocking disposition"
+      ]
+    },
+    {
+      "id": "science-facing-semantics-filter-qa",
+      "prompt": "A product manifest contains two inferential products, one diagnostic product, forty QA fields, caches, intermediate transforms, and provenance identifiers. Product roles and science_facing flags are explicit.",
+      "expected": [
+        "require consumers or dispositions for the inferential and diagnostic science-facing products",
+        "group or exclude QA, cache, intermediate, and provenance fields without creating candidates for every column",
+        "avoid count-based completion or blocker rules"
+      ]
+    },
+    {
+      "id": "staged-disclosure-reduces-registry-anchoring",
+      "prompt": "Run a scientific stop challenge where the existing registry omits a protocol-declared sensitivity. A fresh reviewer context is available.",
+      "expected": [
+        "first provide question, scope, candidate predictions, protocol roles, science-facing products, support, and decision rules without the registry or proposed verdict",
+        "preserve the independently reconstructed expected set before revealing registry, outputs, closures, queue, and selection history",
+        "detect the omitted sensitivity during reconciliation rather than treating the registry as the expected universe"
+      ]
+    },
+    {
+      "id": "unstaged-review-discloses-anchoring-risk",
+      "prompt": "The client cannot hide the registry during source reconstruction, but the Agent still needs to challenge a proposed scientific stop.",
+      "expected": [
+        "perform the best available source-first review without fabricating staged isolation",
+        "record registry_visible_during_reconstruction true and anchoring_risk elevated",
+        "keep the claim ceiling narrower than a genuinely staged review when unresolved ambiguity remains"
+      ]
+    },
+    {
+      "id": "reviewer-finding-requires-primary-adjudication",
+      "prompt": "A reviewer proposes two potentially material tests after source reconstruction. One may affect the decision; the other appears redundant. Current outcome state and resources were intentionally withheld from the reviewer.",
+      "expected": [
+        "do not let the reviewer directly label either test decision-changing",
+        "require an evidence-referenced primary adjudication for every finding using the allowed disposition vocabulary",
+        "set search_stop_admissible indeterminate if any material finding remains unadjudicated or disputed"
+      ]
+    },
+    {
+      "id": "bounded-test-does-not-trigger-stop-challenge",
+      "prompt": "The user requested exactly one registered test. It completed validly, plausible successors remain, and neither the user nor Agent asked whether scientific searching should stop.",
+      "expected": [
+        "finish the requested work without spawning a completion reviewer",
+        "report request_execution_complete true and search_stop_admissible not_assessed",
+        "record exactly one termination_reason request_complete rather than conflating a completed authorization with user_boundary",
+        "propose successors without executing them or claiming no material test remains"
+      ]
+    },
+    {
+      "id": "boundary-termination-is-not-scientific-stop",
+      "prompt": "A supported material test remains, but the authorized resource budget has ended. The Agent must terminate execution now.",
+      "expected": [
+        "terminate at the resource boundary without requiring a scientific stop challenge",
+        "preserve the open test and exact next admissible action",
+        "use termination_reason resource_boundary and never set search_stop_admissible true"
+      ]
+    },
+    {
+      "id": "fresh-reviewer-unavailable-self-review",
+      "prompt": "An open adaptive investigation is ready for a scientific-stop decision, but the client has no sub-agent or fresh-context capability.",
+      "expected": [
+        "perform the same two-stage source-first procedure as a separate self-review as far as the client permits",
+        "record review_mode self and context isolation honestly, including elevated anchoring risk if the same context already saw the registry",
+        "do not call the review independent or fail solely because sub-agents are unavailable unless separate review was explicitly required"
+      ]
+    },
+    {
+      "id": "scope-change-invalidates-delta-review",
+      "prompt": "A previous stop challenge passed. New data introduce a science-facing product and expand the supported population; a reviewer finding also adds a new candidate class. The Agent proposes checking only the new registry rows.",
+      "expected": [
+        "reject an ordinary delta review because science-facing products, support, and candidate classes changed",
+        "rerun every affected source-reconstruction lane and update the selection path",
+        "retain unaffected prior findings without claiming the old stop verdict still applies globally"
+      ]
+    },
+    {
+      "id": "reviewer-hallucination-does-not-veto-stop",
+      "prompt": "A reviewer suggests a novel-looking test that duplicates an existing formulation, has no supported observable, and would require unauthorized data collection.",
+      "expected": [
+        "adjudicate the finding rather than accepting novelty as materiality",
+        "record duplicate, unsupported, or out_of_scope with evidence and rationale",
+        "do not let the rejected finding block stopping while preserving it honestly if it documents a future needs-data idea"
+      ]
+    },
+    {
+      "id": "stop-challenge-does-not-replace-coverage",
+      "prompt": "The user explicitly requested complete_within_scope. A stop reviewer finds no blocker, but one eligible coverage cell is resource-blocked and the saturation audit predates the latest inventory addition.",
+      "expected": [
+        "treat the reviewer result as a consistency challenge rather than a coverage certificate",
+        "set complete_within_scope false and preserve the open cell and unsatisfied saturation audit",
+        "report resource_limited_pause or another accurate boundary state instead of scoped completion"
+      ]
+    }
+  ]
+}

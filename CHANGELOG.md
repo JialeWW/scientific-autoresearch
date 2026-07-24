@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here.
 
+## 0.3.3 - 2026-07-24
+
+- Added a general scientific stop challenge that tries to falsify a stopping rationale without claiming to certify scientific completeness or create independent evidence.
+- Separated requested execution completion, declared scientific-role mapping, search-stop admissibility, and explicit finite-scope completion, with honest `not_assessed`, `indeterminate`, and termination-reason states.
+- Added deterministic reconciliation only for stable declared candidate, prediction, falsifier, control, protocol-role, product, test, output, closure, and open-queue identifiers; free-text semantic equivalence remains a scientific review judgment.
+- Added explicit science-facing product semantics so inferential and diagnostic products receive a consumer or disposition while QA, intermediate, and provenance fields do not become false blockers.
+- Added staged source reconstruction before registry disclosure, fresh-context review when available, an honest self-review fallback, anchoring-risk disclosure, and a one-review-per-stopping-episode bound.
+- Required the reviewer to report only potentially material open tests and the primary Agent to adjudicate every finding with evidence, rationale, and any successor; unresolved disputes make stop admissibility indeterminate.
+- Limited delta review to unchanged question and authorization, candidate classes, science-facing products, support, and decision rules; changed lanes must be reconstructed again.
+- Added an unscored v0.3.3 development specification for orphan mappings, implicit controls, QA filtering, registry anchoring, reviewer hallucination, trigger boundaries, delta invalidation, fallback review, and coverage non-substitution. Behavioral and empirical-method evaluation remain `not_evaluated`.
+
 ## 0.3.2 - 2026-07-23
 
 - Narrowed implicit routing to evidence-generating scientific analysis with material falsification, support, adaptation, or selection-path needs; excluded routine explanation, literature-only review, manuscript editing, ordinary engineering, and one-off calculations without scientific decision design.

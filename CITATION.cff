@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use scientific-autoresearch, please cite it using this metadata."
-title: "scientific-autoresearch: A lightweight workflow for iterative and auditable scientific research"
+title: "scientific-autoresearch: A workflow for adaptive scientific search and selection-aware inference"
 authors:
   - family-names: "Wang"
     given-names: "Jiale"

@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here.
 
+## 0.3.4 - 2026-08-08
+
+- Treats direct questions about exhaustion or remaining possibilities as `complete_within_scope` queries rather than inferring completion from inventory saturation, closed declared cells, request completion, or search-stop admissibility alone.
+- Requires an explicit no with the failed gate when scoped completion is false, `not_assessed` when it was not evaluated, and a bounded declared-scope statement—never open-world exhaustiveness—when it is true.
+
 ## 0.3.3 - 2026-07-24
 
 - Added a general scientific stop challenge that tries to falsify a stopping rationale without claiming to certify scientific completeness or create independent evidence.

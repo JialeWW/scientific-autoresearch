@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BUILDER_PATH = ROOT / "scripts" / "build_installable_skill.py"
 SKILL_DIR = ROOT / "scientific-autoresearch"
 COMPLETION_REFERENCE = SKILL_DIR / "references" / "completion-review.md"
+COVERAGE_REFERENCE = SKILL_DIR / "references" / "coverage-search.md"
 V033_CASES = ROOT / "benchmarks" / "development-cases" / "v0.3.3-scientific-stop-challenge.json"
 
 
@@ -101,6 +102,38 @@ class LightweightInstallSurfaceTests(unittest.TestCase):
                 "stop-challenge-does-not-replace-coverage",
             }.issubset(ids)
         )
+
+    def test_v034_exhaustion_answers_require_scoped_completion(self) -> None:
+        core = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        coverage = COVERAGE_REFERENCE.read_text(encoding="utf-8")
+
+        self.assertIn('Treat questions such as "Is the search exhaustive?"', core)
+        self.assertIn("Answer from `complete_within_scope`", core)
+        self.assertIn(
+            "only `complete_within_scope=true` permits a scoped completion claim",
+            coverage,
+        )
+        self.assertIn(
+            'Do not answer "yes within scope" merely because the inventory is saturated',
+            coverage,
+        )
+        self.assertIn(
+            "If `complete_within_scope=false`, answer that formal scoped completion has not been established",
+            coverage,
+        )
+        self.assertIn(
+            "then state which gates passed and the exact failed gate",
+            coverage,
+        )
+        self.assertIn(
+            "If `complete_within_scope=not_assessed`, answer that exhaustiveness was not assessed",
+            coverage,
+        )
+        self.assertIn(
+            "the declared versioned data-supported scope is complete, followed immediately by its boundary",
+            coverage,
+        )
+        self.assertIn("does not imply open-world exhaustiveness", coverage)
 
     def test_archive_is_deterministic_and_lightweight(self) -> None:
         builder = load_builder()

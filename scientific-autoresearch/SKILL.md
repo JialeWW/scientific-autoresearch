@@ -3,7 +3,7 @@ name: scientific-autoresearch
 description: "Use when asked to design, execute, audit, or iteratively extend an evidence-generating scientific analysis where falsification, outcome-informed choices, data support, or selection-path validity are material. Supports prespecified programs, explicitly autonomous multi-round research, and explicitly requested finite coverage. Do not use for routine scientific explanation, literature-only review, manuscript editing, or ordinary engineering and one-off calculations without scientific decision design."
 license: MIT
 metadata:
-  version: "0.3.3"
+  version: "0.3.4"
 ---
 
 # Scientific Autoresearch
@@ -90,6 +90,8 @@ Only when preparing to set `search_stop_admissible=true`, claim that no material
 When the user requests systematic coverage, saturation, exhaustion of a declared data-supported space, or `complete_within_scope`, read `references/coverage-search.md`. Use a finite versioned inventory, data-supported coverage cells, candidate-forward and data-product-reverse saturation audits, a complete selection ledger, and an exact open queue. Unrun, invalid, blocked, and resource-deferred cells remain open.
 
 Claim `complete_within_scope` only when the declared inventory satisfies its saturation rule, every eligible cell is validly tested or explicitly closed, the complete selection path is reviewed, and the final decision rule is applied. Resource exhaustion makes the search resource-limited or incomplete, not complete. Scope the claim to the candidate classes, observables, and data products actually covered.
+
+Treat questions such as "Is the search exhaustive?", "Have we exhausted the possibilities?", or "Is anything left?" as completion-state queries. Answer from `complete_within_scope`, not from `inventory_saturated`, `coverage_complete`, `request_execution_complete`, or `search_stop_admissible` alone. If `complete_within_scope=false`, answer no and name the failed gate even when the current inventory is saturated and every declared cell is closed; never say "yes within scope" in that state. If it is `not_assessed`, state that scoped completeness was not assessed. If it is true, say only that the declared versioned scope is complete and explicitly deny open-world exhaustiveness.
 
 A scientific stop challenge may review the coverage record and expose inconsistencies, but it cannot replace inventory saturation, cell closure, selection-ledger review, or the final decision rule.
 

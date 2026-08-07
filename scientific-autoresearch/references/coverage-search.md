@@ -197,6 +197,19 @@ Queued, deferred, and resource-blocked cells remain in the coverage denominator.
 
 ## 8. State the Scope Honestly
 
+Do not collapse the completion gates into the word "exhaustive":
+
+- `inventory_saturated=true` means the required inventory audits produced no new eligible candidates for that version.
+- `coverage_complete=true` means every eligible cell in that inventory version is classified closed.
+- `search_stop_admissible=true` means no currently identified feasible, supported test meets the continuation rule.
+- only `complete_within_scope=true` permits a scoped completion claim, and it still does not imply open-world exhaustiveness.
+
+When directly asked whether the work is exhaustive, use this decision rule:
+
+- If `complete_within_scope=true`, answer that the declared versioned data-supported scope is complete, followed immediately by its boundary.
+- If `complete_within_scope=false`, answer that formal scoped completion has not been established, then state which gates passed and the exact failed gate. Do not answer "yes within scope" merely because the inventory is saturated or all declared cells are closed.
+- If `complete_within_scope=not_assessed`, answer that exhaustiveness was not assessed.
+
 When supported by the recorded audit, use:
 
 > We systematically searched a versioned inventory of candidate classes and observables or tests supported by the available data products.

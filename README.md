@@ -8,13 +8,15 @@ The publication figure shows the explicit systematic-coverage branch, including 
 
 `scientific-autoresearch` is a client-neutral [Agent Skill](https://agentskills.io) for iterative, falsifiable, and auditable scientific work. It can run a fully frozen analysis program, conduct outcome-adaptive research, or systematically cover a finite data-supported candidate space. Scientific controls scale with outcome-driven scientific discretion; ordinary engineering iteration stays outside the scientific selection history.
 
-Current version: **0.3.3**.
+Current version: **0.3.4**.
 
 The release source of truth is `metadata.version` in `scientific-autoresearch/SKILL.md`. Historical machine-audit schemas and benchmark protocols have independent, immutable version lines.
 
-## Version 0.3.3 Highlights
+## Version 0.3.4 Highlights
 
-Version 0.3.3 adds a general scientific stop challenge to the lightweight v0.3.2 workflow. It prevents completion of a requested test or registered batch from being promoted into a claim that no material scientific work remains:
+Version 0.3.4 tightens the answer to exhaustion and completion questions. A saturated inventory, closed declared cells, completed request, or admissible scientific stop is not reported as scoped completion unless `complete_within_scope=true`. If scoped completion is false, the answer is no and names the failed gate; if it was not assessed, the answer says so. Even a true result is limited to the declared versioned data-supported scope and never implies open-world exhaustiveness.
+
+The v0.3.3 foundation remains unchanged: a general scientific stop challenge prevents completion of a requested test or registered batch from being promoted into a claim that no material scientific work remains:
 
 ```text
 declared scientific identifiers and science-facing products
@@ -33,7 +35,7 @@ The challenge runs only before a scientific-stop or no-material-test claim. One 
 
 For explicitly autonomous or iterative research, the default behavior is to build a compact candidate board, test the most informative supported candidate, learn from the result, and continue inside the authorized envelope. For design, read-only audit, or one named test, the Skill stays within that request and reports successors as proposals. A round is a scientific interpretation checkpoint, not a tool call, retry, or worker change; a change in scope, cost, risk, data access, or external action still requires authorization.
 
-When systematic coverage is explicitly requested, v0.3.3 retains full finite-scope completion: a versioned data-supported inventory, candidate-forward and data-product-reverse saturation audits, finite coverage cells, complete selection-path inference, and an exact open queue. The stop challenge can expose inconsistencies in that record but cannot replace its saturation or closure gates.
+When systematic coverage is explicitly requested, v0.3.4 retains full finite-scope completion: a versioned data-supported inventory, candidate-forward and data-product-reverse saturation audits, finite coverage cells, complete selection-path inference, and an exact open queue. The stop challenge can expose inconsistencies in that record but cannot replace its saturation or closure gates.
 
 Freeze the next coherent test or batch, or one complete multi-stage mapping when it can already be prespecified. Confirmatory, blinded, costly, irreversible, regulated, safety-sensitive, and jointly inferred work freezes its full required protocol. Ordinary multi-round work uses one compact candidate board and result–decision record; formal scoped completion adds a compact scientific coverage record, not an immutable artifact tree.
 
@@ -51,7 +53,7 @@ The redesign keeps later scientific safeguards that materially improve validity:
 
 It removes the default coupling between ordinary development and immutable scientific audit. Worker, chunk, cache, scheduler, equivalent implementation, resource smoke, and response-blind qualification changes no longer rebuild scientific contracts, hashes, ledgers, and prior valid computations.
 
-The official runtime archive contains only `SKILL.md`, scientific references, and the license. The schema-1.5.4 validator and its report-contract, status-schema, and round-gate references remain recoverable from the immutable v0.3.0 release but are not installed with v0.3.3. The package remains client-neutral and does not bind a particular sub-agent API or add product-specific UI metadata.
+The official runtime archive contains only `SKILL.md`, scientific references, and the license. The schema-1.5.4 validator and its report-contract, status-schema, and round-gate references remain recoverable from the immutable v0.3.0 release but are not installed with v0.3.4. The package remains client-neutral and does not bind a particular sub-agent API or add product-specific UI metadata.
 
 ## Default Scientific Behavior
 
@@ -124,11 +126,11 @@ In an authorized iterative task, a bounded result does not itself end execution 
     └── references/
 ```
 
-The runtime installable surface is only `scientific-autoresearch/SKILL.md` and `scientific-autoresearch/references/`. The source-tree `scientific-autoresearch/evals/` directory is retained only for the immutable v0.2.8 benchmark line and is excluded from the official v0.3.3 skill archive. Repository-level benchmark, compatibility, and maintenance materials are not default Agent context.
+The runtime installable surface is only `scientific-autoresearch/SKILL.md` and `scientific-autoresearch/references/`. The source-tree `scientific-autoresearch/evals/` directory is retained only for the immutable v0.2.8 benchmark line and is excluded from the official v0.3.4 skill archive. Repository-level benchmark, compatibility, and maintenance materials are not default Agent context.
 
 ## Installation
 
-Prefer the versioned release asset `scientific-autoresearch-v0.3.3-skill.zip`; it contains one installable `scientific-autoresearch/` directory and excludes historical benchmark evals, validators, scripts, and formal machine-audit references. Extract that directory into a skills directory recognized by the Agent client.
+Prefer the versioned release asset `scientific-autoresearch-v0.3.4-skill.zip`; it contains one installable `scientific-autoresearch/` directory and excludes historical benchmark evals, validators, scripts, and formal machine-audit references. Extract that directory into a skills directory recognized by the Agent client.
 
 For a source checkout, copy only the runtime surface:
 
@@ -170,17 +172,17 @@ not claim scoped completion unless the saturation and closure conditions pass.
 
 ## Legacy Machine-Audit Compatibility
 
-The schema-1.5.4 machine-audit workflow is preserved in the immutable [v0.3.0 tag](https://github.com/JialeWW/scientific-autoresearch/tree/v0.3.0) for existing structured runs. It is deliberately absent from the v0.3.3 Skill archive. Use the frozen v0.3.0 package only when an existing run actually depends on that schema; do not mix its provenance or artifact rules into ordinary v0.3.3 research.
+The schema-1.5.4 machine-audit workflow is preserved in the immutable [v0.3.0 tag](https://github.com/JialeWW/scientific-autoresearch/tree/v0.3.0) for existing structured runs. It is deliberately absent from the v0.3.4 Skill archive. Use the frozen v0.3.0 package only when an existing run actually depends on that schema; do not mix its provenance or artifact rules into ordinary v0.3.4 research.
 
 ## Evaluation Status
 
-The latest frozen benchmark protocol/scorer remains **2.1.2**, with Skill **0.2.8** as its immutable release under test. Those protocol artifacts and historical `not_evaluated` results are not rewritten for v0.3.3.
+The latest frozen benchmark protocol/scorer remains **2.1.2**, with Skill **0.2.8** as its immutable release under test. Those protocol artifacts and historical `not_evaluated` results are not rewritten for v0.3.4.
 
-The v0.3.0–v0.3.2 development specifications remain historical, unscored inputs. `benchmarks/development-cases/v0.3.3-scientific-stop-challenge.json` adds unscored cases for orphan roles, implicit material controls, science-facing product semantics, staged registry disclosure, auditable finding adjudication, self-review fallback, trigger boundaries, delta invalidation, reviewer hallucination, and coverage non-substitution. These specifications are not benchmark measurements. Skill 0.3.3 remains **not evaluated** until a frozen successor suite is executed.
+The v0.3.0–v0.3.2 development specifications remain historical, unscored inputs. `benchmarks/development-cases/v0.3.3-scientific-stop-challenge.json` adds unscored cases for orphan roles, implicit material controls, science-facing product semantics, staged registry disclosure, auditable finding adjudication, self-review fallback, trigger boundaries, delta invalidation, reviewer hallucination, and coverage non-substitution. These specifications are not benchmark measurements. The 0.3.4 completion-language correction is covered by deterministic repository tests only; Skill 0.3.4 remains **not evaluated** until a frozen successor suite is executed.
 
 Two unfrozen qualitative development probes are preserved under `benchmarks/development-runs/`. One specified compact-record continuation after a weak result; the other retained full scoped-coverage planning and an exact open queue without requiring a machine-audited schema. Because no model, runtime, sampling, timing, or judge protocol was frozen and no scientific computation was executed, these are diagnostics only and do not change the **not evaluated** status or establish superiority over v0.2.1.
 
-The existing source-tree `scientific-autoresearch/evals/*.json` files remain byte-frozen at their historical paths because protocol 2.1.2 binds those paths and hashes for Skill 0.2.8. They are legacy benchmark inputs, not v0.3.3 runtime instructions or current examples, and are excluded from the official v0.3.3 installable archive and runtime-package digest. Moving them requires a future benchmark protocol that preserves the old line rather than silently breaking it.
+The existing source-tree `scientific-autoresearch/evals/*.json` files remain byte-frozen at their historical paths because protocol 2.1.2 binds those paths and hashes for Skill 0.2.8. They are legacy benchmark inputs, not v0.3.4 runtime instructions or current examples, and are excluded from the official v0.3.4 installable archive and runtime-package digest. Moving them requires a future benchmark protocol that preserves the old line rather than silently breaking it.
 
 ## Scientific Interpretation
 

@@ -204,6 +204,12 @@ Do not collapse the completion gates into the word "exhaustive":
 - `search_stop_admissible=true` means no currently identified feasible, supported test meets the continuation rule.
 - only `complete_within_scope=true` permits a scoped completion claim, and it still does not imply open-world exhaustiveness.
 
+Route direct questions by meaning:
+
+- Questions about exhaustion or formal completion use `complete_within_scope`.
+- Questions about a qualifying next test or actionable open work use `search_stop_admissible` together with the exact open queue.
+- If wording such as "Is anything left?" is ambiguous, report both states rather than inferring either from the other.
+
 When directly asked whether the work is exhaustive, use this decision rule:
 
 - If `complete_within_scope=true`, answer that the declared versioned data-supported scope is complete, followed immediately by its boundary.

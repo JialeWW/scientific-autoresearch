@@ -103,14 +103,39 @@ class LightweightInstallSurfaceTests(unittest.TestCase):
             }.issubset(ids)
         )
 
-    def test_v034_exhaustion_answers_require_scoped_completion(self) -> None:
+    def test_v035_routes_completion_and_continuation_questions_separately(self) -> None:
         core = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
         coverage = COVERAGE_REFERENCE.read_text(encoding="utf-8")
 
-        self.assertIn('Treat questions such as "Is the search exhaustive?"', core)
-        self.assertIn("Answer from `complete_within_scope`", core)
+        self.assertIn('Treat "Is the search exhaustive?"', core)
+        self.assertIn("as scoped-completion questions", core)
+        self.assertIn('Treat "Does any qualifying next test remain?"', core)
+        self.assertIn(
+            "Answer from `search_stop_admissible` and name any current qualifying open test",
+            core,
+        )
+        self.assertIn(
+            "when explicit coverage is active, also give the exact open queue",
+            core,
+        )
+        self.assertIn(
+            'If wording such as "Is anything left?" is ambiguous, report both',
+            core,
+        )
+        self.assertNotIn(
+            'or "Is anything left?" as completion-state queries',
+            core,
+        )
         self.assertIn(
             "only `complete_within_scope=true` permits a scoped completion claim",
+            coverage,
+        )
+        self.assertIn(
+            "Questions about a qualifying next test or actionable open work use `search_stop_admissible`",
+            coverage,
+        )
+        self.assertIn(
+            'If wording such as "Is anything left?" is ambiguous, report both states',
             coverage,
         )
         self.assertIn(

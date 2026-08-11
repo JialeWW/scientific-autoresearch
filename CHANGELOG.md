@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here.
 
+## 0.3.5 - 2026-08-11
+
+- Separates scoped-completion questions from continuation questions: exhaustion claims use `complete_within_scope`, while questions about a qualifying next test use `search_stop_admissible` and name current qualifying open work; an exact open queue remains specific to explicit coverage.
+- Requires ambiguous questions such as "Is anything left?" to report both states instead of inferring either one from the other. This is a wording and routing correction; it adds no review, artifact, or execution step.
+
 ## 0.3.4 - 2026-08-08
 
 - Treats direct questions about exhaustion or remaining possibilities as `complete_within_scope` queries rather than inferring completion from inventory saturation, closed declared cells, request completion, or search-stop admissibility alone.

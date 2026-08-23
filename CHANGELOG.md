@@ -2,13 +2,16 @@
 
 All notable changes to this project are documented here.
 
-## 0.3.5 - 2026-08-23
+## 0.3.6 - 2026-08-23
+
+- Formalizes runtime and public-facing prose by replacing slogan-like headings, rhetorical contrasts, and colloquial process descriptions with direct definitions, applicability conditions, and evidence requirements.
+- Preserves explicit prohibitions where scientific validity, authorization, safety, selection control, or research integrity requires them.
+- Clarifies the final integrity clause so every listed practice is unambiguously prohibited. This release changes wording only and adds no review, artifact, execution step, or scientific gate.
+
+## 0.3.5 - 2026-08-11
 
 - Separates scoped-completion questions from continuation questions: exhaustion claims use `complete_within_scope`, while questions about a qualifying next test use `search_stop_admissible` and name current qualifying open work; an exact open queue remains specific to explicit coverage.
 - Requires ambiguous questions such as "Is anything left?" to report both states instead of inferring either one from the other. This is a wording and routing correction; it adds no review, artifact, or execution step.
-- Formalizes runtime and public-facing prose by replacing slogan-like headings, rhetorical contrasts, and colloquial process descriptions with direct definitions, applicability conditions, and evidence requirements.
-- Preserves explicit prohibitions where scientific validity, authorization, safety, selection control, or research integrity requires them.
-- Clarifies the final integrity clause so every listed practice is unambiguously prohibited. These changes add no review, artifact, execution step, or scientific gate.
 
 ## 0.3.4 - 2026-08-08
 

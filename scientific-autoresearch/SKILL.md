@@ -3,7 +3,7 @@ name: scientific-autoresearch
 description: "Use when asked to design, execute, audit, or iteratively extend an evidence-generating scientific analysis where falsification, outcome-informed choices, data support, or selection-path validity are material. Supports prespecified programs, explicitly autonomous multi-round research, and explicitly requested finite coverage. Do not use for routine scientific explanation, literature-only review, manuscript editing, or ordinary engineering and isolated calculations without scientific decision design."
 license: MIT
 metadata:
-  version: "0.3.5"
+  version: "0.3.6"
 ---
 
 # Scientific Autoresearch

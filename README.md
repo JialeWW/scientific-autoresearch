@@ -8,15 +8,15 @@ The publication figure shows the explicit systematic-coverage branch, including 
 
 `scientific-autoresearch` is a client-neutral [Agent Skill](https://agentskills.io) for iterative, falsifiable, and auditable scientific work. It can run a fully frozen analysis program, conduct outcome-adaptive research, or systematically cover a finite data-supported candidate space. Scientific controls scale with outcome-driven scientific discretion; ordinary engineering iteration stays outside the scientific selection history.
 
-Current version: **0.3.5**.
+Current version: **0.3.6**.
 
 The release source of truth is `metadata.version` in `scientific-autoresearch/SKILL.md`. Historical machine-audit schemas and benchmark protocols have independent, immutable version lines.
 
-## Version 0.3.5 Highlights
+## Version 0.3.6 Highlights
 
-Version 0.3.5 formalizes the runtime and public-facing language without changing scientific behavior. It replaces slogan-like headings, rhetorical contrasts, and colloquial process descriptions with direct definitions, applicability conditions, and evidence requirements. Explicit prohibitions remain where scientific validity, authorization, safety, or research integrity requires them. This revision adds no review, artifact, or execution step.
+Version 0.3.6 formalizes the runtime and public-facing language without changing scientific behavior. It replaces slogan-like headings, rhetorical contrasts, and colloquial process descriptions with direct definitions, applicability conditions, and evidence requirements. Explicit prohibitions remain where scientific validity, authorization, safety, or research integrity requires them. This revision adds no review, artifact, or execution step.
 
-This release also separates completion questions from continuation questions. Exhaustion or formal-completion questions use `complete_within_scope`; questions about a qualifying next test use `search_stop_admissible` and name any current qualifying open test, with the exact open queue retained for explicit coverage. Ambiguous wording such as "Is anything left?" reports both states; neither is inferred from the other.
+The v0.3.5 routing correction remains unchanged. Exhaustion or formal-completion questions use `complete_within_scope`; questions about a qualifying next test use `search_stop_admissible` and name any current qualifying open test, with the exact open queue retained for explicit coverage. Ambiguous wording such as "Is anything left?" reports both states; neither is inferred from the other.
 
 The v0.3.4 completion guardrail remains: a saturated inventory, closed declared cells, completed request, or admissible scientific stop is not reported as scoped completion unless `complete_within_scope=true`. Even a true result is limited to the declared versioned data-supported scope and never implies open-world exhaustiveness.
 
@@ -39,7 +39,7 @@ The challenge runs only before a scientific-stop or no-material-test claim. One 
 
 For explicitly autonomous or iterative research, the default behavior is to build a compact candidate board, test the most informative supported candidate, learn from the result, and continue inside the authorized envelope. For design, read-only audit, or one named test, the Skill stays within that request and reports successors as proposals. A round is defined at a scientific interpretation checkpoint; tool calls, retries, and worker changes remain operational events. A change in scope, cost, risk, data access, or external action still requires authorization.
 
-When systematic coverage is explicitly requested, v0.3.5 retains full finite-scope completion: a versioned data-supported inventory, candidate-forward and data-product-reverse saturation audits, finite coverage cells, complete selection-path inference, and an exact open queue. The stop challenge may expose inconsistencies; explicit coverage still requires its saturation and closure gates.
+When systematic coverage is explicitly requested, v0.3.6 retains full finite-scope completion: a versioned data-supported inventory, candidate-forward and data-product-reverse saturation audits, finite coverage cells, complete selection-path inference, and an exact open queue. The stop challenge may expose inconsistencies; explicit coverage still requires its saturation and closure gates.
 
 Freeze the next coherent test or batch, or one complete multi-stage mapping when it can already be prespecified. Confirmatory, blinded, costly, irreversible, regulated, safety-sensitive, and jointly inferred work freezes its full required protocol. Ordinary multi-round work uses one compact candidate board and result–decision record. Formal scoped completion additionally requires a compact scientific coverage record.
 
@@ -57,7 +57,7 @@ The redesign keeps later scientific safeguards that materially improve validity:
 
 It removes the default coupling between ordinary development and immutable scientific audit. Worker, chunk, cache, scheduler, equivalent implementation, resource smoke, and response-blind qualification changes no longer rebuild scientific contracts, hashes, ledgers, and prior valid computations.
 
-The official runtime archive contains only `SKILL.md`, scientific references, and the license. The schema-1.5.4 validator and its report-contract, status-schema, and round-gate references remain recoverable from the immutable v0.3.0 release and are excluded from v0.3.5. The package remains client-neutral and does not bind a particular sub-agent API or add product-specific UI metadata.
+The official runtime archive contains only `SKILL.md`, scientific references, and the license. The schema-1.5.4 validator and its report-contract, status-schema, and round-gate references remain recoverable from the immutable v0.3.0 release and are excluded from v0.3.6. The package remains client-neutral and does not bind a particular sub-agent API or add product-specific UI metadata.
 
 ## Default Scientific Behavior
 
@@ -130,11 +130,11 @@ In an authorized iterative task, a bounded result does not itself end execution 
     └── references/
 ```
 
-The runtime installable surface is only `scientific-autoresearch/SKILL.md` and `scientific-autoresearch/references/`. The source-tree `scientific-autoresearch/evals/` directory is retained only for the immutable v0.2.8 benchmark line and is excluded from the official v0.3.5 skill archive. Repository-level benchmark, compatibility, and maintenance materials are not default Agent context.
+The runtime installable surface is only `scientific-autoresearch/SKILL.md` and `scientific-autoresearch/references/`. The source-tree `scientific-autoresearch/evals/` directory is retained only for the immutable v0.2.8 benchmark line and is excluded from the official v0.3.6 skill archive. Repository-level benchmark, compatibility, and maintenance materials are not default Agent context.
 
 ## Installation
 
-Prefer the versioned release asset `scientific-autoresearch-v0.3.5-skill.zip`; it contains one installable `scientific-autoresearch/` directory and excludes historical benchmark evals, validators, scripts, and formal machine-audit references. Extract that directory into a skills directory recognized by the Agent client.
+Prefer the versioned release asset `scientific-autoresearch-v0.3.6-skill.zip`; it contains one installable `scientific-autoresearch/` directory and excludes historical benchmark evals, validators, scripts, and formal machine-audit references. Extract that directory into a skills directory recognized by the Agent client.
 
 For a source checkout, copy only the runtime surface:
 
@@ -176,17 +176,17 @@ not claim scoped completion unless the saturation and closure conditions pass.
 
 ## Legacy Machine-Audit Compatibility
 
-The schema-1.5.4 machine-audit workflow is preserved in the immutable [v0.3.0 tag](https://github.com/JialeWW/scientific-autoresearch/tree/v0.3.0) for existing structured runs. It is excluded from the v0.3.5 Skill archive. Use the frozen v0.3.0 package only when an existing run actually depends on that schema; keep its provenance and artifact rules separate from ordinary v0.3.5 research.
+The schema-1.5.4 machine-audit workflow is preserved in the immutable [v0.3.0 tag](https://github.com/JialeWW/scientific-autoresearch/tree/v0.3.0) for existing structured runs. It is excluded from the v0.3.6 Skill archive. Use the frozen v0.3.0 package only when an existing run actually depends on that schema; keep its provenance and artifact rules separate from ordinary v0.3.6 research.
 
 ## Evaluation Status
 
-The latest frozen benchmark protocol/scorer remains **2.1.2**, with Skill **0.2.8** as its immutable release under test. Those protocol artifacts and historical `not_evaluated` results are not rewritten for v0.3.5.
+The latest frozen benchmark protocol/scorer remains **2.1.2**, with Skill **0.2.8** as its immutable release under test. Those protocol artifacts and historical `not_evaluated` results are not rewritten for v0.3.6.
 
-The v0.3.0–v0.3.2 development specifications remain historical, unscored inputs. `benchmarks/development-cases/v0.3.3-scientific-stop-challenge.json` adds unscored cases for orphan roles, implicit material controls, science-facing product semantics, staged registry disclosure, auditable finding adjudication, self-review fallback, trigger boundaries, delta invalidation, reviewer hallucination, and coverage non-substitution. These specifications are not benchmark measurements. The v0.3.4 completion-language guardrail and v0.3.5 question routing are covered by deterministic repository tests. The formal-language revision received static review and does not constitute a behavioral result. Skill v0.3.5 remains **not evaluated** until a frozen successor suite is executed.
+The v0.3.0–v0.3.2 development specifications remain historical, unscored inputs. `benchmarks/development-cases/v0.3.3-scientific-stop-challenge.json` adds unscored cases for orphan roles, implicit material controls, science-facing product semantics, staged registry disclosure, auditable finding adjudication, self-review fallback, trigger boundaries, delta invalidation, reviewer hallucination, and coverage non-substitution. These specifications are not benchmark measurements. The v0.3.4 completion-language guardrail and v0.3.5 question routing are covered by deterministic repository tests. The v0.3.6 formal-language revision received static review and does not constitute a behavioral result. Skill v0.3.6 remains **not evaluated** until a frozen successor suite is executed.
 
 Two unfrozen qualitative development probes are preserved under `benchmarks/development-runs/`. One specified compact-record continuation after a weak result; the other retained full scoped-coverage planning and an exact open queue without requiring a machine-audited schema. Because no model, runtime, sampling, timing, or judge protocol was frozen and no scientific computation was executed, these are diagnostics only and do not change the **not evaluated** status or establish superiority over v0.2.1.
 
-The existing source-tree `scientific-autoresearch/evals/*.json` files remain byte-frozen at their historical paths because protocol 2.1.2 binds those paths and hashes for Skill 0.2.8. They are legacy benchmark inputs, not v0.3.5 runtime instructions or current examples, and are excluded from the official v0.3.5 installable archive and runtime-package digest. A future protocol must preserve the existing benchmark line before relocating these files.
+The existing source-tree `scientific-autoresearch/evals/*.json` files remain byte-frozen at their historical paths because protocol 2.1.2 binds those paths and hashes for Skill 0.2.8. They are legacy benchmark inputs, not v0.3.6 runtime instructions or current examples, and are excluded from the official v0.3.6 installable archive and runtime-package digest. A future protocol must preserve the existing benchmark line before relocating these files.
 
 ## Scientific Interpretation
 

@@ -14,7 +14,7 @@ Separate, as applicable:
 - cases excluded by predeclared quality, time, redshift, wavelength, sensitivity, resolution, or eligibility rules;
 - true zeros with adequate support and sensitivity.
 
-Do not infer coverage from successful matches. Do not turn “no detected object” into a physical zero unless support, completeness, and sensitivity justify it.
+Assess coverage independently of successful matches. Interpret “no detected object” as a physical zero only when support, completeness, and sensitivity justify that interpretation.
 
 Treat availability, support, exposure, footprint, quality, and missingness classes as diagnostic strata by default. Do not use unsupported or out-of-footprint cases to subtract, normalize, residualize, or calibrate a scientific response unless an independent physical or instrumental argument makes them a valid background.
 
@@ -46,7 +46,7 @@ For each match or support definition, report:
 
 If matches lie outside the scale on which the mechanism can operate, relabel the variable as footprint, environment, background, coverage, or selection support rather than mechanism support.
 
-## 4. Build Background or Contrast Observables Carefully
+## 4. Construct Background and Contrast Observables
 
 When a raw observable has structured zeros, support dependence, sample-expansion failure, depth trends, or quality-class sign changes, ask whether the mechanism predicts an absolute amount or a deviation from an expected background.
 

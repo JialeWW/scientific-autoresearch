@@ -4,7 +4,7 @@
 
 [Vector PDF](figures/scientific-autoresearch-workflow.pdf) · [Vector SVG](figures/scientific-autoresearch-workflow.svg)
 
-The publication figure shows the explicit systematic-coverage branch, including its yes/no continuation paths. Frozen and bounded outcome-adaptive programs use the same test–audit–decision loop but do not build a search map or closure audit unless systematic coverage is requested.
+The publication figure shows the explicit systematic-coverage branch, including its yes/no continuation paths. Frozen and bounded outcome-adaptive programs use the same test–audit–decision loop. Search maps and closure audits apply only to explicitly requested systematic coverage.
 
 `scientific-autoresearch` is a client-neutral [Agent Skill](https://agentskills.io) for iterative, falsifiable, and auditable scientific work. It can run a fully frozen analysis program, conduct outcome-adaptive research, or systematically cover a finite data-supported candidate space. Scientific controls scale with outcome-driven scientific discretion; ordinary engineering iteration stays outside the scientific selection history.
 
@@ -14,7 +14,9 @@ The release source of truth is `metadata.version` in `scientific-autoresearch/SK
 
 ## Version 0.3.5 Highlights
 
-Version 0.3.5 separates two questions that require different evidence. Exhaustion or formal-completion questions use `complete_within_scope`; questions about a qualifying next test use `search_stop_admissible` and name any current qualifying open test, with the exact open queue retained for explicit coverage. Ambiguous wording such as "Is anything left?" reports both states instead of inferring either one from the other. This correction adds no review, artifact, or execution step.
+Version 0.3.5 formalizes the runtime and public-facing language without changing scientific behavior. It replaces slogan-like headings, rhetorical contrasts, and colloquial process descriptions with direct definitions, applicability conditions, and evidence requirements. Explicit prohibitions remain where scientific validity, authorization, safety, or research integrity requires them. This revision adds no review, artifact, or execution step.
+
+This release also separates completion questions from continuation questions. Exhaustion or formal-completion questions use `complete_within_scope`; questions about a qualifying next test use `search_stop_admissible` and name any current qualifying open test, with the exact open queue retained for explicit coverage. Ambiguous wording such as "Is anything left?" reports both states; neither is inferred from the other.
 
 The v0.3.4 completion guardrail remains: a saturated inventory, closed declared cells, completed request, or admissible scientific stop is not reported as scoped completion unless `complete_within_scope=true`. Even a true result is limited to the declared versioned data-supported scope and never implies open-world exhaustiveness.
 
@@ -29,17 +31,17 @@ reviewer findings -> primary-agent adjudication
          -> separate execution, mapping, stopping, and coverage states
 ```
 
-The deterministic layer checks only declared stable identifiers and resolvable references. Free-text semantic equivalence, undeclared necessary controls, ablations, and additional candidates belong to the scientific challenge. Science-facing manifests can distinguish inferential and diagnostic products from QA, intermediate, and provenance fields, preventing both orphan scientific roles and false blockers from ordinary implementation columns.
+The deterministic layer checks only declared stable identifiers and resolvable references. Free-text semantic equivalence, undeclared necessary controls, ablations, and additional candidates belong to the scientific challenge. Science-facing manifests can distinguish inferential and diagnostic products from QA, intermediate, and provenance fields, preventing both orphan scientific roles and spurious blockers from ordinary implementation columns.
 
-The challenge uses staged disclosure: a fresh reviewer context, when available, first reconstructs the expected set from the question, scope, candidate predictions, protocol roles, science-facing products, support, and decision rule. Only then does it see the test registry, outputs, closures, open queue, and selection history. When staged access is unavailable, the review records elevated anchoring risk; when a fresh reviewer is unavailable, the primary Agent performs the same pass as a disclosed self-review. Reviewer findings are only potentially material until the primary Agent adjudicates each one with evidence.
+The challenge uses staged disclosure: a fresh reviewer context, when available, first reconstructs the expected set from the question, scope, candidate predictions, protocol roles, science-facing products, support, and decision rule. Only then does it see the test registry, outputs, closures, open queue, and selection history. When staged access is unavailable, the review records elevated anchoring risk; when a fresh reviewer is unavailable, the primary Agent performs the same pass as a disclosed self-review. Reviewer findings remain provisional until the primary Agent adjudicates each one with evidence.
 
-The challenge runs only before a scientific-stop or no-material-test claim. One named test, registered-batch completion without such a claim, and user, resource, safety, or governance boundaries remain bounded without ceremonial review. One review is allowed per stopping episode, with a delta review only while the question and authorization, candidate classes, science-facing products, support, and decision rules remain unchanged. A reviewer cannot certify open-world completeness, create independent evidence, or replace explicit finite-coverage saturation.
+The challenge runs only before a scientific-stop or no-material-test claim. One named test, registered-batch completion without such a claim, and user, resource, safety, or governance boundaries are exempt from the stop challenge. One review is allowed per stopping episode, with a delta review only while the question and authorization, candidate classes, science-facing products, support, and decision rules remain unchanged. A reviewer cannot certify open-world completeness, create independent evidence, or replace explicit finite-coverage saturation.
 
-For explicitly autonomous or iterative research, the default behavior is to build a compact candidate board, test the most informative supported candidate, learn from the result, and continue inside the authorized envelope. For design, read-only audit, or one named test, the Skill stays within that request and reports successors as proposals. A round is a scientific interpretation checkpoint, not a tool call, retry, or worker change; a change in scope, cost, risk, data access, or external action still requires authorization.
+For explicitly autonomous or iterative research, the default behavior is to build a compact candidate board, test the most informative supported candidate, learn from the result, and continue inside the authorized envelope. For design, read-only audit, or one named test, the Skill stays within that request and reports successors as proposals. A round is defined at a scientific interpretation checkpoint; tool calls, retries, and worker changes remain operational events. A change in scope, cost, risk, data access, or external action still requires authorization.
 
-When systematic coverage is explicitly requested, v0.3.5 retains full finite-scope completion: a versioned data-supported inventory, candidate-forward and data-product-reverse saturation audits, finite coverage cells, complete selection-path inference, and an exact open queue. The stop challenge can expose inconsistencies in that record but cannot replace its saturation or closure gates.
+When systematic coverage is explicitly requested, v0.3.5 retains full finite-scope completion: a versioned data-supported inventory, candidate-forward and data-product-reverse saturation audits, finite coverage cells, complete selection-path inference, and an exact open queue. The stop challenge may expose inconsistencies; explicit coverage still requires its saturation and closure gates.
 
-Freeze the next coherent test or batch, or one complete multi-stage mapping when it can already be prespecified. Confirmatory, blinded, costly, irreversible, regulated, safety-sensitive, and jointly inferred work freezes its full required protocol. Ordinary multi-round work uses one compact candidate board and result–decision record; formal scoped completion adds a compact scientific coverage record, not an immutable artifact tree.
+Freeze the next coherent test or batch, or one complete multi-stage mapping when it can already be prespecified. Confirmatory, blinded, costly, irreversible, regulated, safety-sensitive, and jointly inferred work freezes its full required protocol. Ordinary multi-round work uses one compact candidate board and result–decision record. Formal scoped completion additionally requires a compact scientific coverage record.
 
 The redesign keeps later scientific safeguards that materially improve validity:
 
@@ -55,11 +57,11 @@ The redesign keeps later scientific safeguards that materially improve validity:
 
 It removes the default coupling between ordinary development and immutable scientific audit. Worker, chunk, cache, scheduler, equivalent implementation, resource smoke, and response-blind qualification changes no longer rebuild scientific contracts, hashes, ledgers, and prior valid computations.
 
-The official runtime archive contains only `SKILL.md`, scientific references, and the license. The schema-1.5.4 validator and its report-contract, status-schema, and round-gate references remain recoverable from the immutable v0.3.0 release but are not installed with v0.3.5. The package remains client-neutral and does not bind a particular sub-agent API or add product-specific UI metadata.
+The official runtime archive contains only `SKILL.md`, scientific references, and the license. The schema-1.5.4 validator and its report-contract, status-schema, and round-gate references remain recoverable from the immutable v0.3.0 release and are excluded from v0.3.5. The package remains client-neutral and does not bind a particular sub-agent API or add product-specific UI metadata.
 
 ## Default Scientific Behavior
 
-The always-loaded core is science-forward:
+The always-loaded core applies the following scientific controls:
 
 - Build mechanisms first for mechanism questions and substantively distinct models, relations, features, simulations, designs, interventions, or failure modes for other questions.
 - Run the simplest supported test that best distinguishes the leading alternatives and, when iterative autonomy is explicit, choose the next candidate, falsifier, validation, or refinement inside the authorization envelope.
@@ -69,19 +71,19 @@ The always-loaded core is science-forward:
 
 Explicitly autonomous or iterative execution continues inside the authorization and frozen rules without renewed confirmation at every checkpoint.
 
-If the request is only prospective design, do not generate outcomes. If it is only a read-only audit, do not execute, repair, or extend the work without authorization.
+Prospective-design requests produce plans without outcomes. Read-only audits exclude execution, repair, and extension unless separately authorized.
 
 ## Compact Records and Engineering Boundaries
 
-Use one persistent compact record by default: the candidate board, frozen batches, data and code versions, decision-bearing outcomes and choices, failures, and report. Add a contemporaneous decision entry when outcomes alter the scientific path. Do not create a formal inventory, coverage matrix, bundle, or artifact tree for ordinary work.
+Use one persistent compact record by default: the candidate board, frozen batches, data and code versions, decision-bearing outcomes and choices, failures, and report. Add a contemporaneous decision entry when outcomes alter the scientific path. Formal inventories, coverage matrices, bundles, and artifact trees are reserved for requests that require them.
 
-Record input identity once at first production use and verify it again before final reporting or handoff. Prefer a stable version or snapshot identifier; use a digest only when no adequate identifier exists or exact byte identity matters. Do not hash unchanged inputs, code, or intermediate outputs at every batch.
+Record input identity at first production use and verify it again before final reporting or handoff. Prefer a stable version or snapshot identifier; use a digest only when no adequate identifier exists or exact byte identity matters. Intermediate re-verification is required only after a material mutation or assurance trigger.
 
-Freeze a reproducible randomization policy appropriate to the design. For simulation or optimization, record deterministic seeds or state and choose common, paired, or independent streams by the comparison design. For treatment or operational allocation, use a separate validated concealed scheme and restrict its state until disclosure is authorized. Never select randomness because it improves a result.
+Freeze a reproducible randomization policy appropriate to the design. For simulation or optimization, record deterministic seeds or state and choose common, paired, or independent streams by the comparison design. For treatment or operational allocation, use a separate validated concealed scheme and restrict its state until disclosure is authorized. Outcome-dependent selection of randomness is prohibited.
 
-Classify changes by their scientific effect rather than by a named contract type. Equivalent worker, chunk, scheduler, cache, implementation, retry, and path changes do not reopen science. Data or code changes that can alter support, eligibility, sample, estimand, ranking, or interpretation require affected checks and, when outcome-informed, enter the selection path.
+Classify changes by their scientific effect. Equivalent worker, chunk, scheduler, cache, implementation, retry, and path changes do not reopen science. Data or code changes that can alter support, eligibility, sample, estimand, ranking, or interpretation require affected checks and, when outcome-informed, enter the selection path.
 
-Do not invent qualification work without a concrete failure mode. For material data, numerical, memory, I/O, or runtime risk, qualify the affected execution response-blindly; once the relevant criteria pass, begin science. Independent families do not block one another, while shared dependencies and joint decisions gate only their dependents.
+Execution qualification is required only for an identified failure mode. For material data, numerical, memory, I/O, or runtime risk, qualify the affected execution response-blindly; once the relevant criteria pass, begin science. Independent families do not block one another, while shared dependencies and joint decisions gate only their dependents.
 
 Ordinary research does not require bespoke audit trees, repeated hashing, or formal run-package validators by default. It still reuses project-required scientific, data-integrity, execution, and provenance controls, adding artifacts only for a concrete integrity, handoff, governance, or reproducibility need.
 
@@ -174,17 +176,17 @@ not claim scoped completion unless the saturation and closure conditions pass.
 
 ## Legacy Machine-Audit Compatibility
 
-The schema-1.5.4 machine-audit workflow is preserved in the immutable [v0.3.0 tag](https://github.com/JialeWW/scientific-autoresearch/tree/v0.3.0) for existing structured runs. It is deliberately absent from the v0.3.5 Skill archive. Use the frozen v0.3.0 package only when an existing run actually depends on that schema; do not mix its provenance or artifact rules into ordinary v0.3.5 research.
+The schema-1.5.4 machine-audit workflow is preserved in the immutable [v0.3.0 tag](https://github.com/JialeWW/scientific-autoresearch/tree/v0.3.0) for existing structured runs. It is excluded from the v0.3.5 Skill archive. Use the frozen v0.3.0 package only when an existing run actually depends on that schema; keep its provenance and artifact rules separate from ordinary v0.3.5 research.
 
 ## Evaluation Status
 
 The latest frozen benchmark protocol/scorer remains **2.1.2**, with Skill **0.2.8** as its immutable release under test. Those protocol artifacts and historical `not_evaluated` results are not rewritten for v0.3.5.
 
-The v0.3.0–v0.3.2 development specifications remain historical, unscored inputs. `benchmarks/development-cases/v0.3.3-scientific-stop-challenge.json` adds unscored cases for orphan roles, implicit material controls, science-facing product semantics, staged registry disclosure, auditable finding adjudication, self-review fallback, trigger boundaries, delta invalidation, reviewer hallucination, and coverage non-substitution. These specifications are not benchmark measurements. The v0.3.4 completion-language guardrail and v0.3.5 question-routing correction are covered by deterministic repository tests only; Skill v0.3.5 remains **not evaluated** until a frozen successor suite is executed.
+The v0.3.0–v0.3.2 development specifications remain historical, unscored inputs. `benchmarks/development-cases/v0.3.3-scientific-stop-challenge.json` adds unscored cases for orphan roles, implicit material controls, science-facing product semantics, staged registry disclosure, auditable finding adjudication, self-review fallback, trigger boundaries, delta invalidation, reviewer hallucination, and coverage non-substitution. These specifications are not benchmark measurements. The v0.3.4 completion-language guardrail and v0.3.5 question routing are covered by deterministic repository tests. The formal-language revision received static review and does not constitute a behavioral result. Skill v0.3.5 remains **not evaluated** until a frozen successor suite is executed.
 
 Two unfrozen qualitative development probes are preserved under `benchmarks/development-runs/`. One specified compact-record continuation after a weak result; the other retained full scoped-coverage planning and an exact open queue without requiring a machine-audited schema. Because no model, runtime, sampling, timing, or judge protocol was frozen and no scientific computation was executed, these are diagnostics only and do not change the **not evaluated** status or establish superiority over v0.2.1.
 
-The existing source-tree `scientific-autoresearch/evals/*.json` files remain byte-frozen at their historical paths because protocol 2.1.2 binds those paths and hashes for Skill 0.2.8. They are legacy benchmark inputs, not v0.3.5 runtime instructions or current examples, and are excluded from the official v0.3.5 installable archive and runtime-package digest. Moving them requires a future benchmark protocol that preserves the old line rather than silently breaking it.
+The existing source-tree `scientific-autoresearch/evals/*.json` files remain byte-frozen at their historical paths because protocol 2.1.2 binds those paths and hashes for Skill 0.2.8. They are legacy benchmark inputs, not v0.3.5 runtime instructions or current examples, and are excluded from the official v0.3.5 installable archive and runtime-package digest. A future protocol must preserve the existing benchmark line before relocating these files.
 
 ## Scientific Interpretation
 

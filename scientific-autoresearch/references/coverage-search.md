@@ -13,7 +13,7 @@ When the user explicitly requests full systematic coverage or scoped completion,
 - [5. Audit Inventory Saturation](#5-audit-inventory-saturation)
 - [6. Close Coverage](#6-close-coverage)
 - [7. Schedule Without Shrinking Coverage](#7-schedule-without-shrinking-coverage)
-- [8. State the Scope Honestly](#8-state-the-scope-honestly)
+- [8. State the Completion Scope](#8-state-the-completion-scope)
 
 ## 1. Version a Typed Candidate Inventory
 
@@ -39,7 +39,7 @@ specification_timing
 duplicate_of
 ```
 
-Use `pre_result_frozen` when the entry was fixed before related outcomes were inspected and `post_result_adaptive` otherwise. Preserve every prior inventory version. Batch additions discovered at one audit checkpoint into one successor version and record the diff; never silently insert them into an old version. A legacy record may retain a mechanism-specific column name, but it must not force nonmechanistic candidates to make mechanistic claims.
+Use `pre_result_frozen` when the entry was fixed before related outcomes were inspected and `post_result_adaptive` otherwise. Preserve every prior inventory version. Batch additions discovered at one audit checkpoint into one successor version and record the diff; prior versions remain unchanged. A legacy record may retain a mechanism-specific column name, provided it does not require nonmechanistic candidates to make mechanistic claims.
 
 Keep scientifically plausible but currently untestable entries with `candidate_status=needs_data`. They document the boundary of the available data but do not enter the executable coverage denominator.
 
@@ -47,7 +47,7 @@ Record data support as `supported`, `support_limited`, `diagnostic_only`, `unsup
 
 ## 2. Enumerate Through Complementary Lenses
 
-Freeze the inventory-audit protocol before outcomes. Use complementary lenses rather than one unconstrained brainstorming pass:
+Freeze the inventory-audit protocol before outcomes and apply the following complementary lenses:
 
 - candidate-forward decomposition of the substantive mechanisms, models, features, simulations, designs, or other declared candidate classes;
 - data-product-reverse mapping from each authorized field, table, image, time series, model output, or experimental record to the candidates and alternatives it can test;
@@ -60,13 +60,13 @@ The saturation audit always has two complementary, separately scoped directions:
 1. candidate-forward: start from the declared candidate classes and enumerate distinct roles and predictions;
 2. data-product-reverse: start from every authorized data product and ask which pathways, alternatives, and artifacts it can distinguish.
 
-When a protocol or plan also declares stable scientific-role identifiers, reconcile them protocol-forward under `completion-review.md`. That is a required traceability lane for a stopping or completion claim, not a substitute for either saturation direction and not automatically a third candidate-generation audit.
+When a protocol or plan also declares stable scientific-role identifiers, reconcile them protocol-forward under `completion-review.md`. This required traceability lane supports a stopping or completion claim. The two saturation directions remain separately required, and protocol-forward reconciliation counts as a third candidate-generation audit only when it was explicitly defined for that purpose.
 
-For a mechanistic search, candidate-forward is specifically a mechanism-forward audit; for other declared classes, use the corresponding model-, feature-, simulation-, or design-forward audit rather than forcing mechanistic language.
+Name the candidate-forward audit after the declared candidate class: mechanism-, model-, feature-, simulation-, or design-forward.
 
-These directions are different enumeration procedures, not automatically statistically independent reviews. Freeze their starting bases and scopes separately, and disclose shared executor, context, prior-inventory visibility, or source material. A high-consequence run may add separated contexts or reviewers, but different people or models are not a universal minimum.
+These directions are distinct enumeration procedures. Statistical independence requires separate justification. Freeze their starting bases and scopes separately, and disclose shared executor, context, prior-inventory visibility, or source material. A high-consequence run may add separated contexts or reviewers; universal use of different people or models is not required.
 
-At Round 0, decide whether the problem warrants a third separately declared source, such as a targeted literature audit, formal theory or model enumeration, structured expert elicitation, or a failure-mode catalogue. If declared applicable, freeze its scope and completion rule and require it for saturation. Literature review is conditional: use it when premise, novelty, or inventory coverage depends on literature, not as a ritual for every run.
+At Round 0, decide whether the problem warrants a third separately declared source, such as a targeted literature audit, formal theory or model enumeration, structured expert elicitation, or a failure-mode catalogue. If declared applicable, freeze its scope and completion rule and require it for saturation. Use literature review when the premise, novelty assessment, or inventory coverage depends on it.
 
 Track mechanisms separately from measurement, selection, quality, model, feature, simulation, design, and method candidates. Merge semantic duplicates within the appropriate type and record the surviving ID and justification.
 
@@ -195,9 +195,9 @@ Every screen and outcome that can influence progression enters the ledger and it
 
 Queued, deferred, and resource-blocked cells remain in the coverage denominator. When resources end, serialize the full open queue, priority basis, dependencies, estimated resource need, and next admissible action.
 
-## 8. State the Scope Honestly
+## 8. State the Completion Scope
 
-Do not collapse the completion gates into the word "exhaustive":
+Report each completion gate separately and reserve `complete_within_scope` for the defined scoped-completion claim:
 
 - `inventory_saturated=true` means the required inventory audits produced no new eligible candidates for that version.
 - `coverage_complete=true` means every eligible cell in that inventory version is classified closed.

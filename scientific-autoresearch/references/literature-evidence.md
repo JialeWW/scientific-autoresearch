@@ -45,7 +45,7 @@ Include conflicting, null, and methodologically limiting evidence rather than on
 ## 4. Connect Literature to the Autoresearch Loop
 
 - Use prior work to define plausible candidate rationales and, when relevant, mechanisms, meaningful effect scales, controls, and failure modes.
-- Do not use literature after the fact only to rationalize a discovered pattern.
+- Post hoc literature searches must not serve solely to rationalize a discovered pattern.
 - Freeze literature-derived thresholds, windows, or priors before confirmation when possible.
 - If a result conflicts with prior work, test whether population, support, measurement, scale, or model differences explain the conflict before claiming novelty.
 - Before promotion, state exactly what is new: data, measurement, method, population, scale, mechanism test, or independent replication.

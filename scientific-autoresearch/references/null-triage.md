@@ -35,7 +35,7 @@ For a mechanistic claim, ask whether the observable represented the mechanism's 
 
 For observational support, geometry, censoring, or background questions, read `references/observational-data.md`.
 
-## 4. Expand Formulations Without Result Shopping
+## 4. Govern Post-result Formulation Expansion
 
 For explicit systematic coverage, continue through remaining pre-result-frozen coverage cells when they represent distinct, scientifically justified observables, tests, scales, support sets, or parameter regimes. For other outcome-informed work, preserve unresolved candidates and tests in the ledger without claiming a coverage denominator or saturation.
 
@@ -52,7 +52,7 @@ Specify every addition before running it, assign a new candidate or formulation 
 
 Update the complete selection path, not only the final test count. A null-triggered proxy, sample, scale, threshold, model, or parameter change can affect generation, screening, ranking, and promotion even when it receives a new filename or code version. The Prior-exposure Audit remains in force.
 
-Do not add variants merely to find significance. Stop expanding a candidate family when no substantively distinct observable, test role, formulation, or parameter regime remains supported by current data, later variants are only threshold nudges or duplicates, the data cannot identify the distinction, or governance blocks the work.
+Add variants only when they address a named substantive failure mode. Stop expanding a candidate family when no substantively distinct observable, test role, formulation, or parameter regime remains supported by current data, later variants are threshold adjustments without a distinct scientific role or are duplicates, the data cannot identify the distinction, or governance blocks the work.
 
 Compute scarcity may defer valid cells, but it does not make the formulation space scientifically complete.
 
@@ -70,7 +70,7 @@ For a model, feature, simulation, design, or other candidate, apply `candidate_s
 
 Missing data, small samples, or invalid tests do not weaken a candidate by themselves.
 
-## 6. Stop Correctly
+## 6. Apply the Candidate Stopping Criteria
 
 Stop expanding the affected candidate when its remaining variants are redundant or unsupported, its required verification data are unavailable, or progress needs new data or assumptions. In authorized iterative work, continue through other candidates only while they meet Core Rule 6's continuation standard; one candidate's blocker does not end otherwise admissible work. A bounded report describes claim strength rather than overriding that standard.
 

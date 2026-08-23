@@ -1,8 +1,8 @@
 # Scientific Stop Challenge
 
-Use this reference only before claiming `search_stop_admissible=true`, stating that no material test remains, or ending open or adaptive research on a scientific-stop basis. The challenge tries to falsify the stopping rationale; it does not certify open-world scientific completeness or create independent evidence.
+Use this reference only before claiming `search_stop_admissible=true`, stating that no material test remains, or ending open or adaptive research on a scientific-stop basis. The challenge is designed to test the stopping rationale; it does not certify open-world scientific completeness or create independent evidence.
 
-Do not trigger it merely because one named test or registered batch finished, or because a user, resource, safety, or governance boundary ended execution. Report the bounded result or boundary honestly and leave `search_stop_admissible` false when a material open test is known, or `not_assessed` when scientific stopping was not evaluated.
+Triggering conditions exclude completion of one named test or registered batch and execution terminated by a user, resource, safety, or governance boundary. Report the bounded result or boundary and leave `search_stop_admissible` false when a material open test is known, or `not_assessed` when scientific stopping was not evaluated.
 
 ## 1. Reconcile Declared Identifiers
 
@@ -44,7 +44,7 @@ Every declared key must resolve to one valid disposition. A tested item must res
 
 ## 2. Challenge Stopping in Two Stages
 
-Use one fresh reviewer context when available. A different agent or model is process separation, not independent scientific verification. If no fresh reviewer is available, use the same procedure as a clearly labeled self-review and disclose shared context.
+Use one fresh reviewer context when available. Use of a different agent or model provides process separation; independent scientific verification requires independent evidence. If no fresh reviewer is available, use the same procedure as a clearly labeled self-review and disclose shared context.
 
 Use staged disclosure:
 
@@ -58,7 +58,7 @@ registry_visible_during_reconstruction: true
 anchoring_risk: elevated
 ```
 
-A same-context self-review that has already seen the registry is not source-isolated merely because it temporarily sets the registry aside. It must record `registry_visible_during_reconstruction: true` and `anchoring_risk: elevated`.
+A same-context self-review that has already seen the registry remains source-exposed after the registry is set aside. It must record `registry_visible_during_reconstruction: true` and `anchoring_risk: elevated`.
 
 Record `review_mode`, `context_isolation`, source versions, materials reviewed, the preserved reconstructed expected set, missing or unverifiable sources, structural discrepancies, challenged closures, `potentially_material_open_tests`, reviewer verdict, and claim ceiling. The reviewer does not decide whether a proposed test would change the current result. Use this closed reviewer vocabulary:
 
@@ -81,7 +81,7 @@ rationale: text
 successor_id: optional
 ```
 
-Do not silently omit a finding. An accepted finding blocks scientific stopping when it is nonduplicate, in scope, supported, feasible, authorized, and reasonably capable of materially changing the requested interpretation or decision. Put it in the open queue or freeze an outcome-informed successor before execution. A rejected finding needs evidence and rationale; reviewer novelty alone does not make it a blocker.
+Adjudicate every finding explicitly. An accepted finding blocks scientific stopping when it is nonduplicate, in scope, supported, feasible, authorized, and reasonably capable of materially changing the requested interpretation or decision. Put it in the open queue or freeze an outcome-informed successor before execution. A rejected finding requires evidence and rationale; reviewer novelty alone is insufficient for blocker status.
 
 Preserve the reviewer's issued verdict. If a material dispute, missing source, or unadjudicated finding remains during primary adjudication, leave the affected finding explicitly unresolved and set `search_stop_admissible=indeterminate`; do not rewrite the reviewer verdict unless the reviewer itself revises its report. `no_blocker_found` is only the reviewer result; set `search_stop_admissible=true` only after declared-source reconciliation and all adjudications pass.
 
@@ -105,4 +105,4 @@ Only the primary agent records `termination_reason`, and only when the task actu
 
 Run one challenge per stopping episode and collect accepted findings into one successor or open queue. A delta review is valid only while the scientific question and authorization, candidate classes, science-facing data products, support rules, and decision rules remain unchanged. If a finding or new data changes any of them, rerun the affected source-reconstruction lanes rather than relying on an ordinary delta.
 
-Do not spawn a reviewer of the reviewer. Do not call a fresh-context review independent replication, inferential validation, or proof that no unimagined candidate exists. It establishes only an evidence-referenced challenge to stopping over the declared and reconstructed sources. It cannot restore pre-result status, reconstruct omitted attempts, reseal exposed evidence, validate unsupported domain assumptions, or upgrade same-data exploration into confirmation.
+Use one reviewer layer per stopping episode. A fresh-context review establishes an evidence-referenced challenge to stopping over the declared and reconstructed sources. Its claim scope excludes independent replication, inferential validation, open-world completeness, restoration of pre-result status, reconstruction of omitted attempts, resealing of exposed evidence, validation of unsupported domain assumptions, and conversion of same-data exploration into confirmation.

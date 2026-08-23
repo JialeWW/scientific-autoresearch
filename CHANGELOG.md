@@ -2,10 +2,13 @@
 
 All notable changes to this project are documented here.
 
-## 0.3.5 - 2026-08-11
+## 0.3.5 - 2026-08-23
 
 - Separates scoped-completion questions from continuation questions: exhaustion claims use `complete_within_scope`, while questions about a qualifying next test use `search_stop_admissible` and name current qualifying open work; an exact open queue remains specific to explicit coverage.
 - Requires ambiguous questions such as "Is anything left?" to report both states instead of inferring either one from the other. This is a wording and routing correction; it adds no review, artifact, or execution step.
+- Formalizes runtime and public-facing prose by replacing slogan-like headings, rhetorical contrasts, and colloquial process descriptions with direct definitions, applicability conditions, and evidence requirements.
+- Preserves explicit prohibitions where scientific validity, authorization, safety, selection control, or research integrity requires them.
+- Clarifies the final integrity clause so every listed practice is unambiguously prohibited. These changes add no review, artifact, execution step, or scientific gate.
 
 ## 0.3.4 - 2026-08-08
 
@@ -14,18 +17,18 @@ All notable changes to this project are documented here.
 
 ## 0.3.3 - 2026-07-24
 
-- Added a general scientific stop challenge that tries to falsify a stopping rationale without claiming to certify scientific completeness or create independent evidence.
-- Separated requested execution completion, declared scientific-role mapping, search-stop admissibility, and explicit finite-scope completion, with honest `not_assessed`, `indeterminate`, and termination-reason states.
+- Added a general scientific stop challenge that evaluates a stopping rationale without claiming to certify scientific completeness or create independent evidence.
+- Separated requested execution completion, declared scientific-role mapping, search-stop admissibility, and explicit finite-scope completion, with explicit `not_assessed`, `indeterminate`, and termination-reason states.
 - Added deterministic reconciliation only for stable declared candidate, prediction, falsifier, control, protocol-role, product, test, output, closure, and open-queue identifiers; free-text semantic equivalence remains a scientific review judgment.
-- Added explicit science-facing product semantics so inferential and diagnostic products receive a consumer or disposition while QA, intermediate, and provenance fields do not become false blockers.
-- Added staged source reconstruction before registry disclosure, fresh-context review when available, an honest self-review fallback, anchoring-risk disclosure, and a one-review-per-stopping-episode bound.
+- Added explicit science-facing product semantics so inferential and diagnostic products receive a consumer or disposition while QA, intermediate, and provenance fields do not become spurious blockers.
+- Added staged source reconstruction before registry disclosure, fresh-context review when available, a disclosed self-review fallback, anchoring-risk disclosure, and a one-review-per-stopping-episode bound.
 - Required the reviewer to report only potentially material open tests and the primary Agent to adjudicate every finding with evidence, rationale, and any successor; unresolved disputes make stop admissibility indeterminate.
 - Limited delta review to unchanged question and authorization, candidate classes, science-facing products, support, and decision rules; changed lanes must be reconstructed again.
 - Added an unscored v0.3.3 development specification for orphan mappings, implicit controls, QA filtering, registry anchoring, reviewer hallucination, trigger boundaries, delta invalidation, fallback review, and coverage non-substitution. Behavioral and empirical-method evaluation remain `not_evaluated`.
 
 ## 0.3.2 - 2026-07-23
 
-- Narrowed implicit routing to evidence-generating scientific analysis with material falsification, support, adaptation, or selection-path needs; excluded routine explanation, literature-only review, manuscript editing, ordinary engineering, and one-off calculations without scientific decision design.
+- Narrowed implicit routing to evidence-generating scientific analysis with material falsification, support, adaptation, or selection-path needs; excluded routine explanation, literature-only review, manuscript editing, ordinary engineering, and isolated calculations without scientific decision design.
 - Limited multi-round continuation to explicitly autonomous or iterative requests. Design, read-only audit, and named one-test tasks now stay bounded, while scope, cost, risk, data-access, and external-action changes require renewed authorization.
 - Restored the distinction between a coherent frozen multi-stage mapping and an outcome-driven successor, including prospective comparison-family, evidence-partition, decision, and selection-path rules.
 - Replaced universal seed `42` behavior with design-appropriate reproducible randomization: common, paired, or independent streams for simulation and a separate protected concealed scheme for allocation, with no post-outcome randomness selection.
@@ -36,7 +39,7 @@ All notable changes to this project are documented here.
 
 ## 0.3.1 - 2026-07-23
 
-- Kept the active candidate–test–interpret–next-step loop while making the next executable test or coherent batch, rather than the whole future project, the default freeze unit.
+- Kept the active candidate–test–interpret–next-step loop and made the next executable test or coherent batch the default freeze unit while retaining full-protocol freezes where scientifically required.
 - Made one compact candidate board and result–decision log the only default research record; ordinary work now explicitly forbids manifest trees, checksum indexes, receipts, immutable round snapshots, status-transition files, and run validators.
 - Limited input identity to a stable version or snapshot at first production use and one final confirmation, using digests only when stable identity is unavailable or exact byte identity matters; unchanged inputs, code, and intermediate outputs are not repeatedly hashed.
 - Set `42` as the default master random seed when no user or project seed already exists; exact reruns and comparable candidates reuse its stream rule, while required multi-realization studies deterministically derive and retain their full seed set from `42`.
@@ -51,10 +54,10 @@ All notable changes to this project are documented here.
 - Rebased the always-loaded workflow on v0.2.1's active research loop: build a candidate space, test, interpret, learn from weak results, choose the next candidate or refinement, and continue autonomously to a scientific conclusion or real boundary.
 - Generalized the mechanism inventory into a compact board of mechanisms or other substantive candidates while keeping scientific rationale, distinct predictions, data support, falsifiers, and mechanism-first reasoning where applicable.
 - Made one compact candidate board and result–decision record the default for ordinary multi-round research. Outcome-informed changes are recorded before execution without creating a new governance system.
-- Retained full finite-scope coverage only on explicit request: versioned inventories, candidate-forward and data-product-reverse audits, coverage cells, complete selection accounting, honest scoped completion, and exact open queues without fixed mechanism or round caps.
+- Retained full finite-scope coverage only on explicit request: versioned inventories, candidate-forward and data-product-reverse audits, coverage cells, complete selection accounting, scope-bounded completion, and exact open queues without fixed mechanism or round caps.
 - Separated engineering repair and scientifically equivalent execution changes from scientific rounds, and retained the rule that same-data reruns are not independent verification.
 - Limited ordinary input-identity verification to first production use and final reporting or handoff, with intermediate rechecks only after a material identity or assurance trigger rather than at every batch.
-- Kept scale or radius sensitivity, measurement error, systematics, falsification, comparability, transportability, stochastic discipline, and complete-selection-path inference as promotion safeguards rather than per-tool ceremony.
+- Kept scale or radius sensitivity, measurement error, systematics, falsification, comparability, transportability, stochastic discipline, and complete-selection-path inference as promotion safeguards without imposing unnecessary per-tool requirements.
 - Moved profiles, formal contracts, execution lifecycle, machine-audit schemas, immutable artifact rules, and validators into routed compatibility references instead of the ordinary scientific path.
 - Added a deterministic runtime-package digest and runtime-only installable archive that excludes historical v0.2.8 eval inputs. The frozen protocol/scorer 2.1.2 line remains unchanged; v0.3.0 behavioral and empirical-method evaluation remain `not_evaluated`.
 

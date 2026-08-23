@@ -2,7 +2,7 @@
 
 Use this adapter for benchmark optimization, predictive modeling, algorithm comparison, stochastic simulation, numerical convergence, surrogate models, or parameter sweeps.
 
-Choose the workflow by outcome-driven discretion, not by domain or analysis count. Execute a frozen benchmark, finite model comparison, feature-selection algorithm, hyperparameter procedure, convergence program, or bounded automated search directly when its complete data-to-decision mapping is prespecified. When inspected outcomes motivate choices outside that mapping, record the choice and freeze a successor. Build systematic finite coverage of model, simulation, solver, or design classes only when that objective is explicit.
+Choose the workflow according to the degree of outcome-driven discretion, independently of domain or analysis count. Execute a frozen benchmark, finite model comparison, feature-selection algorithm, hyperparameter procedure, convergence program, or bounded automated search directly when its complete data-to-decision mapping is prespecified. When inspected outcomes motivate choices outside that mapping, record the choice and freeze a successor. Build systematic finite coverage of model, simulation, solver, or design classes only when that objective is explicit.
 
 ## 1. State the Scientific Role
 
@@ -10,7 +10,7 @@ Classify the round as prediction, model comparison, method validation, parameter
 
 Define the unit of generalization, target distribution, metric, baseline, minimum meaningful improvement, compute budget, and failure criterion.
 
-For a fully frozen batch, freeze the complete pipeline, family, or search procedure; sample; metric; evidence partitions; randomization; budget and stopping; decision and joint-inference rules; and falsifier in its compact scientific plan. For outcome-informed or coverage work, freeze the eligible candidates, comparable target and support regimes, ranking evidence beyond a nominal p-value, complexity or compute treatment, practical-equivalence rule, inconclusive rule, and inference strategy before the applicable model-specific outcomes. Audit prior benchmark, validation, leaderboard, simulation, seed, checkpoint, and parameter exposure. A new split, codebase, model family, repository, workflow, or skill version does not restore pristine test status when underlying evidence overlaps.
+For a fully frozen batch, freeze the complete pipeline, family, or search procedure; sample; metric; evidence partitions; randomization; budget and stopping; decision and joint-inference rules; and falsifier in its compact scientific plan. For outcome-informed or coverage work, freeze the eligible candidates, comparable target and support regimes, ranking evidence beyond a nominal p-value, complexity or compute treatment, practical-equivalence rule, inconclusive rule, and inference strategy before the applicable model-specific outcomes. Audit prior benchmark, validation, leaderboard, simulation, seed, checkpoint, and parameter exposure. A new split, codebase, model family, repository, workflow, or skill version does not restore unexposed test status when underlying evidence overlaps.
 
 ## 2. Seal Test and Benchmark Evidence
 
@@ -25,7 +25,7 @@ A single sealed opening may execute a fully frozen multi-candidate decision if t
 
 Use nested validation when tuning and estimating generalization would otherwise reuse the same folds. Report distribution shift, support gaps, leakage checks, and extrapolation limits.
 
-## 3. Represent Only the Search That Actually Occurs
+## 3. Representation of the Executed Search
 
 Start from a reproducible baseline. A fully frozen batch has no search inventory. Outcome-informed work uses candidate records and a contemporaneous selection ledger but does not claim saturation. Only explicit systematic coverage builds a versioned typed inventory and finite coverage cells.
 
@@ -65,7 +65,7 @@ When a finite compute envelope is explicitly authorized under `references/govern
 - For simulations, test resolution, timestep, domain size, softening, solver tolerance, conservation, and initial-condition variation when relevant.
 - Use convergence curves, recovery tests, known-truth cases, or analytic limits rather than relying on a single run.
 
-A single seeded realization supports a smoke test or exact reproduction, not stochastic robustness. Seeds are nuisance realizations, not independent scientific sample units. Never select the luckiest seed, checkpoint, or realization.
+A single seeded realization supports smoke testing or exact reproduction. Assess stochastic robustness across realizations governed by the frozen realization and precision-expansion policy. Treat seeded realizations as nuisance realizations, not independent scientific sample units. Outcome-based selection of seeds, checkpoints, or realizations is prohibited.
 
 ## 5. Use Scientific Falsifiers
 
@@ -85,4 +85,4 @@ State the expected outcome under the claim and under the alternative before runn
 
 Record only what the actual path requires: data versions and split logic, code state, environment, hardware, precision, actual seeds, search and refinement rules when applicable, compute use, selection-influencing configurations and failures, metric definition, uncertainty, and sealed-test policy. Add inventory and coverage status only for explicit systematic coverage.
 
-Use `verification_status=internal_only` for cross-validation or resampling. Use `holdout_verified` only after a truly sealed evaluation. Never report the luckiest run as the result.
+Use `verification_status=internal_only` for cross-validation or resampling. Use `holdout_verified` only after a truly sealed evaluation. When aggregation is part of the frozen design, report the prespecified aggregate; outcome-based selection of a favorable run is prohibited.

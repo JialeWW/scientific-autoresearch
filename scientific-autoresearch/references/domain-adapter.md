@@ -39,16 +39,16 @@ measurement support
 
 For each rule, record its stable name, affected inputs and fields, expected relation or tolerance, observed status, and failure action. Alias decisions need an authoritative source or an explicitly unresolved state; do not guess from similar strings. A many-to-many join, tolerance failure, count mismatch, or cross-partition overlap is not automatically invalid, but it must match the scientific rule or block the affected result.
 
-Let project code perform the checks. The generic skill cannot infer whether a scientific identifier, tolerance, or domain assumption is correct. Use `passed`, `failed`, or `inconclusive`; `passed` requires every blocking rule for that family to pass.
+Execute these checks through project-specific code. The generic skill cannot infer whether a scientific identifier, tolerance, or domain assumption is correct. Use `passed`, `failed`, or `inconclusive`; `passed` requires every blocking rule for that family to pass.
 
-Once the relevant rules pass, begin or resume that family's science. Do not add more blocking checks for general reassurance. If a response-blind repair changes an identifier mapping, join, support rule, unit, or quality rule, rerun only the affected checks. Create a new scientific batch only when the change can alter the supported sample, estimand, candidate value, ranking, inference, or interpretation.
+Once the relevant rules pass, begin or resume that family's science. Additional blocking checks require a newly identified failure mode that could affect scientific validity. If a response-blind repair changes an identifier mapping, join, support rule, unit, or quality rule, rerun only the affected checks. Create a new scientific batch only when the change can alter the supported sample, estimand, candidate value, ranking, inference, or interpretation.
 
 ## 3. Review Material Semantic Judgments
 
 When a scientific decision depends on a judgment that structure checks cannot establish, record its reason, scope, evidence reviewed, status, and unresolved objections in the compact research record. Use `not_required` with a reason for low-consequence or directly testable decisions; otherwise use `pending`, `passed`, `passed_with_reservations`, `failed`, or `inconclusive`.
 
-Do not call a review independent merely because it used another person, model, or label. Disclose shared evidence, context, methods, or personnel. Semantic review does not turn same-data exploration into independent verification or establish empirical operating characteristics.
+Describe a review as independent only when its evidence, context, methods, and personnel meet the stated independence criterion. Disclose all shared elements. Semantic review cannot convert same-data exploration into independent verification or establish empirical operating characteristics.
 
-## 4. Keep the Check Lightweight
+## 4. Proportionate Documentation Requirements
 
 Keep the applicable findings in the compact research record. Ordinary work needs no adapter artifact, hash, immutable version, schema-specific project contract, or validator report. Formal representation does not add scientific validity by itself and belongs to a separately requested audit workflow.

@@ -35,7 +35,7 @@ Derive numerical eligibility, support, or comparison thresholds from scientific 
 
 Here, population means the scientific target domain, system class, distribution, or ensemble—not a particular dataset split. Record concrete support with `supported_sample_id`; train/test or discovery/verification partitions may share one population when they sample the same target definition.
 
-Substantive eligibility is a gate, not a post-result plausibility score. Declare each candidate type, such as mechanism, model, feature, simulation, or design. For mechanistic candidates, freeze `mechanism_alignment` as `direct`, `calibrated_proxy`, `diagnostic_only`, `unsupported`, or `not_assessed`. For a nonmechanistic scientific or operational decision, use `not_applicable` with a reason and apply the declared `substantive_eligibility` rule instead. Diagnostics and unsupported proxies remain in the record but cannot become a substantive leader through statistical strength alone.
+Apply substantive eligibility as a pre-result gate. Declare each candidate type, such as mechanism, model, feature, simulation, or design. For mechanistic candidates, freeze `mechanism_alignment` as `direct`, `calibrated_proxy`, `diagnostic_only`, `unsupported`, or `not_assessed`. For a nonmechanistic scientific or operational decision, use `not_applicable` with a reason and apply the declared `substantive_eligibility` rule. Diagnostics and unsupported proxies remain in the record and are ineligible for substantive leadership based on statistical strength alone.
 
 When screening and decision evidence differ, freeze one mapping per distinct family and screening-statistic relation: both evidence definitions, estimands and scales, the scale relation, validation or calibration rule, and discordance rule. A rank statistic can support monotone association while remaining silent about raw-scale slope, calibration, residual structure, or predictive loss. Without a validated mapping, a screen may prioritize execution but cannot replace decision-scale evidence.
 
@@ -52,11 +52,11 @@ Before assigning an evidence stage, freeze a bounded exposure-audit scope: relev
 - previous data splits or holdouts and whether they remained sealed;
 - undocumented or uncertain exposure.
 
-Record what was checked, unavailable sources, who or what supplied the information, overlap scope, known attempts, uncertain gaps, and the resulting evidence-stage restriction. Complete the declared audit when every available in-scope source was checked or the frozen effort bound was reached. Do not expand into unrelated project archaeology; unresolved relevant gaps become `unknown` rather than disappearing.
+Record what was checked, unavailable sources, who or what supplied the information, overlap scope, known attempts, uncertain gaps, and the resulting evidence-stage restriction. Complete the declared audit when every available in-scope source was checked or the frozen effort bound was reached. Limit the exposure audit to its declared scope and record unresolved relevant gaps as `unknown`.
 
 Keep the current evidence label separate from future verification eligibility. Exposed evidence remains exploratory or internal-only even when a prospectively frozen candidate could later be tested on genuinely untouched data.
 
-Exposure follows the information, not the filename or tool. Changing the sample definition, codebase, model, repository, workflow, or skill version does not restore confirmatory status when overlapping outcome information influenced the new analysis. A formerly inspected holdout is not sealed again. When exposure cannot be reconstructed, label it `unknown` and do not claim pristine confirmation.
+Determine exposure from the information accessed and its decision relevance. Changes to filenames, tools, samples, codebases, models, repositories, workflows, or skill versions cannot restore confirmatory status when overlapping outcome information influenced the analysis. A formerly inspected holdout remains exposed. When exposure cannot be reconstructed, label it `unknown` and restrict the evidence stage accordingly.
 
 State what is independent: prior-result blinding, evidence or data, implementation, or review. A result-blind rerun may receive the frozen test specification and reuse validated parsers, data semantics or contracts, deterministic utilities, and tests when they do not encode outcome-informed scientific choices. It must not receive prior numeric outcomes, rankings, conclusions, or discretionary outcome-derived choices outside that specification. Disclose shared infrastructure and do not claim implementation independence unless it is real. Same-data blind reruns remain reproduction or internal validation; untouched-data verification may reuse software unless software independence is the target.
 
@@ -115,11 +115,11 @@ A scheduler may use cost, expected information gain, dependency order, or feasib
 - passing the screen does not itself count as verification;
 - candidates or tests not yet run remain open; in an explicit coverage task, their coverage cells stay `planned` or `resource_blocked`, never `covered`.
 
-Priority is an execution property, not scientific evidence. When resources end, save the open candidate or test queue, dependencies, priority basis, and next admissible action. In explicit coverage, do not shrink the inventory or coverage denominator. In bounded outcome-guided work, report the current scientific state rather than implying saturation.
+Execution priority carries no evidential weight. When resources end, save the open candidate or test queue, dependencies, priority basis, and next admissible action. In explicit coverage, preserve the inventory and coverage denominator. In bounded outcome-guided work, report the current scientific state without implying saturation.
 
 Ordinary changes to workers, chunking, cache placement, scheduling, or an equivalent implementation do not enter the scientific record merely because they occurred during a search. Apply the frozen execution-equivalence gate. Enter them in the selection path only when scientific outcomes motivated the change in a way that could alter which candidate was run, retained, ranked, or reported, or when the equivalence gate failed and scientific values or decision semantics may have changed.
 
-## 6. Decide Conservatively
+## 6. Apply the Prespecified Decision Rule
 
 At decision time:
 

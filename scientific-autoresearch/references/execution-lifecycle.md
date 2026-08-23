@@ -22,11 +22,11 @@ A qualification failure creates an engineering repair or amendment. Re-freeze th
 
 Before qualification starts, define its smallest scientifically coherent executable analysis family, minimum science-critical checks, pass/fail criteria, resource bound, and failure action. Checks should address identified ways that execution could alter the sample, estimand, ranking, or conclusion.
 
-When the criteria pass, accept the execution state and begin production science for that family. Do not keep adding checks for general reassurance, recursively audit the validator or audit procedure, or require a stronger equivalence claim than the science needs. Reopen qualification only for a newly identified concrete failure mode within that scientific-impact boundary; record the reason and keep the new check proportionate.
+When the criteria pass, accept the execution state and begin production science for that family. Additional qualification is warranted only for a newly identified concrete failure mode within the scientific-impact boundary. Record the reason and keep the new check proportionate to the scientific risk. Recursive validation is outside the default procedure, and the required equivalence claim must not exceed the prespecified scientific requirement.
 
 Qualify independent families separately. A pending or failed check for one family remains open and does not block a qualified family. A shared input, calibration, or dependency blocks only affected families; a joint decision rule may delay the joint comparison, promotion, or conclusion without suppressing otherwise valid family-level results.
 
-If the resource bound is reached before the criteria pass, report the unresolved blocker or simplify the execution design. Do not silently expand qualification or substitute administrative completeness for scientific readiness.
+If the resource bound is reached before the criteria pass, report the unresolved blocker or simplify the execution design. Any expansion of qualification requires an explicit amendment; administrative completeness does not establish scientific readiness.
 
 ## Classify the Change by Effect
 
@@ -34,9 +34,9 @@ Classify by effect; do not create separate contracts or announce category names 
 
 - A **scientific-meaning change** affects candidates, estimand, scientific population or support, feature meaning, model or statistic, validation design, multiplicity, decision rule, stopping, or reporting role. Outcome-driven changes enter the selection path.
 - A **data-or-support change** affects input identity, versions, joins, quality rules, units, support, or dependence. Repeat the affected data checks. Re-freeze science only if the change alters eligibility, sample, estimand, interpretation, or decision use.
-- An **execution change** affects workers, chunk size, scheduling, cache location, parallelism, runtime implementation, or equivalent resource controls. It is not a scientific change when an agreed equivalence check passes.
+- An **execution change** affects workers, chunk size, scheduling, cache location, parallelism, runtime implementation, or equivalent resource controls. Classify it as engineering when an agreed equivalence check passes.
 
-Classify code edits by their effect, not their filename. A production-script edit can be an execution repair; a small configuration edit can be scientific if it changes a threshold, feature, sample, or model.
+Classify code edits according to their effect; file type is insufficient. A production-script edit can be an execution repair; a small configuration edit can be scientific if it changes a threshold, feature, sample, or model.
 
 ## Equivalent Execution
 
@@ -50,16 +50,16 @@ Aggregation order, randomization, and partition membership remain scientific whe
 
 If equivalence passes, record one execution amendment and continue. If it fails, stop before opening decision-bearing outcomes and determine whether the difference is a data, execution, or scientific change.
 
-## Smoke Before Expensive Full-Scale Work
+## Response-Blind Feasibility Testing
 
 When memory, I/O, duration, or long-tail behavior presents a material risk, run a response-blind smoke on the worst plausible component before expensive upstream full-scale stages. The smoke should answer only the feasibility questions needed to choose an execution profile, using safe projected inputs or noncandidate fixtures where possible.
 
-Freeze production execution settings only after the relevant smoke passes. Low-risk work does not need a ceremonial smoke test or a `not_applicable` record.
+Freeze production execution settings only after the relevant smoke test passes. Smoke tests and `not_applicable` records are not required for low-risk work.
 
 ## Records and Checkpoints
 
-Development files may be edited normally. Once an outcome-bearing contract, result, or report has been shared or used as evidence, preserve it and create an amendment or successor rather than silently rewriting history.
+Development files may be edited normally. Once an outcome-bearing contract, result, or report has been shared or used as evidence, preserve it and make subsequent changes through a versioned amendment or successor.
 
 Record engineering failures only to the degree needed for diagnosis and reproducibility. Do not add worker, chunk, cache, deployment, or retry events to the scientific selection ledger unless they exposed candidate outcomes or influenced a scientific choice.
 
-Run only the scientific or execution checks needed at meaningful delivery, pause, handoff, material decision-bearing resume, or scientific-plan-change boundaries—not after every script or result. Do not build a general validator for ordinary work. Ordinary retries, engineering resumes, and accepted execution amendments do not require repeated full validation. Continue automatically inside the recorded authorization and equivalence envelope.
+Run scientific or execution checks at meaningful delivery, pause, handoff, material decision-bearing resume, or scientific-plan-change boundaries. Routine scripts and results, ordinary retries, engineering resumes, and accepted execution amendments require no repeated full validation. General validators are outside the requirements for ordinary work. Continue automatically inside the recorded authorization and equivalence envelope.

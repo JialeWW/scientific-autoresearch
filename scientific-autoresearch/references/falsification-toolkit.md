@@ -41,7 +41,7 @@ A useful check has different expected outcomes under the claim and its main alte
 - Remove special cases only under a predeclared criterion; otherwise report the analysis as exploratory.
 - Examine leverage and influence without deleting inconvenient cases.
 
-Influence analysis diagnoses dependence on cases. It is not independent verification.
+Influence analysis provides diagnostic evidence about dependence on cases and does not constitute independent verification.
 
 ## Alternative Models and Measurements
 
@@ -65,10 +65,10 @@ Test invariances, symmetries, units, conservation laws, monotonicity, or limitin
 ## Multiple Testing and Adaptive Search
 
 - Record the complete selection path and all data looks, including generation, modification, screening, ranking, verification targeting, and promotion.
-- Save complete grids, not only the winner.
+- Save complete grids, including all evaluated configurations.
 - Use a justified end-to-end null, multiplicity, selective, sequential, hierarchical, Bayesian, or other path-covering method, or reserve sealed verification evidence.
-- Keep a scan winner exploratory until verified.
-- Do not use favorable post-result storytelling as a substitute for selection control.
+- Keep a result selected from a scan exploratory until verified.
+- Selection control requires a valid design or inferential procedure; post-result narrative justification is insufficient.
 
 ## Promotion Audit
 
@@ -79,6 +79,6 @@ Before promotion, ask:
 3. Was support and sensitivity sufficient for the check to fail meaningfully?
 4. Does the check target the main alternative or only reproduce the same assumptions?
 5. Is the evidence same-data consistency, alternate proxy, alternate sample, holdout verification, simulation truth, or external replication?
-6. Did the candidate survive because its frozen substantive rationale predicted the result, or because the rationale changed afterward?
+6. Did the frozen substantive rationale predict the result, and did that rationale remain unchanged after outcome inspection?
 
 Record the answer and its consequence for the frozen candidate or claim and `verification_status`. Use `candidate_status` for a typed candidate; use `mechanism_status` only for a mechanistic inventory. Preserve a changed formulation by ID and timing rather than assigning the undefined label `formulation_status`.

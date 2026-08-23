@@ -2,7 +2,7 @@
 
 Use these principles when substantive framing is ambiguous, evidence conflicts, or the next decision is unclear.
 
-## Substance Before Metric
+## Scientific Relevance and Metric Choice
 
 Start with why a candidate bears on the scientific or operational decision and what evidence it predicts. For a mechanistic candidate, state why the effect could occur; for a predictive, computational, or design candidate, state its target role and performance claim. A metric matters only after the rationale, estimand, support, and failure condition are clear.
 
@@ -10,60 +10,60 @@ Start with why a candidate bears on the scientific or operational decision and w
 If candidate C bears on decision Q, then evidence X should meet criterion D by a meaningful scale E in supported sample S.
 ```
 
-## Result Is Not Claim
+## Result–Claim Alignment
 
 A result is a number, fit, feature, detection, or comparison. A claim states what that result changes. Verify that the computed estimand matches the sentence used to describe it.
 
-## Decision Before Ranking
+## Prespecification of Decision and Ranking Rules
 
-Define the intended decision, comparable candidates, evidence rule, meaningful difference, tie rule, and inconclusive rule before inspecting candidate-specific outcomes. The smallest p-value is not automatically the best scientific explanation.
+Define the intended decision, comparable candidates, evidence rule, meaningful difference, tie rule, and inconclusive rule before inspecting candidate-specific outcomes. Apply the prespecified decision rule; nominal p-value alone is insufficient for scientific ranking.
 
-## Exploration Is Not Confirmation
+## Evidence Stages for Exploration and Confirmation
 
-Exploration is valuable when its search scope and failures remain visible. A data-dependent result becomes a frozen candidate for future verification, not a retrospective confirmatory result.
+Exploration is valuable when its search scope and failures remain visible. Classify a data-dependent result as exploratory and freeze it as a candidate for future verification.
 
 Exposure follows the underlying information. Changing a sample, codebase, model, repository, workflow, or skill version does not make overlapping evidence untouched again.
 
-## Formulation Is Not Candidate
+## Candidate and Formulation Distinctions
 
 A formulation combines a candidate, observable or test role, support definition, statistic or model, and analysis choices. A failed formulation may weaken its frozen candidate-level claim only when it was valid and adequately sensitive; weakening a mechanistic candidate additionally requires mechanism-matched evidence.
 
-## Support Is Part of the Science
+## Data Support as an Inferential Requirement
 
-Rows in a table are not automatically a testable sample. Separate cases that were not observed, observed but nondetected, observed and zero, censored, low quality, ineligible, or excluded by a frozen rule.
+Define the testable sample from observation and support status. Separate cases that were not observed, observed but nondetected, observed and zero, censored, low quality, ineligible, or excluded by a frozen rule.
 
-Candidates with different target populations, supported samples, estimands, evidence stages, or material data quality are not automatically comparable. Keep them as parallel conclusions or support-limited candidates unless a validated common-scale mapping exists.
+Direct comparison requires compatible target populations, supported samples, estimands, evidence stages, and material data quality, or a validated common-scale mapping. Otherwise, keep candidates as parallel conclusions or support-limited candidates.
 
-## Sensitivity Precedes Null Interpretation
+## Sensitivity Requirements for Null Interpretation
 
-A small p-value is not a meaningful effect, and a large p-value is not evidence of absence. Compare uncertainty with the minimum meaningful effect and ask what the design could detect or exclude.
+Interpret p-values together with effect magnitude, uncertainty, and design sensitivity. Evidence of absence requires sufficient precision to exclude the minimum meaningful effect.
 
-## Failure Modes Are Features
+## Failure-Mode Analysis
 
-Name selection, calibration, background, hidden covariates, leakage, outliers, flexible formulas, implementation errors, and proxy mismatch before testing. If no possible result can weaken the explanation, the claim is too vague.
+Name selection, calibration, background, hidden covariates, leakage, outliers, flexible formulas, implementation errors, and proxy mismatch before testing. If no possible result can weaken the explanation, the claim lacks a discriminating falsification criterion.
 
-## Evidence Has Levels
+## Evidence-Stage Classification
 
 Same-data consistency, alternate proxies, cross-validation, simulations, sealed holdouts, and external replication carry different evidential weight. Label them separately.
 
-## Negative Results Must Stay Visible
+## Retention of Negative and Invalid Results
 
-Preserve null, inconclusive, invalid, and failed branches. They constrain future search and prevent rediscovery of the same mistake.
+Preserve null, inconclusive, invalid, and failed branches. They constrain future search and prevent repeated evaluation of an invalidated branch.
 
-## Autonomy Must Be Auditable
+## Audit Requirements for Autonomous Research
 
 For explicit systematic coverage, do not cap scientific possibilities with an arbitrary candidate or round count. Version a finite data-supported inventory, make every executable formulation set finite, preserve the full ledger, and stop scientifically only after the complete closure gate passes.
 
-For outcome-informed work without a systematic-coverage objective, preserve the full candidate and selection history and describe its conclusion as bounded rather than inventing saturation. Bounded is a claim level, not a stopping rule; continue under Core Rule 6 while material supported science remains. A fully frozen batch needs neither an inventory nor an adaptive search ledger.
+For outcome-informed work without a systematic-coverage objective, preserve the full candidate and selection history and classify its conclusion as bounded. A bounded classification defines claim level and leaves Core Rule 6's continuation standard unchanged. A fully frozen batch needs neither an inventory nor an adaptive search ledger.
 
 The ledger must cover the complete selection path from candidate generation and modification through screening, ranking, verification targeting, and promotion. Use an inferential strategy suited to that path; no single global-null method fits every domain.
 
-Data looks, governance, compute, cost, time, storage, and external actions still require frozen boundaries. If an execution boundary arrives first, pause with open cells rather than declaring the scientific space complete. Do not optimize until a favorable result appears.
+Data looks, governance, compute, cost, time, storage, and external actions require frozen boundaries. If an execution boundary is reached first, preserve all open cells and report the boundary. Outcome-dependent continuation aimed at obtaining a favorable result is prohibited.
 
-## Coverage Is Not Universal Exhaustiveness
+## Scope of Coverage Claims
 
-For explicit systematic coverage, the claim describes a versioned search space constructed from the current question and data products. It does not prove that no other physical, causal, computational, measurement, selection, model, simulation, feature, or design candidate exists.
+For explicit systematic coverage, the claim is limited to the declared versioned search space constructed from the current question and data products and does not establish open-world completeness.
 
-## Governance Is Not an Afterthought
+## Governance and Authorization Requirements
 
-Scientific usefulness does not create authority. Respect data-use, privacy, ethics, safety, resource, and external-action boundaries before execution.
+Scientific utility does not confer execution authority. Respect data-use, privacy, ethics, safety, resource, and external-action boundaries before execution.

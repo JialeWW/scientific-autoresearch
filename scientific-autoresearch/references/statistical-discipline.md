@@ -2,7 +2,7 @@
 
 Use this reference only when the multiplicity, selection path, evidence partition, or stochastic method is not already clear. `decision-selection.md` contains the detailed rules for prior exposure, comparability, and the compact selection record. Do not recreate those records here.
 
-## 1. Handle a Frozen Analysis Family Without Adaptive Machinery
+## 1. Inference for Fully Prespecified Analysis Families
 
 A fully frozen batch may contain a finite prespecified family or bounded automated procedure when its candidate domain, proposal and evaluation rules, evidence partitions, methods, exclusions, randomization, budget, stopping, multiplicity or joint inference, decision, and reporting rules were frozen before outcomes. Record:
 
@@ -24,7 +24,7 @@ Cover the actual outcome-informed path using the simplest defensible option:
 5. Use hierarchical multiplicity control when scientific families and their testing order were prespecified.
 6. Use Bayesian model comparison or averaging when the candidate set, priors, likelihood, decision rule, and sensitivity analysis are scientifically defensible.
 
-Another method is acceptable when it provides equivalent path coverage. State what the method covers, what it omits, its dependence assumptions, and how failed or invalid runs enter the procedure. If no valid method covers retrospective adaptation, keep the affected conclusion exploratory; do not manufacture confirmatory status.
+Another method is acceptable when it provides equivalent path coverage. State what the method covers, what it omits, its dependence assumptions, and how failed or invalid runs enter the procedure. If no valid method covers retrospective adaptation, classify the affected conclusion as exploratory.
 
 ## 3. Establish Support and Sensitivity
 
@@ -54,8 +54,8 @@ State whether independence concerns evidence, prior-result blinding, implementat
 - Never select seeds, checkpoints, or realizations because they improve direction, significance, or rank.
 - Do not treat seeds as independent scientific sample units.
 
-Native optimizer or simulation logs may remain in their reproducible system of record. Reference them from the compact scientific record and summarize selection-influencing state changes; do not copy noninfluential telemetry for ceremony.
+Native optimizer or simulation logs may remain in their reproducible system of record. Reference them from the compact scientific record, summarize selection-influencing state changes, and omit telemetry that influenced neither selection nor reproducibility.
 
-## 6. Stop at the Correct Claim Level
+## 6. Apply Claim-Level Stopping Criteria
 
 A frozen analysis family can end with its prespecified joint decision. In authorized outcome-informed work, use Core Rule 6's problem-specific continuation standard and resource boundary. Explicit systematic coverage uses the saturation and closure rules in `coverage-search.md`. A favorable result, promoted candidate, round count, or resource limit is not scientific completion.

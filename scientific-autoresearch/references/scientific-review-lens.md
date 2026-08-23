@@ -30,7 +30,7 @@ First identify the actual scientific path: fully frozen before outcomes, outcome
 - Verify that the supported sample, unit of inference, proxy, model, statistic, scale, control, and uncertainty model test the stated estimand.
 - Separate causal identification from estimation.
 - Prefer a minimal test; justify every added degree of freedom.
-- Check that governance and resource limits did not distort the design silently.
+- Check and report any effect of governance or resource limits on the design.
 
 ## Evidence Strength
 
@@ -43,12 +43,12 @@ First identify the actual scientific path: fully frozen before outcomes, outcome
 
 For outcome-informed and systematic-coverage work:
 
-- Did every generation, modification, screening, ranking, verification-targeting, and promotion step enter the correct complete path?
+- Was every generation, modification, screening, ranking, verification-targeting, and promotion step recorded in the complete selection path?
 - Does the selected holdout, end-to-end null, selective, sequential, hierarchical, Bayesian, or other method match the path, dependence structure, and decision?
 - Are directly ranked candidates genuinely comparable in target population, supported sample, estimand, evidence stage, and material data quality?
 - Were actual seeds and failed realizations handled under the frozen policy?
 
-A bounded report limits claim strength; it is not a stopping rule. Continue while Core Rule 6 identifies a material supported next test. Preserve unresolved work, and never claim saturation or coverage completion unless systematic coverage was explicitly requested and its closure conditions passed.
+A bounded report defines claim strength and leaves Core Rule 6's stopping rule unchanged. Continue while Core Rule 6 identifies a material supported next test. Preserve unresolved work, and reserve saturation or coverage-completion claims for explicitly requested systematic coverage whose closure conditions passed.
 
 ## Scientific-Stop Audit
 
@@ -71,7 +71,7 @@ Resource-deferred or governance-blocked cells prevent coverage completion. Inven
 
 ## Evidence Independence
 
-Classify support correctly:
+Classify support by evidence source:
 
 ```text
 same-data consistency
@@ -129,8 +129,8 @@ Before promotion, answer:
 5. Was sensitivity adequate, and did inference cover the complete selection path rather than only winners?
 6. Is comparison restricted to a justified family, with noncomparable results parallel or support limited?
 7. Did the frozen ranking, tie, and inconclusive rules support the decision without a min-p default?
-8. What falsifier could have hurt it?
+8. Which prespecified falsifier could have weakened the claim?
 9. What is the verification status?
 10. What dominant limitation must remain in the headline sentence?
 11. What evidence would change the decision?
-12. If systematic coverage was explicitly requested, did the inventory actually meet saturation and coverage criteria, or did execution merely stop? Otherwise is the output clearly a bounded scientific result?
+12. If systematic coverage was explicitly requested, did the inventory meet the saturation and coverage criteria, or was termination operational without scientific completion? Otherwise, is the output clearly classified as a bounded scientific result?

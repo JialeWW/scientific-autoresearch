@@ -87,19 +87,9 @@ Preserve the reviewer's issued verdict. If a material dispute, missing source, o
 
 ## 4. Report Separate States
 
-Use only the applicable values; do not invent compound or interim status labels:
+Use the completion states and termination rules defined in `SKILL.md`, section 6. Report each applicable state against its own criteria. For `complete_within_scope`, apply every condition in `coverage-search.md` as well as the stopping review.
 
-```yaml
-request_execution_complete: true | false
-scientific_mapping_complete: true | false | not_assessed
-search_stop_admissible: true | false | indeterminate | not_assessed
-complete_within_scope: true | false | not_assessed
-termination_reason: scientific_stop | request_complete | user_boundary | resource_boundary | safety_boundary | governance_boundary
-```
-
-Keep the canonical state fields unchanged. A project may add a separate optional label such as `execution_status: registered_batch_complete`; it must not replace or change the type of `request_execution_complete`. That boolean does not imply either mapping completeness or stop admissibility. `complete_within_scope` additionally requires every condition in `coverage-search.md`; this challenge can audit that record but cannot replace it.
-
-Only the primary agent records `termination_reason`, and only when the task actually terminates; a reviewer must not propose one. Record exactly one primary reason then. Use `request_complete` when the bounded request finished as authorized. Use a boundary value only when that boundary interrupts otherwise unfinished authorized work; authorization merely defining a completed request does not turn `request_complete` into `user_boundary`.
+The reviewer reports findings and a review verdict. The primary agent adjudicates those findings, sets the completion states, and records the termination reason when the task ends.
 
 ## 5. Bound Re-review and Claims
 

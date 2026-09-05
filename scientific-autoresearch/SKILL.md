@@ -1,12 +1,14 @@
 ---
 name: scientific-autoresearch
-description: "Use when asked to design, execute, audit, or iteratively extend an evidence-generating scientific analysis where falsification, outcome-informed choices, data support, or selection-path validity are material. Supports prespecified programs, explicitly autonomous multi-round research, and explicitly requested finite coverage. Do not use for routine scientific explanation, literature-only review, manuscript editing, or ordinary engineering and isolated calculations without scientific decision design."
+description: "Design, execute, audit, or teach scientific investigations where falsification, data support, outcome-informed choices, or selection-path validity matter. Not for routine explanation, literature-only review, manuscript editing, or calculations without scientific decision design."
 license: MIT
 metadata:
-  version: "0.3.6"
+  version: "0.4.0"
 ---
 
 # Scientific Autoresearch
+
+For requests to teach scientific research reasoning, read `references/thinking-principles.md` and, when needed, `references/claim-types.md`. Explain the question–prediction–test–decision logic through the requested explanation, critique, or worked example. Use the workflow below when the request includes investigation design, execution, or audit.
 
 Use an active evidence loop:
 
@@ -81,7 +83,17 @@ Within the authorized scope and resource budget, continue while a currently iden
 
 Stop when the requested decision is resolved under its declared rule, no currently identified feasible test meets the continuation standard, progress requires new data or assumptions, or a resource, safety, governance, or user boundary is reached. Preserve unresolved candidates and the exact next admissible step. Record the stopping basis. Continue only while a currently identified candidate test, falsifier, validation, or refinement meets the continuation standard stated above, and retain an unresolved outcome when the evidence does not support a selection. If resources end while admissible work remains, report `resource_limited` or a bounded pause and leave scientific and scoped completion unclaimed.
 
-Completion of the requested execution or a registered batch does not establish scientific stopping. Keep `request_execution_complete`, `scientific_mapping_complete`, `search_stop_admissible`, and, only for explicit coverage, `complete_within_scope` separate. Use `not_assessed` when a gate was not invoked and `indeterminate` when a required stop challenge cannot resolve a material dispute. Use the state and termination vocabularies in `references/completion-review.md`; compound status labels are outside the defined vocabulary. When the task actually terminates, record exactly one primary reason. Use `termination_reason=request_complete` when the bounded request finished as authorized; use a user, resource, safety, or governance boundary only when that boundary interrupts otherwise unfinished authorized work.
+Report requested execution, scientific mapping, and scientific stopping as separate states; include scoped completion for explicit coverage. Use `not_assessed` when a gate was not invoked and `indeterminate` when a required stop challenge cannot resolve a material dispute. Use the applicable fields and values below for investigation reports:
+
+```yaml
+request_execution_complete: true | false
+scientific_mapping_complete: true | false | not_assessed
+search_stop_admissible: true | false | indeterminate | not_assessed
+complete_within_scope: true | false | not_assessed
+termination_reason: scientific_stop | request_complete | user_boundary | resource_boundary | safety_boundary | governance_boundary
+```
+
+Keep these field names and value types consistent. A project may add a separate descriptive label such as `execution_status: registered_batch_complete`. Assess mapping, stopping, and scoped completion against their own criteria. When the task ends, the primary agent records exactly one termination reason: `request_complete` for a finished bounded request, `scientific_stop` for an accepted scientific stopping decision, or the applicable boundary when it interrupts unfinished authorized work.
 
 Only when preparing to set `search_stop_admissible=true`, claim that no material test remains, or end open or adaptive research on a scientific-stop basis, read `references/completion-review.md` and run one scientific stop challenge. Reconstruct expected work candidate-forward, from declared protocol roles, and data-product-reverse before accepting the test registry as complete. Use one fresh reviewer context when available; otherwise perform the same source-first pass as an explicitly non-independent self-review. Adjudicate every finding and test or leave open every accepted, supported, feasible, authorized, potentially material omission. Limit the stop challenge to one reviewer layer. A named-test result, registered-batch completion without a search-stop claim, or boundary-forced termination does not trigger this challenge.
 
@@ -98,6 +110,8 @@ Distinguish scoped-completion questions from continuation questions. Treat "Is t
 A scientific stop challenge may review the coverage record and expose inconsistencies, but it cannot replace inventory saturation, cell closure, selection-ledger review, or the final decision rule.
 
 ## Report
+
+Make the report understandable without the conversation, reusing the persistent scientific record where possible.
 
 Report, as applicable, the supported conclusion and effect scale; uncertainty and sample support; the strongest falsifier, systematics, and alternatives; candidates and formulations attempted; outcome-informed changes and selection-path treatment; evidence status and prior exposure; data, code, and procedure versions; a practical reproduction recipe; the strongest unresolved candidate or open queue; the applicable completion states; and the termination reason.
 

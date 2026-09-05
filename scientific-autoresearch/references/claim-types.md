@@ -42,7 +42,7 @@ Use “mechanism-consistent,” not “mechanism proven,” unless a design test
 
 Question: Which model predicts better, explains a specified structure better, or fits a defined evidence criterion?
 
-State whether the goal is predictive or explanatory. Require comparable data and budgets, a frozen metric, flexibility control, residual or posterior-predictive checks, and sealed or nested evaluation when selection is adaptive.
+State whether the goal is predictive or explanatory. Require comparable data and budgets, a frozen metric, flexibility control, and residual or posterior-predictive checks. For adaptive selection, choose an evaluation or inference method valid for the complete selection path, such as sealed evaluation, nested evaluation, or another strategy in `references/decision-selection.md`.
 
 For a purely predictive or operational decision, apply a frozen substantive eligibility rule tied to the target metric and deployment or scientific use. `mechanism_alignment` may be not applicable with a reason; predictive accuracy does not by itself establish a mechanism.
 
@@ -72,7 +72,7 @@ Question: Which cases violate the current model, and are the deviations real?
 
 Require a frozen baseline, outlier or anomaly definition, multiplicity-aware search, data-quality and influence checks, and plausible physical and nonphysical explanations.
 
-Treat discovered anomalies as exploratory until verified independently.
+Classify the finding by the validity of its decision rule and full selection-path treatment. Report a supported detection when these justify the claim; otherwise retain an exploratory finding. Label independent verification as a separate evidence stage.
 
 ## Claim Card Check
 

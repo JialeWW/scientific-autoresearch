@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here.
 
+## 0.4.0 - 2026-09-05
+
+- Brings scientific investigation and research-reasoning instruction into one skill, with examples and teaching guidance for question framing, falsification, weak-result interpretation, and next-step decisions.
+- Distinguishes prespecified data-dependent procedures from outcome-informed changes outside the frozen procedure, preserving inferential status according to the design and its selection effects.
+- Aligns evidence requirements with the claim and complete selection process, while reporting independent verification as a distinct evidence stage.
+- Makes completion states available in the core instructions and uses detailed stopping review before declaring that no material test remains or ending an investigation on a scientific basis.
+- Presents the workflow, request examples, installation, and evaluation status in a concise user guide.
+- Retains the historical benchmark line. Behavioral and empirical-method evaluation for this release remain `not_evaluated`.
+
 ## 0.3.6 - 2026-08-23
 
 - Formalizes runtime and public-facing prose by replacing slogan-like headings, rhetorical contrasts, and colloquial process descriptions with direct definitions, applicability conditions, and evidence requirements.

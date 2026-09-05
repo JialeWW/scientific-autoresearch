@@ -56,6 +56,7 @@ class LightweightInstallSurfaceTests(unittest.TestCase):
         self.assertNotIn("spawn_agent", core + reference)
 
     def test_completion_review_preserves_staged_and_adjudicated_boundary(self) -> None:
+        core = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
         content = COMPLETION_REFERENCE.read_text(encoding="utf-8")
 
         for required in (
@@ -70,8 +71,6 @@ class LightweightInstallSurfaceTests(unittest.TestCase):
             "Preserve the reviewer's issued verdict",
             "leave the affected finding explicitly unresolved",
             "search_stop_admissible=indeterminate",
-            "a reviewer must not propose one",
-            "authorization merely defining a completed request does not turn `request_complete` into `user_boundary`",
             "Run one challenge per stopping episode",
         ):
             self.assertIn(required, content)
@@ -82,11 +81,13 @@ class LightweightInstallSurfaceTests(unittest.TestCase):
             r"search_stop_admissible: true \| false \| indeterminate \| not_assessed\n"
             r"complete_within_scope: true \| false \| not_assessed\n"
             r"termination_reason: scientific_stop \| request_complete \| user_boundary \| resource_boundary \| safety_boundary \| governance_boundary",
-            content,
+            core,
         )
         self.assertIsNotNone(state_block)
-        self.assertIn("execution_status: registered_batch_complete", content)
-        self.assertNotIn("`request_execution_complete` may use", content)
+        self.assertNotIn("request_execution_complete: true | false", content)
+        self.assertIn("defined in `SKILL.md`, section 6", content)
+        self.assertIn("execution_status: registered_batch_complete", core)
+        self.assertNotIn("`request_execution_complete` may use", core + content)
 
     def test_v033_development_cases_cover_new_failure_modes(self) -> None:
         value = json.loads(V033_CASES.read_text(encoding="utf-8"))

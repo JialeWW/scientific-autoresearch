@@ -20,13 +20,15 @@ Define the intended decision, comparable candidates, evidence rule, meaningful d
 
 ## Evidence Stages for Exploration and Confirmation
 
-Exploration is valuable when its search scope and failures remain visible. Classify a data-dependent result as exploratory and freeze it as a candidate for future verification.
+Preserve the scope and results of exploration. Data-dependent steps inside a mapping frozen before outcomes remain prespecified; assess their inferential validity for the complete mapping. Record outcome-driven discretion outside that mapping as exploratory, preserve the triggering outcome, and freeze the successor before further testing. Use the selection-path treatment and evidence stage to determine which claims the resulting evidence supports.
 
 Exposure follows the underlying information. Changing a sample, codebase, model, repository, workflow, or skill version does not make overlapping evidence untouched again.
 
 ## Candidate and Formulation Distinctions
 
 A formulation combines a candidate, observable or test role, support definition, statistic or model, and analysis choices. A failed formulation may weaken its frozen candidate-level claim only when it was valid and adequately sensitive; weakening a mechanistic candidate additionally requires mechanism-matched evidence.
+
+When choosing the next action, identify whether the dominant limitation lies in the data, model, or scientific question, and whether the proposed step verifies the current claim, broadens it, or changes the question. Apply the existing support, authorization, and successor rules to that choice.
 
 ## Data Support as an Inferential Requirement
 

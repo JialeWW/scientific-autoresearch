@@ -1,198 +1,116 @@
 # Scientific Autoresearch
 
+`scientific-autoresearch` is a client-neutral [Agent Skill](https://agentskills.io) for designing, executing, auditing, and teaching scientific investigations. It connects scientific questions to testable predictions, supported analyses, and decisions about what to investigate next.
+
+Current version: **0.4.0**.
+
+The same workflow serves models and Agent clients that support the Agent Skills format. Its instructions follow the scientific task, available evidence, and requested scope.
+
 ![Scientific autoresearch workflow](figures/scientific-autoresearch-workflow.png)
 
 [Vector PDF](figures/scientific-autoresearch-workflow.pdf) · [Vector SVG](figures/scientific-autoresearch-workflow.svg)
 
-The publication figure shows the explicit systematic-coverage branch, including its yes/no continuation paths. Frozen and bounded outcome-adaptive programs use the same test–audit–decision loop. Search maps and closure audits apply only to explicitly requested systematic coverage.
+The figure shows systematic coverage of a finite, data-supported candidate space. Prespecified analyses and adaptive investigations share its test–interpret–decide loop; coverage maps and closure reviews apply when systematic coverage is requested.
 
-`scientific-autoresearch` is a client-neutral [Agent Skill](https://agentskills.io) for iterative, falsifiable, and auditable scientific work. It can run a fully frozen analysis program, conduct outcome-adaptive research, or systematically cover a finite data-supported candidate space. Scientific controls scale with outcome-driven scientific discretion; ordinary engineering iteration stays outside the scientific selection history.
+## Version 0.4.0 Highlights
 
-Current version: **0.3.6**.
+- Research design, execution, audit, and reasoning instruction are available through one skill. Teaching includes framing questions, choosing falsifiers, interpreting weak results, and distinguishing data, model, and question limitations.
+- Prespecified procedures can use data to determine their next steps while retaining their declared inferential status, provided the procedure and its selection effects are handled by a valid design. Scientific changes chosen outside that procedure after viewing outcomes are recorded as outcome-informed successors.
+- Evidence requirements follow the scientific claim and the complete selection process. Appropriate holdout, sequential, selective, or other justified methods can support inference; independent verification is reported as a distinct evidence stage.
+- Completion states are defined in the core instructions. Detailed scientific stopping review is used before concluding that no material test remains or ending an investigation on a scientific basis.
 
-The release source of truth is `metadata.version` in `scientific-autoresearch/SKILL.md`. Historical machine-audit schemas and benchmark protocols have independent, immutable version lines.
+## How It Works
 
-## Version 0.3.6 Highlights
+1. **Define the scientific decision.** Specify the question, target population, quantity to estimate, meaningful effect scale, available data, and independent statistical unit.
+2. **Develop testable candidates.** Connect each mechanism, model, relation, or design to its predictions, data support, and potential falsifiers.
+3. **Prespecify the next test.** Freeze the next informative test or coherent batch, including comparisons, uncertainty, decision rules, and reporting. A fully specified program can freeze its complete procedure at once.
+4. **Interpret the evidence.** Assess effect sizes, uncertainty, sensitivity, systematics, and the selection process. Weak or conflicting results guide the next supported test or identify the need for better data.
+5. **Report the result and next step.** Preserve favorable and unfavorable attempts, explain outcome-informed changes, and distinguish completion of the requested work from scientific stopping and finite-scope coverage.
 
-Version 0.3.6 formalizes the runtime and public-facing language without changing scientific behavior. It replaces slogan-like headings, rhetorical contrasts, and colloquial process descriptions with direct definitions, applicability conditions, and evidence requirements. Explicit prohibitions remain where scientific validity, authorization, safety, or research integrity requires them. This revision adds no review, artifact, or execution step.
+Use one compact candidate board and result–decision record for ordinary investigations. Detailed references are loaded when the task needs them, such as dependent observations, causal inference, machine learning, selection correction, or scientific stopping.
 
-The v0.3.5 routing correction remains unchanged. Exhaustion or formal-completion questions use `complete_within_scope`; questions about a qualifying next test use `search_stop_admissible` and name any current qualifying open test, with the exact open queue retained for explicit coverage. Ambiguous wording such as "Is anything left?" reports both states; neither is inferred from the other.
-
-The v0.3.4 completion guardrail remains: a saturated inventory, closed declared cells, completed request, or admissible scientific stop is not reported as scoped completion unless `complete_within_scope=true`. Even a true result is limited to the declared versioned data-supported scope and never implies open-world exhaustiveness.
-
-The v0.3.3 foundation remains unchanged: a general scientific stop challenge prevents completion of a requested test or registered batch from being promoted into a claim that no material scientific work remains:
-
-```text
-declared scientific identifiers and science-facing products
-         -> deterministic reference reconciliation
-scientific source material
-         -> staged source-first stopping challenge
-reviewer findings -> primary-agent adjudication
-         -> separate execution, mapping, stopping, and coverage states
-```
-
-The deterministic layer checks only declared stable identifiers and resolvable references. Free-text semantic equivalence, undeclared necessary controls, ablations, and additional candidates belong to the scientific challenge. Science-facing manifests can distinguish inferential and diagnostic products from QA, intermediate, and provenance fields, preventing both orphan scientific roles and spurious blockers from ordinary implementation columns.
-
-The challenge uses staged disclosure: a fresh reviewer context, when available, first reconstructs the expected set from the question, scope, candidate predictions, protocol roles, science-facing products, support, and decision rule. Only then does it see the test registry, outputs, closures, open queue, and selection history. When staged access is unavailable, the review records elevated anchoring risk; when a fresh reviewer is unavailable, the primary Agent performs the same pass as a disclosed self-review. Reviewer findings remain provisional until the primary Agent adjudicates each one with evidence.
-
-The challenge runs only before a scientific-stop or no-material-test claim. One named test, registered-batch completion without such a claim, and user, resource, safety, or governance boundaries are exempt from the stop challenge. One review is allowed per stopping episode, with a delta review only while the question and authorization, candidate classes, science-facing products, support, and decision rules remain unchanged. A reviewer cannot certify open-world completeness, create independent evidence, or replace explicit finite-coverage saturation.
-
-For explicitly autonomous or iterative research, the default behavior is to build a compact candidate board, test the most informative supported candidate, learn from the result, and continue inside the authorized envelope. For design, read-only audit, or one named test, the Skill stays within that request and reports successors as proposals. A round is defined at a scientific interpretation checkpoint; tool calls, retries, and worker changes remain operational events. A change in scope, cost, risk, data access, or external action still requires authorization.
-
-When systematic coverage is explicitly requested, v0.3.6 retains full finite-scope completion: a versioned data-supported inventory, candidate-forward and data-product-reverse saturation audits, finite coverage cells, complete selection-path inference, and an exact open queue. The stop challenge may expose inconsistencies; explicit coverage still requires its saturation and closure gates.
-
-Freeze the next coherent test or batch, or one complete multi-stage mapping when it can already be prespecified. Confirmatory, blinded, costly, irreversible, regulated, safety-sensitive, and jointly inferred work freezes its full required protocol. Ordinary multi-round work uses one compact candidate board and result–decision record. Formal scoped completion additionally requires a compact scientific coverage record.
-
-The redesign keeps later scientific safeguards that materially improve validity:
-
-- a compact data-to-decision plan that defines the actual decision, comparable candidates, ranking evidence, ties, and inconclusive outcomes;
-- prior-exposure tracking that follows overlapping outcome information across code, sample, split, repository, workflow, or skill changes;
-- independent statistical units, group-aware partitions and resampling, support and data-integrity checks;
-- scale and parameter sensitivity, including radius, aperture, binning, threshold, and resolution when relevant;
-- measurement-error propagation, systematics, negative controls, falsification, and transportability;
-- explicit mapping between screening statistics and final predictive or inferential models;
-- inference that accounts for frozen winner selection or the complete outcome-adaptive selection path;
-- preservation of weak, null, failed, conflicting, and unfavorable branches;
-- finite data-supported coverage, saturation audits, and open queues only when systematic coverage is actually requested.
-
-It removes the default coupling between ordinary development and immutable scientific audit. Worker, chunk, cache, scheduler, equivalent implementation, resource smoke, and response-blind qualification changes no longer rebuild scientific contracts, hashes, ledgers, and prior valid computations.
-
-The official runtime archive contains only `SKILL.md`, scientific references, and the license. The schema-1.5.4 validator and its report-contract, status-schema, and round-gate references remain recoverable from the immutable v0.3.0 release and are excluded from v0.3.6. The package remains client-neutral and does not bind a particular sub-agent API or add product-specific UI metadata.
-
-## Default Scientific Behavior
-
-The always-loaded core applies the following scientific controls:
-
-- Build mechanisms first for mechanism questions and substantively distinct models, relations, features, simulations, designs, interventions, or failure modes for other questions.
-- Run the simplest supported test that best distinguishes the leading alternatives and, when iterative autonomy is explicit, choose the next candidate, falsifier, validation, or refinement inside the authorization envelope.
-- After weak or null evidence, check support, sensitivity, observable choice, scale, measurement error, model fit, and systematics before moving through the remaining candidate board.
-- Record each outcome-informed scientific modification before running it, preserve the earlier branch, and include every selection-influencing attempt in final inference.
-- Before a scientific-stop or no-material-test claim, reconcile declared scientific identifiers and run one staged, source-first stopping challenge. Do not trigger it for a bounded test or boundary stop, and reserve saturation and coverage-completion claims for explicitly requested full coverage.
-
-Explicitly autonomous or iterative execution continues inside the authorization and frozen rules without renewed confirmation at every checkpoint.
-
-Prospective-design requests produce plans without outcomes. Read-only audits exclude execution, repair, and extension unless separately authorized.
-
-## Compact Records and Engineering Boundaries
-
-Use one persistent compact record by default: the candidate board, frozen batches, data and code versions, decision-bearing outcomes and choices, failures, and report. Add a contemporaneous decision entry when outcomes alter the scientific path. Formal inventories, coverage matrices, bundles, and artifact trees are reserved for requests that require them.
-
-Record input identity at first production use and verify it again before final reporting or handoff. Prefer a stable version or snapshot identifier; use a digest only when no adequate identifier exists or exact byte identity matters. Intermediate re-verification is required only after a material mutation or assurance trigger.
-
-Freeze a reproducible randomization policy appropriate to the design. For simulation or optimization, record deterministic seeds or state and choose common, paired, or independent streams by the comparison design. For treatment or operational allocation, use a separate validated concealed scheme and restrict its state until disclosure is authorized. Outcome-dependent selection of randomness is prohibited.
-
-Classify changes by their scientific effect. Equivalent worker, chunk, scheduler, cache, implementation, retry, and path changes do not reopen science. Data or code changes that can alter support, eligibility, sample, estimand, ranking, or interpretation require affected checks and, when outcome-informed, enter the selection path.
-
-Execution qualification is required only for an identified failure mode. For material data, numerical, memory, I/O, or runtime risk, qualify the affected execution response-blindly; once the relevant criteria pass, begin science. Independent families do not block one another, while shared dependencies and joint decisions gate only their dependents.
-
-Ordinary research does not require bespoke audit trees, repeated hashing, or formal run-package validators by default. It still reuses project-required scientific, data-integrity, execution, and provenance controls, adding artifacts only for a concrete integrity, handoff, governance, or reproducibility need.
-
-Detailed result-blinding, evidence-independence, implementation-independence, and execution-lifecycle rules live in routed scientific references. The core retains the essential boundary: same-data reruns are reproduction or internal validation, not independent verification.
-
-## Continuous Scientific Decisions
-
-At each scientific checkpoint, the current frozen plan determines the branch:
-
-- A credible candidate passes through effect-size, uncertainty, systematics, selection-correction, comparability, and verification review. If evidence is not yet sufficient for its declared stage, the next validation or falsification batch is frozen and execution continues.
-- A weak or null result is triaged for mechanism weakness, wrong observable or scale, inadequate sensitivity, unsupported sample, model failure, or systematic error. A discriminating successor is frozen when available; otherwise the result is reported as null, inconclusive, support-limited, or needing new data.
-
-In an authorized iterative task, a bounded result does not itself end execution while a currently identified feasible test still meets the declared continuation standard. When full systematic coverage or scoped completion is explicitly requested, execution advances toward closure until completion or a real authorization, resource, governance, or scientific boundary. A user-requested bounded coverage stage ends at its declared stage boundary with the exact open queue.
-
-## Repository Layout
-
-```text
-.
-├── README.md
-├── CHANGELOG.md
-├── CITATION.cff
-├── CITATION.bib
-├── figures/
-├── scripts/
-│   ├── build_installable_skill.py
-│   └── validate_skill.py
-├── compatibility/
-│   └── README.md
-├── benchmarks/
-│   ├── README.md
-│   ├── development-cases/
-│   │   ├── v0.3.0-routing-efficiency.json
-│   │   ├── v0.3.1-lightweight-runtime.json
-│   │   ├── v0.3.2-boundary-corrections.json
-│   │   └── v0.3.3-scientific-stop-challenge.json
-│   ├── development-runs/
-│   ├── protocol-index.json
-│   ├── score-v2.1.2.py
-│   ├── tests/
-│   └── results/
-└── scientific-autoresearch/
-    ├── SKILL.md
-    ├── evals/
-    └── references/
-```
-
-The runtime installable surface is only `scientific-autoresearch/SKILL.md` and `scientific-autoresearch/references/`. The source-tree `scientific-autoresearch/evals/` directory is retained only for the immutable v0.2.8 benchmark line and is excluded from the official v0.3.6 skill archive. Repository-level benchmark, compatibility, and maintenance materials are not default Agent context.
-
-## Installation
-
-Prefer the versioned release asset `scientific-autoresearch-v0.3.6-skill.zip`; it contains one installable `scientific-autoresearch/` directory and excludes historical benchmark evals, validators, scripts, and formal machine-audit references. Extract that directory into a skills directory recognized by the Agent client.
-
-For a source checkout, copy only the runtime surface:
-
-```bash
-git clone https://github.com/JialeWW/scientific-autoresearch.git
-mkdir -p /path/to/your/skills-directory/scientific-autoresearch
-cp scientific-autoresearch/scientific-autoresearch/SKILL.md /path/to/your/skills-directory/scientific-autoresearch/
-cp -R scientific-autoresearch/scientific-autoresearch/references /path/to/your/skills-directory/scientific-autoresearch/
-```
-
-The installed path must contain `scientific-autoresearch/SKILL.md`. The package is client-neutral and contains no client-specific metadata.
+An explicitly iterative request authorizes continued investigation within its stated scope and resources. A design request produces a plan; a named test produces that test and its interpretation; an audit reviews the available evidence. Teaching requests explain the reasoning with examples or exercises. Prospective, sensitive, costly, or regulated work uses the applicable project protocol and authorization requirements.
 
 ## Example Requests
 
-### Frozen continuous program
+### Research design
 
 ```text
-Use scientific-autoresearch to execute this fully prespecified candidate family.
-Freeze its held-out comparison, joint inference, falsifiers, stopping and reporting
-rules before outcomes, then run continuously to a bounded scientific result.
+Use scientific-autoresearch to turn this question and dataset into a research plan.
+Identify the leading candidates, their distinct predictions, and the first
+informative test. Explain the data support and uncertainty needed for a decision.
 ```
 
-### Bounded adaptive research
+### Prespecified analysis
 
 ```text
-Use scientific-autoresearch to investigate these candidates autonomously. Keep one
-compact candidate board and result-decision record, run the applicable scale and
-systematics checks, learn from weak results, and continue while a material supported
-candidate or falsifier could change the conclusion, or until a real boundary is reached.
+Use scientific-autoresearch to execute this prespecified analysis program.
+Check the data support, comparison and stopping rules, run the analysis, and report
+effect sizes, uncertainty, and the conclusion supported by the design.
 ```
 
-### Explicit coverage search
+### Iterative investigation
 
 ```text
-Use scientific-autoresearch to systematically cover the finite candidate and test
-space supported by these data. Preserve every unrun cell in the open queue and do
-not claim scoped completion unless the saturation and closure conditions pass.
+Use scientific-autoresearch to investigate these candidates iteratively within
+this dataset and compute budget. Keep a compact record, learn from each result,
+and continue while a supported test could materially change the conclusion.
 ```
 
-## Legacy Machine-Audit Compatibility
+### Scientific audit
 
-The schema-1.5.4 machine-audit workflow is preserved in the immutable [v0.3.0 tag](https://github.com/JialeWW/scientific-autoresearch/tree/v0.3.0) for existing structured runs. It is excluded from the v0.3.6 Skill archive. Use the frozen v0.3.0 package only when an existing run actually depends on that schema; keep its provenance and artifact rules separate from ordinary v0.3.6 research.
+```text
+Use scientific-autoresearch to review this analysis and its results.
+Assess whether the claim matches the estimand, data support, uncertainty,
+selection process, and available verification. Identify material open tests.
+```
 
-## Evaluation Status
+### Research-reasoning lesson
 
-The latest frozen benchmark protocol/scorer remains **2.1.2**, with Skill **0.2.8** as its immutable release under test. Those protocol artifacts and historical `not_evaluated` results are not rewritten for v0.3.6.
+```text
+Use scientific-autoresearch to teach me how to distinguish a weak hypothesis
+from an insensitive test. Work through an example and help me choose a useful
+next observation or analysis.
+```
 
-The v0.3.0–v0.3.2 development specifications remain historical, unscored inputs. `benchmarks/development-cases/v0.3.3-scientific-stop-challenge.json` adds unscored cases for orphan roles, implicit material controls, science-facing product semantics, staged registry disclosure, auditable finding adjudication, self-review fallback, trigger boundaries, delta invalidation, reviewer hallucination, and coverage non-substitution. These specifications are not benchmark measurements. The v0.3.4 completion-language guardrail and v0.3.5 question routing are covered by deterministic repository tests. The v0.3.6 formal-language revision received static review and does not constitute a behavioral result. Skill v0.3.6 remains **not evaluated** until a frozen successor suite is executed.
+For systematic coverage, request a finite data-supported candidate and test space explicitly. The skill then maintains a versioned inventory, coverage record, and exact queue of remaining tests. Completion refers to that declared scope.
 
-Two unfrozen qualitative development probes are preserved under `benchmarks/development-runs/`. One specified compact-record continuation after a weak result; the other retained full scoped-coverage planning and an exact open queue without requiring a machine-audited schema. Because no model, runtime, sampling, timing, or judge protocol was frozen and no scientific computation was executed, these are diagnostics only and do not change the **not evaluated** status or establish superiority over v0.2.1.
+## Installation
 
-The existing source-tree `scientific-autoresearch/evals/*.json` files remain byte-frozen at their historical paths because protocol 2.1.2 binds those paths and hashes for Skill 0.2.8. They are legacy benchmark inputs, not v0.3.6 runtime instructions or current examples, and are excluded from the official v0.3.6 installable archive and runtime-package digest. A future protocol must preserve the existing benchmark line before relocating these files.
+Download [scientific-autoresearch-v0.4.0-skill.zip](https://github.com/JialeWW/scientific-autoresearch/releases/download/v0.4.0/scientific-autoresearch-v0.4.0-skill.zip) from the [v0.4.0 release](https://github.com/JialeWW/scientific-autoresearch/releases/tag/v0.4.0). Extract its `scientific-autoresearch/` directory into the skills directory recognized by your Agent client. The installed path must contain `scientific-autoresearch/SKILL.md`.
+
+The archive includes the core instructions, scientific references, and license. All research and teaching functions are included in this single skill.
+
+For installation from source:
+
+```bash
+git clone --branch v0.4.0 --depth 1 https://github.com/JialeWW/scientific-autoresearch.git
+mkdir -p /path/to/your/skills-directory/scientific-autoresearch
+cp scientific-autoresearch/scientific-autoresearch/SKILL.md /path/to/your/skills-directory/scientific-autoresearch/
+cp -R scientific-autoresearch/scientific-autoresearch/references /path/to/your/skills-directory/scientific-autoresearch/
+cp scientific-autoresearch/LICENSE /path/to/your/skills-directory/scientific-autoresearch/
+```
 
 ## Scientific Interpretation
 
-Only substantively eligible candidates with compatible targets, support, estimands, evidence bases, and data-quality regimes may be directly ranked. Inference must cover the full selection procedure. Weak and failed results remain in the record, and seeds, scales, checkpoints, or subgroups may not be selected because they improve the outcome.
+Direct candidate comparisons require compatible targets, support, estimands, evidence, and data quality. Inference accounts for the full procedure used to generate, modify, compare, and select candidates. Prespecified data-dependent procedures and outcome-informed changes are recorded according to their actual design and evidence exposure.
 
-For completed coverage work, scope the statement to the actual data-supported inventory. Do not claim exhaustion of all scientific possibilities.
+A null conclusion requires enough support and sensitivity to address the meaningful effect under study. Otherwise, the result is reported as inconclusive or support-limited, with the data or test needed to resolve it. Reproduction, internal validation, selection-adjusted inference, and independent verification are reported at their respective evidence stages.
+
+## Evaluation Status
+
+Repository checks cover package structure, reference consistency, release metadata, reproducible installation archives, and selected instruction regressions. Behavioral and empirical-method evaluation for v0.4.0 remain **`not_evaluated`**. Cross-model performance has not been measured.
+
+[Benchmark documentation](benchmarks/README.md) describes the evaluation protocols, development cases, and qualitative probes. The frozen protocol **2.1.2** remains bound to skill **0.2.8** and its historical inputs and results. Development specifications and probes provide diagnostic material for future evaluation.
+
+## Repository Resources
+
+- [`scientific-autoresearch/SKILL.md`](scientific-autoresearch/SKILL.md): core workflow and reference routing.
+- [`scientific-autoresearch/references/`](scientific-autoresearch/references/): guidance for scientific reasoning, inference, data domains, execution, and stopping.
+- [`scripts/`](scripts/): package validation and release-archive tools.
+- [`benchmarks/`](benchmarks/): evaluation protocols, development cases, and results.
+- [`compatibility/README.md`](compatibility/README.md): guidance for existing schema-1.5.4 machine-audit runs, preserved in the [v0.3.0 release](https://github.com/JialeWW/scientific-autoresearch/tree/v0.3.0).
+- [`CHANGELOG.md`](CHANGELOG.md): release history.
 
 ## Inspiration
 
@@ -200,4 +118,4 @@ This project was inspired by Andrej Karpathy's [`autoresearch`](https://github.c
 
 ## Citation and License
 
-Use [`CITATION.cff`](CITATION.cff) or [`CITATION.bib`](CITATION.bib) for a tagged release. Distributed under the MIT License; see `LICENSE`.
+Use [`CITATION.cff`](CITATION.cff) or [`CITATION.bib`](CITATION.bib) to cite a tagged release. Distributed under the [MIT License](LICENSE).

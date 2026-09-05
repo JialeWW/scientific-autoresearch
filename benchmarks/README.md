@@ -1,4 +1,4 @@
-# Benchmark Evidence Boundary
+# Benchmark Evaluation
 
 This directory is repository-maintenance infrastructure, not part of an ordinary scientific run. It separates:
 
@@ -6,11 +6,11 @@ This directory is repository-maintenance infrastructure, not part of an ordinary
 2. behavioral evaluation on isolated executions;
 3. empirical operating-characteristic studies under known or defensible truth.
 
-Passing deterministic checks does not establish behavioral or empirical validity. The frozen v0.2.8 result remains `not_evaluated`. Protocol/scorer 2.1.2 repairs the execution boundary and replays a non-development canary shakedown, but no frozen development suite or scored development case has been run. Skill v0.3.6 is a later installable release, has no result in this frozen protocol line, and is also `not_evaluated`.
+Deterministic checks cover package consistency and benchmark infrastructure. Behavioral evaluation and empirical-method validation for Skill v0.4.0 have status `not_evaluated`. The historical protocol/scorer 2.1.2 binds Skill v0.2.8 and includes a reproducible canary shakedown; its frozen development suite has no scored execution.
 
 ## Immutable protocol lines
 
-`manifest.json`, `score.py`, and `results/v0.2.8.json` remain the byte-frozen 2.1.0 chain. The reviewed 2.1.1 files are retained byte-for-byte as a superseded, unevaluated no-go snapshot. Protocol/scorer 2.1.2 is the benchmark-only successor whose release under test remains Skill 0.2.8. It does not evaluate or describe v0.3.x. `protocol-index.json` resolves every result or execution through explicit artifact hashes; it never infers a historical manifest from the current Skill version.
+`manifest.json`, `score.py`, and `results/v0.2.8.json` remain the byte-frozen 2.1.0 chain. The reviewed 2.1.1 files are retained byte-for-byte as a superseded, unevaluated no-go snapshot. Protocol/scorer 2.1.2 is the benchmark-only successor whose release under test remains Skill 0.2.8. `protocol-index.json` resolves every result or execution through the artifact hashes of its evaluated version. Evaluation of later Skill releases requires a successor protocol.
 
 Any scorer, protocol, or result-schema correction requires a new patch version. Do not overwrite a frozen scorer, manifest, result, execution manifest, or execution directory.
 
@@ -22,7 +22,7 @@ Any scorer, protocol, or result-schema correction requires a new patch version. 
 
 `development-cases/v0.3.1-lightweight-runtime.json` and `development-cases/v0.3.2-boundary-corrections.json` remain historical unfrozen, unscored specifications. `development-cases/v0.3.3-scientific-stop-challenge.json` adds unscored cases for declared-role reconciliation, source-first staged review, reviewer finding adjudication, trigger boundaries, delta invalidation, and coverage non-substitution. Version 0.3.4 adds only a deterministic completion-language regression check; v0.3.5 adds deterministic completion-versus-continuation routing; v0.3.6 formalizes public-facing language. These definitions and tests are not behavioral observations.
 
-The historical files under `scientific-autoresearch/evals/` remain at their original paths only because the immutable v0.2.8 protocol manifests bind those exact paths and hashes. They are legacy benchmark case sources, not current v0.3.6 runtime guidance. A successor protocol may relocate its own copied case source, but must not rewrite the frozen 2.1.2 manifests or imply that the old cases describe v0.3.6.
+The historical files under `scientific-autoresearch/evals/` retain the paths and hashes bound by the immutable v0.2.8 protocol manifests. The v0.4.0 runtime package consists of `SKILL.md` and its scientific references. A successor evaluation protocol can maintain its own versioned cases while preserving the historical benchmark artifacts.
 
 ## Protocol 2.1.2 comparison unit
 

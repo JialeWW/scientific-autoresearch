@@ -24,7 +24,7 @@ Ask:
 
 Use:
 
-- `null` only for an adequately supported and sensitive formulation compatible with no meaningful effect;
+- `null` only when the prespecified null or equivalence decision rule is met and the uncertainty excludes the declared scientifically meaningful alternative;
 - `inconclusive` when precision or support is inadequate;
 - `artifact` or `invalid` for measurement, selection, leakage, implementation, or assumption failures;
 - `needs_data` at candidate level when current data cannot test its frozen claim.

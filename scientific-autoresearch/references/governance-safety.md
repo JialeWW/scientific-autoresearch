@@ -61,7 +61,7 @@ Require explicit approval before:
 
 Before requesting approval, provide the exact proposed action, target, expected duration or cost, scientific purpose, failure modes, rollback or stop mechanism, and outputs.
 
-For nontrivial computation, one explicit authorization may cover several rounds, regardless of execution or access method. Record:
+For resource-constrained, shared, paid, or otherwise materially impactful computation, record the applicable authorization boundaries. One explicit authorization may cover several rounds, regardless of execution or access method. Reuse existing authorization and execution policies; select relevant fields from:
 
 ```text
 compute_authorization_id
@@ -80,7 +80,7 @@ monitoring_and_stop_mechanism
 
 Do not request renewed approval for registered work wholly inside a valid envelope. Request it only before a change exceeds the authorized execution context, data scope, job class, cost, concurrency, duration, storage, or network boundary, or changes the external impact.
 
-An omitted envelope field is not unlimited permission. Resolve it from the documented execution policy or responsible authority; if no authoritative boundary exists, request clarification or renewed authorization.
+An omitted applicable boundary is not unlimited permission. Resolve material unknowns from the documented execution policy or responsible authority; request clarification or renewed authorization when an unresolved boundary affects permission, cost, data access, safety, or external impact. Ordinary local computation within the authorized task and available tool limits does not require a separate authorization envelope merely because the calculation is nontrivial.
 
 Track cumulative and remaining use at declared resource checkpoints, not after every small task. Resource exhaustion, service interruption, or envelope expiry creates a bounded pause when work remains. Preserve the scientific and engineering queues, last accepted qualification state, and resume conditions; do not call the inventory saturated or coverage complete.
 
@@ -102,7 +102,7 @@ For such work:
 
 ## 6. Report the Gate
 
-Record:
+Record the applicable fields, reusing existing records rather than requiring irrelevant entries:
 
 ```text
 governance_status

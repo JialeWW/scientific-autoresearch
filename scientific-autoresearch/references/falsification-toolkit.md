@@ -67,7 +67,7 @@ Test invariances, symmetries, units, conservation laws, monotonicity, or limitin
 - Record the complete selection path and all data looks, including generation, modification, screening, ranking, verification targeting, and promotion.
 - Save complete grids, including all evaluated configurations.
 - Use a justified end-to-end null, multiplicity, selective, sequential, hierarchical, Bayesian, or other path-covering method, or reserve sealed verification evidence.
-- Keep a result selected from a scan exploratory until verified.
+- Keep scan-selected conclusions exploratory when their selection path is not validly accounted for; report independent verification separately.
 - Selection control requires a valid design or inferential procedure; post-result narrative justification is insufficient.
 
 ## Promotion Audit

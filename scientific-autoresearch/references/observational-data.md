@@ -27,7 +27,7 @@ When aliases, multi-table joins, repeated rows, numerical tolerances, expected c
 - For nearest-neighbor or triggering mechanisms, test proximity, minimum distance, or presence within a predeclared scale.
 - For additive, cumulative, path-integrated, line-integrated, or volume-integrated mechanisms, test an appropriately weighted cumulative observable.
 - For distributional mechanisms, compare the relevant distributions rather than only means or correlations.
-- For threshold mechanisms, freeze the threshold before testing or label the scan exploratory.
+- For threshold mechanisms, freeze the threshold or the complete scan and its selection-aware decision rule before testing; record outcome-driven changes outside that rule as exploratory.
 - For object-specific natural scales, test a normalized quantity such as distance/radius, time/period, wavelength/linewidth, count/exposure, or signal/resolution element.
 - For shells, outskirts, interfaces, boundary layers, transition zones, or edges, test a physically motivated annular or shell observable rather than only enclosed apertures.
 

@@ -2,7 +2,7 @@
 
 Use this reference only before claiming `search_stop_admissible=true`, stating that no material test remains, or ending open or adaptive research on a scientific-stop basis. The challenge is designed to test the stopping rationale; it does not certify open-world scientific completeness or create independent evidence.
 
-Triggering conditions exclude completion of one named test or registered batch and execution terminated by a user, resource, safety, or governance boundary. Report the bounded result or boundary and leave `search_stop_admissible` false when a material open test is known, or `not_assessed` when scientific stopping was not evaluated.
+Triggering conditions exclude completion of one named test or registered batch and execution terminated by a user, resource, safety, or governance boundary. Report the bounded result or boundary and leave `search_stop_admissible` false when a currently qualifying open test under the continuation rule is known, or `not_assessed` when scientific stopping was not evaluated.
 
 ## 1. Reconcile Declared Identifiers
 
@@ -45,6 +45,8 @@ Every declared key must resolve to one valid disposition. A tested item must res
 ## 2. Challenge Stopping in Two Stages
 
 Use one fresh reviewer context when available. Use of a different agent or model provides process separation; independent scientific verification requires independent evidence. If no fresh reviewer is available, use the same procedure as a clearly labeled self-review and disclose shared context.
+
+When implementing this with a subagent, start without the prior research conversation and provide only the materials for the current disclosure stage. Save its first-stage reconstruction before sending second-stage records. Renaming an exposed worker does not make it fresh; shared filesystem access alone does not enforce isolation. Disclose premature exposure using the fields below.
 
 Use staged disclosure:
 

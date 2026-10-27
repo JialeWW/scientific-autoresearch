@@ -2,22 +2,26 @@
 
 `scientific-autoresearch` is a client-neutral [Agent Skill](https://agentskills.io) for designing, executing, auditing, and teaching scientific investigations. It connects scientific questions to testable predictions, supported analyses, and decisions about what to investigate next.
 
-Current version: **0.4.0**.
+Current version: **0.4.1**.
 
 The same workflow serves models and Agent clients that support the Agent Skills format. Its instructions follow the scientific task, available evidence, and requested scope.
 
-![Scientific autoresearch workflow](figures/scientific-autoresearch-workflow.png)
+![Scientific autoresearch workflow with adaptive collaboration](figures/scientific-autoresearch-workflow-integrated-en.png)
 
-[Vector PDF](figures/scientific-autoresearch-workflow.pdf) · [Vector SVG](figures/scientific-autoresearch-workflow.svg)
+The six-step workflow connects scientific questions, data support, hypotheses, informative tests, execution, interpretation, and review. Task-driven collaboration can support any step when its expected benefit justifies the coordination cost. Scientific stopping is challenged before claiming that no qualifying test remains.
 
-The figure shows systematic coverage of a finite, data-supported candidate space. Prespecified analyses and adaptive investigations share its test–interpret–decide loop; coverage maps and closure reviews apply when systematic coverage is requested.
+Earlier finite-coverage schematic: [PNG](figures/scientific-autoresearch-workflow.png) · [Vector PDF](figures/scientific-autoresearch-workflow.pdf) · [Vector SVG](figures/scientific-autoresearch-workflow.svg). Finite inventories and coverage closure apply only when systematic coverage is explicitly requested.
 
-## Version 0.4.0 Highlights
+## Version 0.4.1 Highlights
 
-- Research design, execution, audit, and reasoning instruction are available through one skill. Teaching includes framing questions, choosing falsifiers, interpreting weak results, and distinguishing data, model, and question limitations.
-- Prespecified procedures can use data to determine their next steps while retaining their declared inferential status, provided the procedure and its selection effects are handled by a valid design. Scientific changes chosen outside that procedure after viewing outcomes are recorded as outcome-informed successors.
-- Evidence requirements follow the scientific claim and the complete selection process. Appropriate holdout, sequential, selective, or other justified methods can support inference; independent verification is reported as a distinct evidence stage.
-- Completion states are defined in the core instructions. Detailed scientific stopping review is used before concluding that no material test remains or ending an investigation on a scientific basis.
+- **Task-driven collaboration.** Create or reuse subagents when scientific benefit, dependencies, and coordination costs justify delegation. Roles and team size follow the problem rather than a fixed pipeline.
+- **Verified integration.** Use bounded handoffs, coordinate concurrent work, check returned evidence, and resolve discrepancies within one shared scientific record. The primary agent retains responsibility for interpretation.
+- **Source-first stopping review.** Reconstruct expected scientific work before revealing registries and results, disclose prior exposure, and distinguish ordinary collaboration from the scientific-stop challenge.
+- **Decision-relevant sensitivity.** Assess attainable precision or sensitivity before testing when the decision depends on distinguishing a meaningful effect, using existing evidence or a simple calculation when sufficient.
+- **Selection-aware interpretation.** Align scan and threshold guidance with valid selection-path inference and distinguish supported null or equivalence decisions from inconclusive results.
+- **Proportionate execution controls.** Reuse existing authorization and resource policies for ordinary local work while preserving boundaries for new costs, data access, and external actions.
+
+The skill remains usable without subagent tools. Collaboration does not expand authorization or turn same-data checks into independent scientific evidence.
 
 ## How It Works
 
@@ -28,6 +32,8 @@ The figure shows systematic coverage of a finite, data-supported candidate space
 5. **Report the result and next step.** Preserve favorable and unfavorable attempts, explain outcome-informed changes, and distinguish completion of the requested work from scientific stopping and finite-scope coverage.
 
 Use one compact candidate board and result–decision record for ordinary investigations. Detailed references are loaded when the task needs them, such as dependent observations, causal inference, machine learning, selection correction, or scientific stopping.
+
+At any step, consider whether bounded delegation would improve the investigation. Verify and integrate useful work before relying on it; work directly when delegation is unavailable or not worthwhile.
 
 An explicitly iterative request authorizes continued investigation within its stated scope and resources. A design request produces a plan; a named test produces that test and its interpretation; an audit reviews the available evidence. Teaching requests explain the reasoning with examples or exercises. Prospective, sensitive, costly, or regulated work uses the applicable project protocol and authorization requirements.
 
@@ -77,14 +83,14 @@ For systematic coverage, request a finite data-supported candidate and test spac
 
 ## Installation
 
-Download [scientific-autoresearch-v0.4.0-skill.zip](https://github.com/JialeWW/scientific-autoresearch/releases/download/v0.4.0/scientific-autoresearch-v0.4.0-skill.zip) from the [v0.4.0 release](https://github.com/JialeWW/scientific-autoresearch/releases/tag/v0.4.0). Extract its `scientific-autoresearch/` directory into the skills directory recognized by your Agent client. The installed path must contain `scientific-autoresearch/SKILL.md`.
+Download [scientific-autoresearch-v0.4.1-skill.zip](https://github.com/JialeWW/scientific-autoresearch/releases/download/v0.4.1/scientific-autoresearch-v0.4.1-skill.zip) from the [v0.4.1 release](https://github.com/JialeWW/scientific-autoresearch/releases/tag/v0.4.1). Extract its `scientific-autoresearch/` directory into the skills directory recognized by your Agent client. The installed path must contain `scientific-autoresearch/SKILL.md`.
 
 The archive includes the core instructions, scientific references, and license. All research and teaching functions are included in this single skill.
 
 For installation from source:
 
 ```bash
-git clone --branch v0.4.0 --depth 1 https://github.com/JialeWW/scientific-autoresearch.git
+git clone --branch v0.4.1 --depth 1 https://github.com/JialeWW/scientific-autoresearch.git
 mkdir -p /path/to/your/skills-directory/scientific-autoresearch
 cp scientific-autoresearch/scientific-autoresearch/SKILL.md /path/to/your/skills-directory/scientific-autoresearch/
 cp -R scientific-autoresearch/scientific-autoresearch/references /path/to/your/skills-directory/scientific-autoresearch/
@@ -99,7 +105,7 @@ A null conclusion requires enough support and sensitivity to address the meaning
 
 ## Evaluation Status
 
-Repository checks cover package structure, reference consistency, release metadata, reproducible installation archives, and selected instruction regressions. Behavioral and empirical-method evaluation for v0.4.0 remain **`not_evaluated`**. Cross-model performance has not been measured.
+Repository checks cover package structure, reference consistency, release metadata, reproducible installation archives, and selected instruction regressions. A limited single-model development comparison informed release review; it did not establish a scientific-correctness advantage over v0.4.0 or a generic agent under shared host defaults. This release describes functional improvements, not validated gains in accuracy, reliability, speed, or cost. Broad behavioral reliability, empirical operating characteristics, and cross-model performance remain unmeasured.
 
 [Benchmark documentation](benchmarks/README.md) describes the evaluation protocols, development cases, and qualitative probes. The frozen protocol **2.1.2** remains bound to skill **0.2.8** and its historical inputs and results. Development specifications and probes provide diagnostic material for future evaluation.
 

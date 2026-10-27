@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here.
 
+## 0.4.1 - 2026-10-27
+
+- Adds task-driven subagent collaboration during planning, investigation, discrepancy resolution, and execution, with delegation guided by dependencies, scientific benefit, and coordination cost.
+- Adds guidance for bounded handoffs, concurrent execution, evidence verification, and integration into one shared scientific record, with the primary agent retaining responsibility for interpretation.
+- Clarifies fresh-context, staged scientific-stop review, including source reconstruction before registry disclosure and explicit reporting of prior exposure.
+- Makes pre-test precision and sensitivity assessment explicit when a decision depends on distinguishing a meaningful effect.
+- Aligns scan and threshold interpretation with valid selection-aware inference, and distinguishes supported null or equivalence decisions from inconclusive results.
+- Applies computation-authorization requirements proportionately and reuses existing policies for ordinary local work within the authorized task.
+- Updates the workflow illustration, installation links, and citation metadata. The release makes no validated performance-superiority claim.
+
 ## 0.4.0 - 2026-09-05
 
 - Brings scientific investigation and research-reasoning instruction into one skill, with examples and teaching guidance for question framing, falsification, weak-result interpretation, and next-step decisions.

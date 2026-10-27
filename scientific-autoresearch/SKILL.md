@@ -1,9 +1,10 @@
 ---
 name: scientific-autoresearch
-description: "Design, execute, audit, or teach scientific investigations where falsification, data support, outcome-informed choices, or selection-path validity matter. Not for routine explanation, literature-only review, manuscript editing, or calculations without scientific decision design."
+description: "Design, execute, audit, or teach scientific investigations where falsification, data support, outcome-informed choices, or selection-path validity matter. Coordinate subagents when this improves the investigation. Not for routine explanation, literature-only review, manuscript editing, or calculations without scientific decision design."
 license: MIT
 metadata:
-  version: "0.4.0"
+  version: "0.4.1"
+  local_revision: "2026-10-27-adaptive-collaboration-refined"
 ---
 
 # Scientific Autoresearch
@@ -20,6 +21,12 @@ question -> candidate -> supported test -> interpretation
 Start after the proportionate support, data-semantic, execution-risk, and, when applicable, governance checks needed to interpret the work. Freeze the full required protocol for confirmatory, blinded, costly, irreversible, regulated, safety-sensitive, or jointly inferred work. For other work, specify the next informative test or coherent batch unless a complete data-to-decision mapping can already be justified and fixed; defer unsupported later stages.
 
 Continue across multiple result–decision rounds only when the user explicitly authorizes autonomous or iterative investigation. For design, read-only audit, or one named test, complete the requested scope and list further scientific tests as proposals. Within an authorized iterative scope, define a round as a scientific checkpoint; tool calls, retries, jobs, and routine confirmation events remain operational events. Seek new authorization when scope, cost, risk, data access, or external action would change.
+
+## Coordinate the research team
+
+During planning and when new questions, discrepancies, or bottlenecks arise, actively consider creating or reusing subagents. Weigh dependencies and expected scientific or execution benefits against context-transfer, coordination, integration, and resource costs. When delegation is worthwhile, tools are available, and the work fits existing authorization and budgets, delegate without waiting for a separate user request. Let the problem determine the division of work; do not impose fixed roles, stage-specific calls, or a team size. Work directly when delegation is unavailable or not worthwhile.
+
+Before delegating, read `references/multi-agent-collaboration.md` for handoff, concurrent execution, and integration. Reassess assignments as the problem changes; reuse, redirect, combine, or end branches while preserving their results and unresolved work. The primary agent remains responsible for the shared protocol, one scientific record, and final interpretation. Apply the scientific rules below across the whole team. Collaboration does not expand authorization or create independent evidence; the scientific-stop review in section 6 retains its own trigger and context requirements.
 
 ## 1. Build a compact candidate board
 
@@ -38,6 +45,8 @@ Freeze the next executable test or coherent prespecified batch. If a complete mu
 Data-dependent steps inside a frozen mapping remain prespecified; outcome-driven discretion outside it creates a successor. Before the first decision-bearing outcome, also freeze the comparison family, evidence partitions, tie, inconclusive, and promotion rules, and the selection-path or untouched-evaluation strategy needed for the claim.
 
 Choose the unresolved candidate, falsifier, validation, or refinement most likely to change scientific understanding. Run the simplest valid supported test that distinguishes plausible alternatives with different observable predictions. Base selection on expected scientific informativeness; nominal significance and convenience alone are insufficient criteria.
+
+When the decision depends on distinguishing a meaningful effect, assess attainable precision or sensitivity before testing, using existing evidence or a simple calculation when adequate. A requested measurement may proceed with its precision limitation stated.
 
 Prespecify and justify numerical thresholds that could materially affect eligibility, support, ranking, or conclusion using science, design, precision, power, or operating characteristics. Label operational heuristics and test reasonable alternatives when consequential. Never choose a threshold merely to retain or exclude available candidates or data families.
 
@@ -121,6 +130,7 @@ Prohibited conduct includes omitting, relabeling, redefining, or selectively rep
 
 ## Load references only when needed
 
+- When delegation would help, or when teaching how research agents collaborate: `references/multi-agent-collaboration.md`.
 - Explicit finite coverage or scoped completion: `references/coverage-search.md`.
 - Scientific-stop or no-material-test claim: `references/completion-review.md`.
 - Material candidate ranking, prior exposure, adaptive choice, or a promoted selection claim: `references/decision-selection.md`; add `references/statistical-discipline.md` when multiplicity, evidence partitions, stochastic calibration, or path inference is not already clear.

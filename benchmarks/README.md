@@ -6,7 +6,11 @@ This directory is repository-maintenance infrastructure, not part of an ordinary
 2. behavioral evaluation on isolated executions;
 3. empirical operating-characteristic studies under known or defensible truth.
 
-Deterministic checks cover package consistency and benchmark infrastructure. Behavioral evaluation and empirical-method validation for Skill v0.4.0 have status `not_evaluated`. The historical protocol/scorer 2.1.2 binds Skill v0.2.8 and includes a reproducible canary shakedown; its frozen development suite has no scored execution.
+Deterministic checks cover package consistency and benchmark infrastructure. Formal behavioral evaluation and empirical-method validation for the current Skill v0.4.1 have status `not_evaluated`. The historical v0.4.0 status remains `not_evaluated`.
+
+As described in the [main README](../README.md#evaluation-status) and [v0.4.1 release notes](https://github.com/JialeWW/scientific-autoresearch/releases/tag/v0.4.1), a limited single-model development comparison informed release review but did not establish a scientific-correctness advantage over v0.4.0 or a generic agent under shared host defaults. Functional updates (including task-driven collaboration), development cases, and qualitative checks do not constitute formal performance validation. No validated gains in accuracy, reliability, speed, or cost are claimed.
+
+The historical protocol/scorer 2.1.2 binds Skill v0.2.8 and includes a reproducible canary shakedown; its frozen development suite has no scored execution. It does not establish evaluation of v0.4.1.
 
 ## Immutable protocol lines
 
@@ -22,7 +26,7 @@ Any scorer, protocol, or result-schema correction requires a new patch version. 
 
 `development-cases/v0.3.1-lightweight-runtime.json` and `development-cases/v0.3.2-boundary-corrections.json` remain historical unfrozen, unscored specifications. `development-cases/v0.3.3-scientific-stop-challenge.json` adds unscored cases for declared-role reconciliation, source-first staged review, reviewer finding adjudication, trigger boundaries, delta invalidation, and coverage non-substitution. Version 0.3.4 adds only a deterministic completion-language regression check; v0.3.5 adds deterministic completion-versus-continuation routing; v0.3.6 formalizes public-facing language. These definitions and tests are not behavioral observations.
 
-The historical files under `scientific-autoresearch/evals/` retain the paths and hashes bound by the immutable v0.2.8 protocol manifests. The v0.4.0 runtime package consists of `SKILL.md` and its scientific references. A successor evaluation protocol can maintain its own versioned cases while preserving the historical benchmark artifacts.
+The historical files under `scientific-autoresearch/evals/` retain the paths and hashes bound by the immutable v0.2.8 protocol manifests. The current v0.4.1 runtime package consists of `SKILL.md` and its scientific references. A successor evaluation protocol can maintain its own versioned cases while preserving the historical benchmark artifacts.
 
 ## Protocol 2.1.2 comparison unit
 

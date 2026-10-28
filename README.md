@@ -28,8 +28,11 @@ The skill remains usable without subagent tools. Collaboration does not expand a
 1. **Define the scientific decision.** Specify the question, target population, quantity to estimate, meaningful effect scale, available data, and independent statistical unit.
 2. **Develop testable candidates.** Connect each mechanism, model, relation, or design to its predictions, data support, and potential falsifiers.
 3. **Prespecify the next test.** Freeze the next informative test or coherent batch, including comparisons, uncertainty, decision rules, and reporting. A fully specified program can freeze its complete procedure at once.
-4. **Interpret the evidence.** Assess effect sizes, uncertainty, sensitivity, systematics, and the selection process. Weak or conflicting results guide the next supported test or identify the need for better data.
-5. **Report the result and next step.** Preserve favorable and unfavorable attempts, explain outcome-informed changes, and distinguish completion of the requested work from scientific stopping and finite-scope coverage.
+4. **Execute and check.** Run the frozen test within the authorized scope, check inputs and outputs, and preserve all outcomes in the shared scientific record, including failed or invalid attempts.
+5. **Interpret the evidence.** Assess effect sizes, uncertainty, sensitivity, systematics, and the selection process. Weak or conflicting results guide the next supported test or identify the need for better data.
+6. **Review and report the result and next step.** Review claims, preserve favorable and unfavorable attempts, explain outcome-informed changes, and distinguish completion of the requested work from scientific stopping and finite-scope coverage.
+
+These six steps follow the numbered stages in the figure. [`SKILL.md`](scientific-autoresearch/SKILL.md) groups the underlying rules into seven numbered sections: section 1 covers steps 1–2; section 2 covers steps 3–4; section 3 covers interpretation and continuation (step 5); sections 5–6 govern conclusion promotion and stopping in steps 5–6; and the Report section specifies reporting requirements (step 6). Section 4 maintains the scientific record throughout, while section 7 adds finite-coverage requirements only when explicitly requested.
 
 Use one compact candidate board and result–decision record for ordinary investigations. Detailed references are loaded when the task needs them, such as dependent observations, causal inference, machine learning, selection correction, or scientific stopping.
 

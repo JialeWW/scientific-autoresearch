@@ -1,6 +1,6 @@
 # Scientific Autoresearch
 
-`scientific-autoresearch` is a client-neutral [Agent Skill](https://agentskills.io) for designing, executing, auditing, and teaching scientific investigations. It connects scientific questions to testable predictions, supported analyses, and decisions about what to investigate next.
+Scientific Autoresearch is a client-neutral [Agent Skill](https://agentskills.io) for iterative scientific investigation. It helps agents develop and compare candidate explanations, run data-supported analyses, and choose follow-up tests as evidence develops. When iterative investigation is authorized, the agent continues within the agreed scope and resource limits, recording outcomes and the reasons for subsequent decisions.
 
 Current version: **0.4.1**.
 
@@ -108,7 +108,7 @@ A null conclusion requires enough support and sensitivity to address the meaning
 
 ## Evaluation Status
 
-Repository checks cover package structure, reference consistency, release metadata, reproducible installation archives, and selected instruction regressions. A limited single-model development comparison informed release review; it did not establish a scientific-correctness advantage over v0.4.0 or a generic agent under shared host defaults. This release describes functional improvements, not validated gains in accuracy, reliability, speed, or cost. Broad behavioral reliability, empirical operating characteristics, and cross-model performance remain unmeasured.
+Repository checks cover package consistency and selected instruction regressions. Formal behavioral evaluation and empirical-method validation for v0.4.1 remain `not_evaluated`. Practical use and development checks are distinct from formal performance validation. Comparative gains in accuracy, reliability, speed, or cost have not been established.
 
 [Benchmark documentation](benchmarks/README.md) describes the evaluation protocols, development cases, and qualitative probes. The frozen protocol **2.1.2** remains bound to skill **0.2.8** and its historical inputs and results. Development specifications and probes provide diagnostic material for future evaluation.
 

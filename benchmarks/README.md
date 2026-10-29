@@ -6,9 +6,7 @@ This directory is repository-maintenance infrastructure, not part of an ordinary
 2. behavioral evaluation on isolated executions;
 3. empirical operating-characteristic studies under known or defensible truth.
 
-Deterministic checks cover package consistency and benchmark infrastructure. Formal behavioral evaluation and empirical-method validation for the current Skill v0.4.1 have status `not_evaluated`. The historical v0.4.0 status remains `not_evaluated`.
-
-As described in the [main README](../README.md#evaluation-status) and [v0.4.1 release notes](https://github.com/JialeWW/scientific-autoresearch/releases/tag/v0.4.1), a limited single-model development comparison informed release review but did not establish a scientific-correctness advantage over v0.4.0 or a generic agent under shared host defaults. Functional updates (including task-driven collaboration), development cases, and qualitative checks do not constitute formal performance validation. No validated gains in accuracy, reliability, speed, or cost are claimed.
+Repository checks cover package consistency and selected instruction regressions. Formal behavioral evaluation and empirical-method validation for v0.4.1 remain `not_evaluated`. Practical use and development checks are distinct from formal performance validation. Comparative gains in accuracy, reliability, speed, or cost have not been established. The historical v0.4.0 status remains `not_evaluated`.
 
 The historical protocol/scorer 2.1.2 binds Skill v0.2.8 and includes a reproducible canary shakedown; its frozen development suite has no scored execution. It does not establish evaluation of v0.4.1.
 
